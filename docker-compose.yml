@@ -1,0 +1,12 @@
+version: '3.4'
+services:
+  seqkit:
+    image: ndeimler99/seqkit_human_teloseq
+    build:
+      context: .
+      target: seqkit
+#  eggnog_mapper:
+#    image: ndeimler99/eggnog_mapper
+#    build:
+#      context: .
+#      target: eggnog_mapper
