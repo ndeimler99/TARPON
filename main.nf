@@ -21,7 +21,7 @@ println """\
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 // include { process_name } from "process_file"
-
+include { putative_isolation } from "./bin/process.nf"
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN ALL WORKFLOWS
@@ -31,12 +31,28 @@ println """\
 workflow {
 
     // check if input file exists
-    // check if output directory exists, if not create 
+    input_file = file(params.input_file)
+    if (!input_file.exists() ) {
+        exit 1, "Input File Does Not Exist"
+    }
+
+    // check if output directory exists
+    outdir = file(params.outdir)
+    if (outdir.exists() && !params.overwrite_outdir) {
+        exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
+    }
     
+    // ###### TO DO #######
     // check if filtered_telo is passed in
     // else - filter telomeric reads
+    // #############
+
 
     //standard pipeline
+    // putative identification of telomeric sequences to limit dataset size
+    putative_sequences = putative_isolation(input_file)
+
+
    
     //load in files from channel/somehow split demultiplex output into different channels?
     /*
