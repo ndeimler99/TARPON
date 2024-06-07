@@ -53,7 +53,7 @@
             
             "required": ["input_file", "outdir", "repeat", "minimum_telo_reads_per_sample"]
         },
-        "Adaptor Sequence Identification": {
+        "Adaptor_Sequence_Identification": {
           "title": "Adaptor Sequence Identification",
           "type": "object",
           "fa_icon": "fas fa-arrow-right",
@@ -72,7 +72,7 @@
             }
           }
         },
-        "Subtelomeric Filtering": {
+        "Subtelomeric_Filtering": {
           "title": "Subtelomeric Filtering Parameters",
           "type": "object",
           "fa_icon": "fas fa-arrow-right",
@@ -96,22 +96,10 @@
             "$ref": "#/definitions/Input"
         },
         {
-            "$ref": "#/definitions/output"
+            "$ref": "#/definitions/Adaptor_Sequence_Identification"
         },
         {
-            "$ref": "#/definitions/Clean_Filter"
-        },
-        {
-            "$ref": "#/definitions/Database"
-        },
-        {
-            "$ref": "#/definitions/Minimap2"
-        },
-        {
-            "$ref": "#/definitions/Kraken2"
-        },
-        {
-            "$ref": "#/definitions/Bracken"
+            "$ref": "#/definitions/Subtelomeric_Filtering"
         }
     ],
     "properties": {
