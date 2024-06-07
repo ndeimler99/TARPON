@@ -1,225 +1,58 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
-    "title": "epi2me-labs/wf-template",
-    "workflow_title": "Template workflow",
-    "description": "Nextflow workflow template repository.",
-    "demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-template/wf-template-demo.tar.gz",
-    "aws_demo_url": "https://ont-exd-int-s3-euwst1-epi2me-labs.s3.amazonaws.com/wf-template/wf-template-demo/aws.nextflow.config",
-    "url": "https://github.com/epi2me-labs/wf-template",
+    "title": "ndeimler99/TArPON",
+    "workflow_title": "Tarpon",
+    "description": "Telomere Analysis Pipeline On Nanopore Sequencing Data",
+    "demo_url": "demo_url",
+    "aws_demo_url": "aws_demo_url",
+    "url": "https://github.com/ndeimler99/TArPON",
     "type": "object",
     "definitions": {
-        
         "Input": {
-            "title": "Input Files",
+            "title": "Mandatory Input",
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
-            "description": "Parameters for finding and handling input data for analysis.",
+            "description": "Mandatory parameters for basic analysis",
             "properties": {
-                "fastq_input_dir": {
+                "input_file": {
                     "type": "string",
                     "format": "path",
-                    "title": "FASTQ",
-                    "description": "FASTQ files to use in the analysis.",
-                    "help_text": "This accepts one of three cases: (i) the path to a single FASTQ file; (ii) the path to a top-level directory containing FASTQ files; (iii) the path to a directory containing one level of sub-directories which in turn contain FASTQ files. In the first and second case, a sample name can be supplied with `--sample`. In the last case, the data is assumed to be multiplexed with the names of the sub-directories as barcodes. In this case, a sample sheet can be provided with `--sample_sheet`."
+                    "title": "FASTQ Input File",
+                    "description": "FASTQ File from Sequencing",
+                    "help_text": ""
                 },
-                "memfactor":{
-                    "type": "number",
-                    "default": 2,
-                    "title": "Memory Scalar",
-                    "description": "Scale memory usage depending on your machine"
-                },
-                "database_dir": {
-                  "title":"Pre-Downloaded Kraken Database",
+                "outdir": {
                   "type": "string",
-                  "format":"path",
-                  "description": "Provide the location of a predownloaded kraken database"
+                  "format": "path",
+                  "title": "Output Directory",
+                  "description": "Desired Output Location",
+                  "help_text": "This should be a path to a directory to store the output data. The parent directory should exist. If the main directory does not exist it will be created"
                 },
-                "database_store_dir":{
-                  "title":"Database Store Dir",
-                  "type":"string",
-                  "format":"path",
-                  "description":"Where to store the downloaded Kraken/Bracken databases"
+                "overwrite_outdir": {
+                  "type": "boolean",
+                  "title": "Overwrite Output Directory?",
+                  "help_text": "Set this to true if the output directory already exists but you would like to overwrite the data"
                 },
-                "krona_file":{
-                  "title":"Krona File",
-                  "type":"string",
-                  "format":"path",
-                  "description":"Provide te Location of a Predownloaded Krona File"
+                "repeat": {
+                  "type": "string",
+                  "title": "Telomeric Repeat Sequence (G-Strand)",
+                  "help_text": "Please supply the telomeric sequence found on the G strand, for examples and most vertebrata, GGTTAG"
                 },
-                "krona_store_dir":{
-                  "title":"Krona Store Dir",
-                  "type":"string",
-                  "format":"path",
-                  "description":"Where to store the downloaded Krona Files"
+                "minimum_telo_reads_per_sample": {
+                  "type": "number",
+                  "title": "Minimum Number of Telomeres Per Sample",
+                  "help_text": "Samples will be marked as failed if minimum number of telomeres is below this threshold"
                 },
-                "real_time":{
-                  "title":"Real-Time",
-                  "type":"boolean",
-                  "description":"Check this box if you want this pipeline to run in real time"
+                "c_strand_only": {
+                  "type": "boolean",
+                  "title": "C Strand Analysis Only",
+                  "help_text": "If the data was collected in such a way that only C strand telomeric sequences should be expected (i.e. ONT protocol), select this box"
                 }
             },
             
-            "required": ["fastq_input_dir"]
-        },
-
-        "output": {
-            "title": "Output Options",
-            "type": "object",
-            "fa_icon": "fas fa-arrow-left",
-            "description": "Parameters for saving and naming workflow outputs.",
-            "properties": {
-                "out_dir": {
-                    "type": "string",
-                    "default": "output",
-                    "format": "directory-path",
-                    "description": "Directory for output of all workflow results."
-                }
-            }
-        },
-        
-        "Clean_Filter":{
-            "title": "Cleaning & Filtering parameters",
-            "type": "object",
-            "fa_icon": "fas fa-arrow-right",
-            "description":"Set parameters for cleaning",
-            "properties":{
-                "QC":{
-                    "type": "boolean",
-                    "description": "For QC, Tick it!",
-                    "default":true
-                    },
-                "trim":{
-                    "type": "boolean",
-                    "description": "Trim the read",
-                    "default": true
-                    },
-                "porechop_abi": {
-                    "type": "boolean",
-                    "description": "porechop abi",
-                    "default": false
-                      },
-                "min_len": {
-                    "type": "integer",
-                    "description": "Minimum length (default: 1400)",
-                    "default": 1400
-                      },
-                "max_len": {
-                    "type": "integer",
-                    "description": "Maximum length (default: 1600)",
-                    "default": 1600
-                      },
-                "min_read_qual": {
-                    "type": "integer",
-                    "description": "Min read quality ",
-                    "default": 0
-                      },
-                "headcrop": {
-                    "type": "integer",
-                    "description": "Headcrop (default: 0)",
-                    "default": 0
-                      },
-                "tailcrop": {
-                    "type": "integer",
-                    "description": "Tail crop (default: 0)",
-                    "default": 0
-                      }
-                  
-              }
-        }, 
-        "Minimap2":{
-                "title": "Minimap2 parameters",
-                "type": "object",
-                "fa_icon": "fas fa-arrow-right",
-                "description": "prepare mapping command",
-                "properties": {
-                  "minimap2": {
-                    "title": "Enter the minimap2 command with parameters",
-                    "description": "Minimap 2.",
-                    "type": "string",
-                    "default":"-k 15 -K 25M --print-qname -aLx map-ont"
-                  }
-                }
-        },
-
-        "Kraken2":{
-                "title": "Kraken2 parameters",
-                "type": "object",
-                "fa_icon": "fas fa-arrow-right",
-                "description": "Enter the Kraken2 parameters",
-                "properties": {
-                  "kraken": {
-                    "title": "Classifier (Kraken 2)",
-                    "description": "Kraken 2 ",
-                    "type": "boolean",
-                    "default": true
-                  },
-                  "db_type": {
-                    "title": "Database name",
-                    "description": "Database (default: Silva)",
-                    "type": "string",
-                    "default": "silva"
-                  },
-                  "k_kmer": {
-                    "title": "K-mer",
-                    "description": "K-mer (default: 21)",
-                    "type": "integer",
-                    "default": 21
-                  },
-                  "minimizer_len": {
-                    "title": "Minimizer Length",
-                    "description": "Minimizer length (default 17)",
-                    "type": "integer",
-                    "default": 17
-                  },
-                  "minimizer_spaces": {
-                    "title": "Minimizer Space",
-                    "description": "Minimizer Spaces (default: 4)",
-                    "type": "integer",
-                    "default": 4
-                  }
-                }
-        },
-
-        "Bracken":{
-                "title": "Bracken parameters",
-                "type": "object",
-                "fa_icon": "fas fa-arrow-right",
-                "properties": {
-                  "bracken": {
-                    "title": "Bracken",
-                    "description": "Bracken",
-                    "type": "boolean",
-                    "default": true
-                  },
-                  "level": {
-                    "title": "Level",
-                    "description": "Level (default: G",
-                    "type": "string",
-                    "default":"G",
-                    "enum": ["D", "P", "C", "O", "F", "G"]
-                  },
-                  "b_kmer": {
-                    "title": "b-kmer",
-                    "description": "b-kmer (default 21)",
-                    "type": "integer",
-                    "default": 21
-                  },
-                  "read_length": {
-                    "title": "Read Length",
-                    "description": "Read Length (default: 1450)",
-                    "type": "integer",
-                    "default": 1450
-                  },
-                  "b_threshold": {
-                    "title": "b-threshold",
-                    "description": "b-threshold (default : 2)",
-                    "type": "integer",
-                    "default": 2
-                  }
-                }
+            "required": ["fastq_input"]
         }
-        
     },
     "allOf": [
         {
