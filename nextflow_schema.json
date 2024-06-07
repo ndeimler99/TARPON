@@ -27,25 +27,30 @@
                   "format": "path",
                   "title": "Output Directory",
                   "description": "Desired Output Location",
+                  "default": "output",
                   "help_text": "This should be a path to a directory to store the output data. The parent directory should exist. If the main directory does not exist it will be created"
                 },
                 "overwrite_outdir": {
                   "type": "boolean",
+                  "default":false,
                   "title": "Overwrite Output Directory?",
                   "help_text": "Set this to true if the output directory already exists but you would like to overwrite the data"
                 },
                 "repeat": {
                   "type": "string",
                   "title": "Telomeric Repeat Sequence (G-Strand)",
+                  "default": "GGTTAG",
                   "help_text": "Please supply the telomeric sequence found on the G strand, for examples and most vertebrata, GGTTAG"
                 },
                 "minimum_telo_reads_per_sample": {
                   "type": "number",
                   "title": "Minimum Number of Telomeres Per Sample",
+                  "default":500,
                   "help_text": "Samples will be marked as failed if minimum number of telomeres is below this threshold"
                 },
                 "c_strand_only": {
                   "type": "boolean",
+                  "default": false,
                   "title": "C Strand Analysis Only",
                   "help_text": "If the data was collected in such a way that only C strand telomeric sequences should be expected (i.e. ONT protocol), select this box"
                 }
@@ -62,6 +67,7 @@
             "adaptor_sequence": {
               "type":"string",
               "title":"Telomere Capture Sequence",
+              "default": "ACTTCGTTCGGT",
               "help_text": "Provide the first 12 nucleotides of the capture sequence that would appear on the G strand telomeric sequences"
             },
             "adaptor_sequence_errors": {
@@ -70,7 +76,8 @@
               "help_text":"Maximum number of errors allowed in the adaptor sequence when identifying the end of telomeric sequences",
               "default":2
             }
-          }
+          },
+          "required": ["adaptor_sequence"]
         },
         "Subtelomeric_Filtering": {
           "title": "Subtelomeric Filtering Parameters",
@@ -81,10 +88,12 @@
             "min_subtelo_length": {
               "type":"number",
               "title":"Minimum Subtelomere Length",
+              "default":300,
               "help_text": "Minimum Read Lenth Before VRR region Telomeric Start Site to Ensure sequencing completely through telomeres"
             },
             "subtelo_threshold": {
               "type":"number",
+              "default":0.3,
               "title":"Maximum Telomeric Percentage",
               "help_text":"Maximum percentage of one nucleotide substitutions of telomeric sequences found within min_subtelo_length before read does not pass filtering criteria"
             }
