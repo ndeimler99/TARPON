@@ -2,7 +2,7 @@
     "$schema": "http://json-schema.org/draft-07/schema",
     "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
     "title": "ndeimler99/TArPON",
-    "workflow_title": "Tarpon",
+    "workflow_title": "TArPON",
     "description": "Telomere Analysis Pipeline On Nanopore Sequencing Data",
     "demo_url": "demo_url",
     "aws_demo_url": "aws_demo_url",
@@ -51,7 +51,44 @@
                 }
             },
             
-            "required": ["fastq_input"]
+            "required": ["input_file", "outdir", "repeat", "minimum_telo_reads_per_sample"]
+        },
+        "Adaptor Sequence Identification": {
+          "title": "Adaptor Sequence Identification",
+          "type": "object",
+          "fa_icon": "fas fa-arrow-right",
+          "description": "Parameters relatig to the identification of a capture sequence on the end of the telomeres",
+          "properties" : {
+            "adaptor_sequence": {
+              "type":"string",
+              "title":"Telomere Capture Sequence",
+              "help_text": "Provide the first 12 nucleotides of the capture sequence that would appear on the G strand telomeric sequences"
+            },
+            "adaptor_sequence_errors": {
+              "type":"number",
+              "title":"Adaptor Sequence Errors",
+              "help_text":"Maximum number of errors allowed in the adaptor sequence when identifying the end of telomeric sequences",
+              "default":2
+            }
+          }
+        },
+        "Subtelomeric Filtering": {
+          "title": "Subtelomeric Filtering Parameters",
+          "type": "object",
+          "fa_icon": "fas fa-arrow-right",
+          "description": "Parameters relatig to filtering telomeric reads by the length of sequence before the telomeric start site",
+          "properties" : {
+            "min_subtelo_length": {
+              "type":"number",
+              "title":"Minimum Subtelomere Length",
+              "help_text": "Minimum Read Lenth Before VRR region Telomeric Start Site to Ensure sequencing completely through telomeres"
+            },
+            "subtelo_threshold": {
+              "type":"number",
+              "title":"Maximum Telomeric Percentage",
+              "help_text":"Maximum percentage of one nucleotide substitutions of telomeric sequences found within min_subtelo_length before read does not pass filtering criteria"
+            }
+          }
         }
     },
     "allOf": [
