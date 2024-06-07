@@ -20,7 +20,7 @@
                     "format": "path",
                     "title": "FASTQ Input File",
                     "description": "FASTQ File from Sequencing",
-                    "help_text": ""
+                    "help_text": "FASTQ File from Sequencing"
                 },
                 "outdir": {
                   "type": "string",
@@ -34,12 +34,14 @@
                   "type": "boolean",
                   "default":false,
                   "title": "Overwrite Output Directory?",
+                  "description": "",
                   "help_text": "Set this to true if the output directory already exists but you would like to overwrite the data"
                 },
                 "repeat": {
                   "type": "string",
                   "title": "Telomeric Repeat Sequence (G-Strand)",
                   "default": "GGTTAG",
+                  "description": "",
                   "help_text": "Please supply the telomeric sequence found on the G strand, for examples and most vertebrata, GGTTAG"
                 },
                 "minimum_telo_reads_per_sample": {
