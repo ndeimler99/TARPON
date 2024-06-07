@@ -22,6 +22,8 @@ println """\
 */
 // include { process_name } from "process_file"
 include { putative_isolation } from "./bin/process.nf"
+include { reverse_complementation } from "./bin/process.nf"
+include { identify_tagging_adaptor } from "./bin/process.nf"
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN ALL WORKFLOWS
@@ -52,8 +54,18 @@ workflow {
     // putative identification of telomeric sequences to limit dataset size
     putative_sequences = putative_isolation(input_file)
 
+    // reverse complement C strands into G strands and modify header line to include strand information
+    reverse_complemented = reverse_complementation(putative_sequences.putative_reads)
 
-   
+    // isolate reads with adaptor sequences and filter by subtelomere size
+    adaptor_identified = identify_tagging_adaptor(reverse_complemented.reversed_reads)
+
+    // this is where I would add demultiplexing so further processes can be ran in parallel
+
+    //telo start and length determination
+
+
+
     //load in files from channel/somehow split demultiplex output into different channels?
     /*
     Channel.fromPath("${params.metadata}") | splitCsv(header: true) | 

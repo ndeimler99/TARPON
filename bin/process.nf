@@ -7,6 +7,7 @@ process putative_isolation {
     
     output:
         path("putative_reads.fastq"), emit: putative_reads
+        path("raw_data.stats.txt")
     
     publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "raw_data.stats.txt"
     
@@ -17,7 +18,7 @@ process putative_isolation {
     """
 }
 
-process rev_comp {
+process reverse_complementation {
     
     label 'seqkit'
 
@@ -25,14 +26,32 @@ process rev_comp {
         path(reads)
 
     output:
-        path("reverse_reads.fastq.gz"), emit: reversed_reads
-        path("done.txt")
+        path("putative_reads.reverse_complemented.fastq"), emit: reversed_reads
+        path("putative_reads.stats.txt")
     
+    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "putative_reads.stats.txt"
+
     script:
     """
-    seqkit seq -r -p ${reads} > reverse_reads.fastq
-    gzip reverse_reads.fastq
-    touch done.txt
+    python3 ${baseDir}/bin/reverse_complement_reads.py ${reads} ${params.repeat} ${params.reverse_complement_threshold} ${params.c_strand_only} putative_reads.reverse_complemented.fastq putative_reads.g_strand.fastq putative_reads.c_strand.fastq
+    seqkit stats -a -N 50,90 -T *.fastq > putative_reads.stats.txt
     """
 }
 
+process identify_tagging_adaptor {
+    label 'seqkit'
+
+    input:
+        path(reads)
+    output:
+        path("adaptor_present.reads.stats.txt")
+        path("subtelo_filtered_reads.fastq"), emit: adaptor_reads
+
+    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "adaptor_present.reads.stats.txt"
+    
+    script:
+    """
+    python3 ${baseDir}/bin/identify_tagging_adaptor.py ${reads} ${params.adaptor_sequence} ${params.adaptor_sequence_errors} reads_with_adaptor.fastq ${params.min_subtelo_length} ${params.subtelo_threshold} subtelo_filtered_reads.fastq subtelo_removed.fastq ${params.repeat}
+    seqkit stats -a -N 50,90 -T *.fastq > adaptor_present.reads.stats.txt
+    """
+}
