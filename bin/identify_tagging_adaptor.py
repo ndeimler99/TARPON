@@ -18,7 +18,7 @@ with open(input_file, 'r') as fh, open(out_file, 'w') as out_fh, open(filtered_r
         linecount += 1
         if linecount % 4 == 0:
             read.append(line.strip())
-            matches = list(regex.finditer(r'(%s){e<=%s}' % (adaptor_sequence, adaptor_errors), read[1]))
+            matches = list(regex.finditer(r'(?e)(%s){e<=%s}' % (adaptor_sequence, adaptor_errors), read[1]))
             if len(matches) > 0:
                 for match in matches:
                     if read[1][0:match.span()[0]].count("GGTTAG") >= 10:
