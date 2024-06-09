@@ -22,80 +22,149 @@
                     "description": "FASTQ File from Sequencing"
                 },
                 "outdir": {
-                  "type": "string",
-                  "format": "path",
-                  "title": "Output Directory",
-                  "default": "output",
-                  "description": "This should be a path to a directory to store the output data. The parent directory should exist. If the main directory does not exist it will be created"
+                    "type": "string",
+                    "format": "path",
+                    "title": "Output Directory",
+                    "default": "output",
+                    "description": "This should be a path to a directory to store the output data. The parent directory should exist. If the main directory does not exist it will be created"
                 },
                 "overwrite_outdir": {
-                  "type": "boolean",
-                  "default":false,
-                  "title": "Overwrite Output Directory?",
-                  "description": "Set this to true if the output directory already exists but you would like to overwrite the data"
+                    "type": "boolean",
+                    "default":false,
+                    "title": "Overwrite Output Directory?",
+                    "description": "Set this to true if the output directory already exists but you would like to overwrite the data"
                 },
                 "repeat": {
-                  "type": "string",
-                  "title": "Telomeric Repeat Sequence (G-Strand)",
-                  "default": "GGTTAG",
-                  "description": "Please supply the telomeric sequence found on the G strand, for examples and most vertebrata, GGTTAG"
+                    "type": "string",
+                    "title": "Telomeric Repeat Sequence (G-Strand)",
+                    "default": "GGTTAG",
+                    "description": "Please supply the telomeric sequence found on the G strand, for examples and most vertebrata, GGTTAG"
+                },
+                "adaptor_sequence": {
+                    "type":"string",
+                    "title":"Telomere Capture Sequence",
+                    "default": "ACTTCGTTCGGT",
+                    "description": "Provide the first 12 nucleotides of the capture sequence that would appear on the G strand telomeric sequences"
                 },
                 "minimum_telo_reads_per_sample": {
-                  "type": "number",
-                  "title": "Minimum Number of Telomeres Per Sample",
-                  "default":500,
-                  "description": "Samples will be marked as failed if minimum number of telomeres is below this threshold"
+                    "type": "number",
+                    "title": "Minimum Number of Telomeres Per Sample",
+                    "default":500,
+                    "description": "Samples will be marked as failed if minimum number of telomeres is below this threshold"
                 },
                 "c_strand_only": {
-                  "type": "boolean",
-                  "default": false,
-                  "title": "C Strand Analysis Only",
-                  "description": "If the data was collected in such a way that only C strand telomeric sequences should be expected (i.e. ONT protocol), select this box"
+                    "type": "boolean",
+                    "default": false,
+                    "title": "C Strand Analysis Only",
+                    "description": "If the data was collected in such a way that only C strand telomeric sequences should be expected (i.e. ONT protocol), select this box"
                 }
             },
-            
             "required": ["input_file", "outdir", "repeat", "minimum_telo_reads_per_sample"]
         },
-        "Adaptor_Sequence_Identification": {
-          "title": "Adaptor Sequence Identification",
-          "type": "object",
-          "fa_icon": "fas fa-arrow-right",
-          "description": "Parameters relatig to the identification of a capture sequence on the end of the telomeres",
-          "properties" : {
-            "adaptor_sequence": {
-              "type":"string",
-              "title":"Telomere Capture Sequence",
-              "default": "ACTTCGTTCGGT",
-              "description": "Provide the first 12 nucleotides of the capture sequence that would appear on the G strand telomeric sequences"
-            },
-            "adaptor_sequence_errors": {
-              "type":"number",
-              "title":"Adaptor Sequence Errors",
-              "description":"Maximum number of errors allowed in the adaptor sequence when identifying the end of telomeric sequences",
-              "default":2
-            }
-          },
-          "required": ["adaptor_sequence"]
-        },
         "Subtelomeric_Filtering": {
-          "title": "Subtelomeric Filtering Parameters",
-          "type": "object",
-          "fa_icon": "fas fa-arrow-right",
-          "description": "Parameters relatig to filtering telomeric reads by the length of sequence before the telomeric start site",
-          "properties" : {
-            "min_subtelo_length": {
-              "type":"number",
-              "title":"Minimum Subtelomere Length",
-              "default":300,
-              "description": "Minimum Read Lenth Before VRR region Telomeric Start Site to Ensure sequencing completely through telomeres"
-            },
-            "subtelo_threshold": {
-              "type":"number",
-              "default":0.3,
-              "title":"Maximum Telomeric Percentage",
-              "description":"Maximum percentage of one nucleotide substitutions of telomeric sequences found within min_subtelo_length before read does not pass filtering criteria"
+            "title": "Subtelomeric Filtering Parameters",
+            "type": "object",
+            "fa_icon": "fas fa-arrow-right",
+            "description": "Parameters relating to filtering telomeric reads by the length of sequence before the telomeric start site",
+            "properties" : {
+                "min_subtelo_length": {
+                    "type":"number",
+                    "title":"Minimum Subtelomere Length",
+                    "default":300,
+                    "description": "Minimum Read Lenth Before VRR region Telomeric Start Site to Ensure sequencing completely through telomeres"
+                },
+                "subtelo_threshold": {
+                  "type":"number",
+                  "default":0.3,
+                  "title":"Maximum Telomeric Percentage",
+                  "description":"Maximum percentage of one nucleotide substitutions of telomeric sequences found within min_subtelo_length before read does not pass filtering criteria"
+                }
             }
-          }
+        },
+        "Telomere_Start_Identification": {
+            "title": "Telomere Start Identification",
+            "type": "object",
+            "fa_icon": "fas fa-arrow-right",
+            "description": "Parameters relating to the determination of the start of telomeric sequences",
+            "properties": {
+                "sliding_window_size":{
+                    "title": "Sliding Window Size",
+                    "type":"number",
+                    "default":100,
+                    "description": "Sliding Window Size for Telomere Start Identification"
+                },
+                "sliding_window_interval":{
+                    "title": "Sliding Window Jump Interval",
+                    "type":"number",
+                    "default": 10,
+                    "description": "Jumping size of sliding window identification to reduce computational time"
+                },
+                "start_repeat_threshold":{
+                    "title":"Repeat Threshold at Telomere Start",
+                    "type":"number",
+                    "default":0.6,
+                    "description": "Threshold that must be exceeded within sliding window for start identification of telomere"
+                },
+                "end_repeat_threshold": {
+                    "title": "Repeat Threshold Minimum",
+                    "type":"number",
+                    "default":0.6,
+                    "description": "Once Telomere Start Threshold is exceeded, the percentage of telomeric repeats can not drop below this threshold"
+                },
+                "perfect_repeats": {
+                    "title": "Identify Telomeric Start by Perfect Repeats",
+                    "default": false,
+                    "type":"boolean",
+                    "description": "If true conduct threshold analysis with perfect telomeric repeats, if false use one nucleotide substitutions. See manual for more details"
+                },
+                "consecutive": {
+                    "type":"boolean",
+                    "default": false,
+                    "title": "Identify Telomere Start by Consecutive Repeats"
+                },
+                "repeat_count":{
+                    "type": "number",
+                    "title": "Consecutive Repeat Count",
+                    "default":20,
+                    "description":"If consecutive repeats is marked True, How many repeats should be used to identify telomere start?"
+                }
+            }
+        },
+        "Advanced_Options": {
+            "title": "Advanced Options",
+            "type": "object",
+            "fa_icon": "fas fa-arrow-right",
+            "description": "Advanced Options regarding Mutant and Other Analyses",
+            "properties": {
+                "adaptor_sequence_errors": {
+                    "type":"number",
+                    "title":"Adaptor Sequence Errors",
+                    "description":"Maximum number of errors allowed in the adaptor sequence when identifying the end of telomeric sequences",
+                    "default":2
+                },
+                "strand_comparison":{
+                    "title": "Strand Comparison",
+                    "type":"boolean",
+                    "default":false,
+                    "description": "Generate Plots Directly comparing C to G strand results"
+                },
+                "indiv_read_plots":{
+                    "title":"Individual Real Plots",
+                    "type":"boolean",
+                    "default":false,
+                    "description": "Generate Plots showing individual reads and telomeric start identification"
+                },
+                "restriction_digest_analysis": {
+                    "type":"string",
+                    "title":"Restrction Enzymes",
+                    "description":"Provide a list of comma seperated restriction enzyme sites for an analysis of digestion completion"
+                },
+                "mutant": {
+                    "type":"string",
+                    "title":"Mutant Repeat of Interest",
+                    "description":"Telomeric Mutation of Interest - See Manual for more details"
+                }
+            } 
         }
     },
     "allOf": [
@@ -103,10 +172,13 @@
             "$ref": "#/definitions/Input"
         },
         {
-            "$ref": "#/definitions/Adaptor_Sequence_Identification"
+            "$ref": "#/definitions/Subtelomeric_Filtering"
         },
         {
-            "$ref": "#/definitions/Subtelomeric_Filtering"
+            "$ref": "#/definitions/Telomere_Start_Identification"
+        },
+        {
+            "$ref": "#/definitions/Advanced_Options"
         }
     ],
     "properties": {

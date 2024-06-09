@@ -55,3 +55,37 @@ process identify_tagging_adaptor {
     seqkit stats -a -N 50,90 -T *.fastq > adaptor_present.reads.stats.txt
     """
 }
+
+process consecutive_identification {
+
+    input:
+        path(reads)
+
+    output:
+        path("telomeric_start_identified.fastq"), emit: telomeric_sequences
+        path("telo_read_stats.txt")
+    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "telo_read_stats.txt"
+
+    script:
+    """
+    python3 ${baseDir}/bin/identify_consecutive_telo_start.py ${reads} ${params.repeat} ${params.repeat_count} ${params.telomeric_repeat_percentage} "telomeric_reads.fastq" "non_telomeric_reads.fastq"
+    seqkit stats -a -N 50,90 -T *.fastq > telo_read_stats.txt
+    """
+}
+
+process threshold_identification {
+
+    input:
+        path(reads)
+
+    output:
+        path("telomeric_start_identified.fastq"), emit: telomeric_sequences
+        path("telo_read_stats.txt")
+    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "telo_read_stats.txt"
+
+    script:
+    """
+    python3 ${baseDir}/bin/identify_threshold_telo_start.py ${reads} ${params.repeat} ${params.perfect_repeats} ${params.sliding_window_size} ${params.sliding_window_interval} ${params.start_repeat_threshold} ${params.end_repeat_threshold} ${params.telomeric_repeat_percentage} "telomeric_reads.fastq" "non_telomeric_reads.fastq"
+    seqkit stats -a -N 50,90 -T *.fastq > telo_read_stats.txt
+    """
+}

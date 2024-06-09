@@ -24,6 +24,8 @@ println """\
 include { putative_isolation } from "./bin/process.nf"
 include { reverse_complementation } from "./bin/process.nf"
 include { identify_tagging_adaptor } from "./bin/process.nf"
+include { consecutive_identification } from "./bin/process.nf"
+include { threshold_identification } from "./bin/process.nf"
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN ALL WORKFLOWS
@@ -63,8 +65,12 @@ workflow {
     // this is where I would add demultiplexing so further processes can be ran in parallel
 
     //telo start and length determination
+    if (params.consecutive) {
 
+    }
+    else {
 
+    }
 
     //load in files from channel/somehow split demultiplex output into different channels?
     /*
