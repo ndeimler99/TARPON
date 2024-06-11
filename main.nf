@@ -45,6 +45,9 @@ workflow {
     if (outdir.exists() && !params.overwrite_outdir) {
         exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
     }
+
+    // check that all other parameters are valid...
+    
     
     // ###### TO DO #######
     // check if filtered_telo is passed in
@@ -65,11 +68,14 @@ workflow {
     // this is where I would add demultiplexing so further processes can be ran in parallel
 
     //telo start and length determination
-    if (params.consecutive) {
-
+    if (params.vrr_start){
+        // identify start of telomeric sequence
+        // pass to secondary workflow for remainder of pipeline
     }
-    else {
-
+    
+    if (params.perfect_start){
+        // identify start of telomeric sequence
+        // pass to secondary workflow for remainder of pipeline
     }
 
     //load in files from channel/somehow split demultiplex output into different channels?
@@ -81,10 +87,7 @@ workflow {
 
     Channel.fromPath("${params.input_gff}/*.gff") . map { id, reads ->
         tokens = id.tokenize(".gff") } | view
-    */
-
-
-    
+    */ 
     
 }
 

@@ -12,7 +12,7 @@ telomeric_repeat_percentage = float(sys.argv[8])
 telo_reads_file = sys.argv[9]
 non_telo_reads_file = sys.argv[10]
 
-with open(telo_reads_file, 'r') as telo_fh, open(non_telo_reads_file, 'w') as non_telo_fh, open(input_file, 'w') as reads_fh:
+with open(telo_reads_file, 'w') as telo_fh, open(non_telo_reads_file, 'w') as non_telo_fh, open(input_file, 'r') as reads_fh:
     read = []
     linecount = 0 
     for line in reads_fh:
@@ -26,11 +26,11 @@ with open(telo_reads_file, 'r') as telo_fh, open(non_telo_reads_file, 'w') as no
                 if perfect_repeats:
                     telo_perc = (subseq.count(repeat) * len(repeat)) / sliding_window_size
                 else:
-                    telo_perc = (regex.finditer(r"(%s){s<=1}" % repeat, subseq) * len(repeat)) / sliding_window_size
+                    telo_perc = len(list(regex.finditer(r"(%s){s<=1}" % repeat, subseq))) * len(repeat) / sliding_window_size
                 
                 if telo_perc >= start_repeat_threshold and not telo_found:
                     telo_found = True
-                    if perfect_repeat:
+                    if perfect_repeats:
                         telo_start = regex.search(repeat, subseq).span()[0] + i
                     else:
                         telo_start = regex.search(r'(%s){s<=1}' % repeat, subseq).span()[0] + i

@@ -8,7 +8,7 @@ telomeric_repeat_percentage = float(sys.argv[4])
 telo_reads_file = sys.argv[5]
 non_telo_reads_file = sys.argv[6]
 
-with open(telo_reads_file, 'r') as telo_fh, open(non_telo_reads_file, 'w') as non_telo_fh, open(input_file, 'w') as reads_fh:
+with open(telo_reads_file, 'w') as telo_fh, open(non_telo_reads_file, 'w') as non_telo_fh, open(input_file, 'r') as reads_fh:
     read = []
     linecount = 0 
     for line in reads_fh:

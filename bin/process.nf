@@ -39,6 +39,7 @@ process reverse_complementation {
 }
 
 process identify_tagging_adaptor {
+    
     label 'seqkit'
 
     input:
@@ -58,12 +59,15 @@ process identify_tagging_adaptor {
 
 process consecutive_identification {
 
+    label 'seqkit'
+
     input:
         path(reads)
 
     output:
-        path("telomeric_start_identified.fastq"), emit: telomeric_sequences
+        path("telomeric_reads.fastq"), emit: telomeric_sequences
         path("telo_read_stats.txt")
+
     publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "telo_read_stats.txt"
 
     script:
@@ -75,11 +79,13 @@ process consecutive_identification {
 
 process threshold_identification {
 
+    label 'seqkit'
+
     input:
         path(reads)
 
     output:
-        path("telomeric_start_identified.fastq"), emit: telomeric_sequences
+        path("telomeric_reads.fastq"), emit: telomeric_sequences
         path("telo_read_stats.txt")
     publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "telo_read_stats.txt"
 
