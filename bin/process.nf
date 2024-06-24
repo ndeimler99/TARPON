@@ -56,36 +56,40 @@ process identify_tagging_adaptor {
     """
 }
 
-process consecutive_identification {
-
+process telo_start_identification {
+    label 'seqkit'
     input:
         path(reads)
 
     output:
-        path("telomeric_start_identified.fastq"), emit: telomeric_sequences
+        path("telomeric.fastq"), emit: telomeric_sequences
+        path("telomeric_stats.txt"), emit: telomeric_stats
         path("telo_read_stats.txt")
+
     publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "telo_read_stats.txt"
+    publishDir "${params.outdir}", mode:'copy',overwite:true, pattern: "telomeric_stats.txt"
 
     script:
     """
-    python3 ${baseDir}/bin/identify_consecutive_telo_start.py ${reads} ${params.repeat} ${params.repeat_count} ${params.telomeric_repeat_percentage} "telomeric_reads.fastq" "non_telomeric_reads.fastq"
+    #python script that identified telomere start. Writes out fastq file, stats file, fastq for reads removed because no telo start was found, fastq for reads removed because didnt reach minimum threshold
+    python3 ${baseDir}/bin/identify_telo_start.py ${reads} ${params.repeat} ${params.sliding_window_size} ${params.sliding_window_interval} ${params.upper_threshold} ${params.lower_threshold} ${params.telomeric_repeat_percentage} ${params.consecutive_repeats} telomeric.fastq no_telomere_start.filtered.fastq below_threshold.filtered.fastq telomeric_stats.txt
     seqkit stats -a -N 50,90 -T *.fastq > telo_read_stats.txt
     """
 }
 
-process threshold_identification {
+process individual_read_plots {
+    label 'seqkit'
 
     input:
         path(reads)
-
+        path(telo_stats)
     output:
-        path("telomeric_start_identified.fastq"), emit: telomeric_sequences
-        path("telo_read_stats.txt")
-    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "telo_read_stats.txt"
+        path("*.pdf")
+
+    publishDir "${params.outdir}/FIGURES/INDIVIDUAL_READ_PLOTS/", mode:'copy', overwrite: true, pattern: "*.pdf"
 
     script:
     """
-    python3 ${baseDir}/bin/identify_threshold_telo_start.py ${reads} ${params.repeat} ${params.perfect_repeats} ${params.sliding_window_size} ${params.sliding_window_interval} ${params.start_repeat_threshold} ${params.end_repeat_threshold} ${params.telomeric_repeat_percentage} "telomeric_reads.fastq" "non_telomeric_reads.fastq"
-    seqkit stats -a -N 50,90 -T *.fastq > telo_read_stats.txt
+    python3 ${baseDir}/bin/indiv_read_plots.py ${reads} ${params.repeat} ${telo_stats} ${params.sliding_window_size} ${params.sliding_window_interval}
     """
 }

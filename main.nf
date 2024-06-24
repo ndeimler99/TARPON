@@ -24,8 +24,9 @@ println """\
 include { putative_isolation } from "./bin/process.nf"
 include { reverse_complementation } from "./bin/process.nf"
 include { identify_tagging_adaptor } from "./bin/process.nf"
-include { consecutive_identification } from "./bin/process.nf"
-include { threshold_identification } from "./bin/process.nf"
+include { telo_start_identification } from "./bin/process.nf"
+include { individual_read_plots } from "./bin/process.nf"
+//include { generate_plots } from "./bin/process.nf"
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN ALL WORKFLOWS
@@ -33,7 +34,6 @@ include { threshold_identification } from "./bin/process.nf"
 */
 
 workflow {
-
     // check if input file exists
     input_file = file(params.input_file)
     if (!input_file.exists() ) {
@@ -65,12 +65,34 @@ workflow {
     // this is where I would add demultiplexing so further processes can be ran in parallel
 
     //telo start and length determination
-    if (params.consecutive) {
+    // analyze reads and create stats file containing read_id, strand, read_len, VRR_Start, VRR_length, Telo_length
+    telo_stats = telo_start_identification(adaptor_identified.adaptor_reads)
 
+    //depending on which start is choosen create plots
+    //if individual read, create plots
+    if (params.indiv_read_plots) {
+        individual_read_plots(telo_stats.telomeric_sequences, telo_stats.telomeric_stats)
     }
-    else {
 
-    }
+    // generate_plots(telo_stats.telomeric_stats)
+    
+    //normal plots
+        // read length histogram
+        // telo length histogram of desired metric
+        // scatter plot comparing read length to telo length
+        // bar plot
+        // If G/C comparison is specified
+            // telo and VRR length distributions between G and C strand reads
+
+    // detailed
+        // histogram of percent telomeric within VRR
+        // histogram of percent VRR within VRR
+        // VRR to % telo scatterplot
+        // adding to stats
+
+    // Go back through all stats output and combine into one file?
+    // C and G strand only seperated if specified past putative identification
+
 
     //load in files from channel/somehow split demultiplex output into different channels?
     /*
