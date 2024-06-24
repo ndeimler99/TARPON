@@ -74,59 +74,10 @@
                     "description": "Minimum Read Lenth Before VRR region Telomeric Start Site to Ensure sequencing completely through telomeres"
                 },
                 "subtelo_threshold": {
-                  "type":"number",
+                  "type":"string",
                   "default":0.3,
                   "title":"Maximum Telomeric Percentage",
                   "description":"Maximum percentage of one nucleotide substitutions of telomeric sequences found within min_subtelo_length before read does not pass filtering criteria"
-                }
-            }
-        },
-        "Telomere_Start_Identification": {
-            "title": "Telomere Start Identification",
-            "type": "object",
-            "fa_icon": "fas fa-arrow-right",
-            "description": "Parameters relating to the determination of the start of telomeric sequences",
-            "properties": {
-                "sliding_window_size":{
-                    "title": "Sliding Window Size",
-                    "type":"number",
-                    "default":100,
-                    "description": "Sliding Window Size for Telomere Start Identification"
-                },
-                "sliding_window_interval":{
-                    "title": "Sliding Window Jump Interval",
-                    "type":"number",
-                    "default": 10,
-                    "description": "Jumping size of sliding window identification to reduce computational time"
-                },
-                "start_repeat_threshold":{
-                    "title":"Repeat Threshold at Telomere Start",
-                    "type":"number",
-                    "default":0.6,
-                    "description": "Threshold that must be exceeded within sliding window for start identification of telomere"
-                },
-                "end_repeat_threshold": {
-                    "title": "Repeat Threshold Minimum",
-                    "type":"number",
-                    "default":0.6,
-                    "description": "Once Telomere Start Threshold is exceeded, the percentage of telomeric repeats can not drop below this threshold"
-                },
-                "perfect_repeats": {
-                    "title": "Identify Telomeric Start by Perfect Repeats",
-                    "default": false,
-                    "type":"boolean",
-                    "description": "If true conduct threshold analysis with perfect telomeric repeats, if false use one nucleotide substitutions. See manual for more details"
-                },
-                "consecutive": {
-                    "type":"boolean",
-                    "default": false,
-                    "title": "Identify Telomere Start by Consecutive Repeats"
-                },
-                "repeat_count":{
-                    "type": "number",
-                    "title": "Consecutive Repeat Count",
-                    "default":20,
-                    "description":"If consecutive repeats is marked True, How many repeats should be used to identify telomere start?"
                 }
             }
         },
@@ -173,9 +124,6 @@
         },
         {
             "$ref": "#/definitions/Subtelomeric_Filtering"
-        },
-        {
-            "$ref": "#/definitions/Telomere_Start_Identification"
         },
         {
             "$ref": "#/definitions/Advanced_Options"

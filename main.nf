@@ -45,6 +45,9 @@ workflow {
     if (outdir.exists() && !params.overwrite_outdir) {
         exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
     }
+
+    // check that all other parameters are valid...
+    
     
     // ###### TO DO #######
     // check if filtered_telo is passed in
@@ -103,10 +106,7 @@ workflow {
 
     Channel.fromPath("${params.input_gff}/*.gff") . map { id, reads ->
         tokens = id.tokenize(".gff") } | view
-    */
-
-
-    
+    */ 
     
 }
 

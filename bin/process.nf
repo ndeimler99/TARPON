@@ -39,6 +39,7 @@ process reverse_complementation {
 }
 
 process identify_tagging_adaptor {
+    
     label 'seqkit'
 
     input:
@@ -78,6 +79,8 @@ process telo_start_identification {
 }
 
 process individual_read_plots {
+    label 'seqkit'
+
     label 'seqkit'
 
     input:
