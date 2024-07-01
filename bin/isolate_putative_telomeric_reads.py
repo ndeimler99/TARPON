@@ -6,6 +6,7 @@ repeat = sys.argv[2]
 repeat_count = int(sys.argv[3])
 c_strand_only = sys.argv[4] == 'true'
 out_file = sys.argv[5]
+non_telo = sys.argv[6]
 
 
 def rev_complement(seq):
@@ -18,7 +19,7 @@ if c_strand_only:
     print(c_strand_only)
     print(type(c_strand_only))
 
-with gzip.open(input_file, 'rt') as input_file_fh, open(out_file, 'w') as out_fh:
+with gzip.open(input_file, 'rt') as input_file_fh, open(out_file, 'w') as out_fh, open(non_telo, "w") as non_telo_fh:
     linecount = 0
     read = []
     for line in input_file_fh:
@@ -27,7 +28,8 @@ with gzip.open(input_file, 'rt') as input_file_fh, open(out_file, 'w') as out_fh
         if linecount % 4 == 0:
             if c_strand_only and read[1].count(rev_complement(repeat)) >= repeat_count:
                 out_fh.write('{}\n{}\n{}\n{}\n'.format(read[0], read[1], read[2], read[3])) 
-            else:   
-                if read[1].count(repeat) > repeat_count or read[1].count(rev_complement(repeat)) >= repeat_count:
-                    out_fh.write('{}\n{}\n{}\n{}\n'.format(read[0], read[1], read[2], read[3]))    
+            elif read[1].count(repeat) > repeat_count or read[1].count(rev_complement(repeat)) >= repeat_count:
+                out_fh.write('{}\n{}\n{}\n{}\n'.format(read[0], read[1], read[2], read[3]))    
+            else:
+                non_telo_fh.write('{}\n{}\n{}\n{}\n'.format(read[0], read[1], read[2], read[3]))
             read = []

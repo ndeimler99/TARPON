@@ -3,18 +3,21 @@ process putative_isolation {
     label 'seqkit'
 
     input:
-        path(reads_file)
+        path(reads_file), stageAs: "input.fastq"
     
     output:
+        path("input.fastq")
         path("putative_reads.fastq"), emit: putative_reads
-        path("raw_data.stats.txt")
+        path("non_telomeric.fastq")
     
-    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "raw_data.stats.txt"
-    
+    publishDir "${params.outdir}/TELOMERIC/", overwrite: true, pattern: "input.fastq"
+    publishDir "${params.outdir}/FILTERED_READS/", overwrite: true, pattern: "input.fastq"
+    publishDir "${params.outdir}/TELOMERIC/", mode: 'copy', overwrite: true, pattern: "putative_reads.fastq"
+    publishDir "${params.outdir}/FILTERED_READS/",  overwrite: true, pattern: "non_telomeric.fastq"
+
     script:
     """
-    seqkit stats -a -N 50,90 -T *.gz > raw_data.stats.txt
-    python3 ${baseDir}/bin/isolate_putative_telomeric_reads.py ${reads_file} ${params.repeat} ${params.repeat_count} ${params.c_strand_only} putative_reads.fastq
+    python3 ${baseDir}/bin/isolate_putative_telomeric_reads.py ${reads_file} ${params.repeat} ${params.repeat_count} ${params.c_strand_only} putative_reads.fastq non_telomeric.fastq
     """
 }
 
@@ -26,15 +29,22 @@ process reverse_complementation {
         path(reads)
 
     output:
-        path("putative_reads.reverse_complemented.fastq"), emit: reversed_reads
-        path("putative_reads.stats.txt")
+        path("20_80_removed_reads.fastq")
+        path("putative_reads.c_g_filtered.fastq"), emit: reversed_reads
+        path("putative.g_strand.fastq"), optional: true
+        path("putative.c_strand.fastq"), optional: true
     
-    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "putative_reads.stats.txt"
+    publishDir "${params.outdir}/FILTERED_READS/", mode: 'copy', overwrite: true, pattern: "20_80_removed*.fastq"
+    publishDir "${params.outdir}/TELOMERIC/", mode: 'copy', overwrite: true, pattern: "putative*.fastq"
 
     script:
     """
-    python3 ${baseDir}/bin/reverse_complement_reads.py ${reads} ${params.repeat} ${params.reverse_complement_threshold} ${params.c_strand_only} putative_reads.reverse_complemented.fastq putative_reads.g_strand.fastq putative_reads.c_strand.fastq
-    seqkit stats -a -N 50,90 -T *.fastq > putative_reads.stats.txt
+    python3 ${baseDir}/bin/reverse_complement_reads.py ${reads} ${params.repeat} ${params.reverse_complement_threshold} ${params.c_strand_only} putative_reads.c_g_filtered.fastq 20_80_removed_reads.fastq
+    if ${params.strand_comparison}
+    then
+        python3 ${baseDir}/bin/separate_strands.py putative_reads.c_g_filtered.fastq putative.g_strand.fastq putative.c_strand.fastq
+        python3 ${baseDir}/bin/separate_strands.py 20_80_removed_reads.fastq 20_80_removed.g_strand.fastq 20_80_removed.c_strand.fastq
+    fi
     """
 }
 
@@ -45,15 +55,26 @@ process identify_tagging_adaptor {
     input:
         path(reads)
     output:
-        path("adaptor_present.reads.stats.txt")
-        path("subtelo_filtered_reads.fastq"), emit: adaptor_reads
+        path("FILTERED_READS/*.fastq")
+        path("TELOMERIC/*.fastq")
+        path("TELOMERIC/adaptor.fastq"), emit: adaptor_reads
 
-    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "adaptor_present.reads.stats.txt"
-    
+    publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
+    publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
+
     script:
     """
-    python3 ${baseDir}/bin/identify_tagging_adaptor.py ${reads} ${params.adaptor_sequence} ${params.adaptor_sequence_errors} reads_with_adaptor.fastq ${params.min_subtelo_length} ${params.subtelo_threshold} subtelo_filtered_reads.fastq subtelo_removed.fastq ${params.repeat}
-    seqkit stats -a -N 50,90 -T *.fastq > adaptor_present.reads.stats.txt
+    mkdir TELOMERIC
+    mkdir FILTERED_READS
+    python3 ${baseDir}/bin/identify_tagging_adaptor.py ${reads} ${params.adaptor_sequence} ${params.adaptor_sequence_errors} ${params.min_subtelo_length} ${params.subtelo_threshold} ${params.repeat} TELOMERIC/subtelo.fastq TELOMERIC/adaptor.fastq FILTERED_READS/subtelo_filtered.fastq FILTERED_READS/adaptor_filtered.fastq
+    if ${params.strand_comparison}
+    then
+        python3 ${baseDir}/bin/separate_strands.py TELOMERIC/subtelo.fastq TELOMERIC/subtelo.g_strand.fastq TELOMERIC/subtelo.c_strand.fastq
+        python3 ${baseDir}/bin/separate_strands.py TELOMERIC/adaptor.fastq TELOMERIC/adaptor.g_strand.fastq TELOMERIC/adaptor.c_strand.fastq
+        
+        python3 ${baseDir}/bin/separate_strands.py FILTERED_READS/subtelo_filtered.fastq FILTERED_READS/subtelo_filtered.g_strand.fastq FILTERED_READS/subtelo_filtered.c_strand.fastq
+        python3 ${baseDir}/bin/separate_strands.py FILTERED_READS/adaptor_filtered.fastq FILTERED_READS/adaptor_filtered.g_strand.fastq FILTERED_READS/adaptor_filtered.c_strand.fastq
+    fi
     """
 }
 
@@ -63,23 +84,33 @@ process telo_start_identification {
         path(reads)
 
     output:
-        path("telomeric.fastq"), emit: telomeric_sequences
+        path("TELOMERIC/telomeric.fastq"), emit: telomeric_sequences
+        path("TELOMERIC/*.fastq")
+        path("FILTERED_READS/*.fastq")
         path("telomeric_stats.txt"), emit: telomeric_stats
-        path("telo_read_stats.txt")
 
-    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "telo_read_stats.txt"
-    publishDir "${params.outdir}", mode:'copy',overwite:true, pattern: "telomeric_stats.txt"
+    publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwite:true, pattern: "telomeric_stats.txt"
+    publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwite:true, pattern: "TELOMERIC/*", saveAs: { filename -> "telomeric.fastq" }
+    publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
+    publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
 
     script:
     """
     #python script that identified telomere start. Writes out fastq file, stats file, fastq for reads removed because no telo start was found, fastq for reads removed because didnt reach minimum threshold
-    python3 ${baseDir}/bin/identify_telo_start.py ${reads} ${params.repeat} ${params.sliding_window_size} ${params.sliding_window_interval} ${params.upper_threshold} ${params.lower_threshold} ${params.telomeric_repeat_percentage} ${params.consecutive_repeats} telomeric.fastq no_telomere_start.filtered.fastq below_threshold.filtered.fastq telomeric_stats.txt
-    seqkit stats -a -N 50,90 -T *.fastq > telo_read_stats.txt
+    mkdir TELOMERIC
+    mkdir FILTERED_READS
+    python3 ${baseDir}/bin/identify_telo_start.py ${reads} ${params.repeat} ${params.sliding_window_size} ${params.sliding_window_interval} ${params.upper_threshold} ${params.lower_threshold} ${params.telomeric_repeat_percentage} ${params.consecutive_repeats} TELOMERIC/telomeric.fastq FILTERED_READS/no_telomere_start.fastq FILTERED_READS/below_telo_%_threshold.fastq telomeric_stats.txt
+
+    if ${params.strand_comparison}
+    then
+        python3 ${baseDir}/bin/separate_strands.py TELOMERIC/telomeric.fastq TELOMERIC/telomeric.g_strand.fastq TELOMERIC/telomeric.c_strand.fastq
+        python3 ${baseDir}/bin/separate_strands.py FILTERED_READS/no_telomere_start.fastq FILTERED_READS/no_telomere_start.g_strand.fastq FILTERED_READS/no_telomere_start.c_strand.fastq  
+        python3 ${baseDir}/bin/separate_strands.py FILTERED_READS/below_telo_%_threshold.fastq FILTERED_READS/below_telo_%_threshold.g_strand.fastq FILTERED_READS/below_telo_%_threshold.c_strand.fastq
+    fi
     """
 }
 
 process individual_read_plots {
-    label 'seqkit'
 
     label 'seqkit'
 
@@ -94,5 +125,79 @@ process individual_read_plots {
     script:
     """
     python3 ${baseDir}/bin/indiv_read_plots.py ${reads} ${params.repeat} ${telo_stats} ${params.sliding_window_size} ${params.sliding_window_interval}
+    """
+}
+
+process generate_plots {
+
+    label 'ggplot'
+
+    input:
+        path(telo_stats)
+    
+    output:
+        path("*.pdf")
+        path("C_G_COMPARISON/*.pdf"), optional:true
+    
+    publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "*.pdf"
+    publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
+
+    script:
+    """
+    Rscript ${baseDir}/bin/basic_plots.R ${telo_stats} ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
+    """
+}
+
+process generate_detailed_plots {
+
+    label 'ggplot'
+
+    input:
+        path(telo_stats), stageAs: "old_telo_stats.txt"
+        path(telomeric_reads)
+    
+    output:
+        path("telomeric.fastq"), emit: telomeric_sequences
+        path("telomeric_stats.txt"), emit: telomeric_stats
+        path("DETAILED_STATS/*.pdf")
+        path("C_G_COMPARISON/*.pdf")
+    
+    publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "DETAILED_STATS/*.pdf"
+    publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
+    publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwrite: true, pattern: "telomeric_stats.txt"
+
+    script:
+    """
+    python3 ${baseDir}/bin/detailed_stats.py ${telomeric_reads} ${params.repeat} ${telo_stats} telomeric_stats.txt
+    Rscript ${baseDir}/bin/detailed_plots.R telomeric_stats.txt ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
+    """
+
+}
+
+
+process summary_stats {
+
+    label 'ggplot'
+
+    input:
+        path(telo_stats)
+    
+    output:
+        path(telomeric_stats.txt)
+        path(filtered_stats.txt)
+    
+    publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "*.pdf"
+    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "*.txt"
+
+    script:
+    """
+    seqkit stats -a -N 50,90 -T ${params.outdir}/TELOMERIC/*.fastq > telomeric_stats.txt
+    seqkit stats -a -N 50,90 -T ${params.outdir}/FILTERED_READS/*.fastq > filtered_stats.txt
+    # generate plots
+        # Quality boxplots for each
+        # Length boxplots for each
+        # Percentage of previous step
+        # Number of reads for each step
+    # remove directories if specified in config
     """
 }
