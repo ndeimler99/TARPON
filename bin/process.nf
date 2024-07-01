@@ -180,11 +180,11 @@ process summary_stats {
     label 'ggplot'
 
     input:
-        path(telo_stats)
+        path(telo_stats), stageAs: "telo_stats.txt"
     
     output:
-        path(telomeric_stats.txt)
-        path(filtered_stats.txt)
+        path("telomeric_stats.txt")
+        path("filtered_stats.txt")
     
     publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "*.pdf"
     publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "*.txt"
@@ -193,6 +193,7 @@ process summary_stats {
     """
     seqkit stats -a -N 50,90 -T ${params.outdir}/TELOMERIC/*.fastq > telomeric_stats.txt
     seqkit stats -a -N 50,90 -T ${params.outdir}/FILTERED_READS/*.fastq > filtered_stats.txt
+
     # generate plots
         # Quality boxplots for each
         # Length boxplots for each

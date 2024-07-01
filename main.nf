@@ -80,7 +80,7 @@ workflow {
 
     generate_plots(telo_stats.telomeric_stats)
 
-    // summary(telo_stats.telomeric_stats)
+    summary_stats(telo_stats.telomeric_stats)
     
     // if (params.detailed_stats) {
     //     telo_stats = generate_detailed_plots(telo_stats.telomeric_stats, telo_stats.telomeric_sequences)
