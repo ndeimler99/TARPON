@@ -1,4 +1,4 @@
-name: TArPON
+name: tarpon
 channels:
   - bioconda
   - anaconda

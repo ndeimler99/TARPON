@@ -177,10 +177,11 @@ process generate_detailed_plots {
 
 process summary_stats {
 
-    label 'ggplot'
+    label 'seqkit'
 
     input:
         path(telo_stats), stageAs: "telo_stats.txt"
+        path(output_dir)
     
     output:
         path("telomeric_stats.txt")
@@ -191,14 +192,37 @@ process summary_stats {
 
     script:
     """
-    seqkit stats -a -N 50,90 -T ${params.outdir}/TELOMERIC/*.fastq > telomeric_stats.txt
-    seqkit stats -a -N 50,90 -T ${params.outdir}/FILTERED_READS/*.fastq > filtered_stats.txt
+    seqkit stats -a -N 50,90 -T ${output_dir}/TELOMERIC/*.fastq > telomeric_stats.txt
+    seqkit stats -a -N 50,90 -T ${output_dir}/FILTERED_READS/*.fastq > filtered_stats.txt
 
-    # generate plots
-        # Quality boxplots for each
-        # Length boxplots for each
-        # Percentage of previous step
-        # Number of reads for each step
-    # remove directories if specified in config
+    Rscript ${baseDir}/bin/seqkit_stats_plots.R telomeric_stats.txt ${params.strand_comparison} telomeric_reads
+    Rscript ${baseDir}/bin/seqkit_stats_plots.R filtered_stats.txt ${params.strand_comparison} filtered_reads
+
+    if ${params.remove_intermediate_fastq}
+    then 
+        rm -r ${output_dir}/TELOMERIC/
+        rm -r ${output_dir}/FILTERED_READS/
+    fi
+    
     """
 }
+
+
+// process restriction_digest {
+
+//     label 'seqkit'
+
+//     input:
+//         path(telo_sequences)
+    
+//     output:
+//         path("digest_stats.txt")
+    
+//     publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "*.txt"
+
+//     script:
+//     """
+//     for seq in $(echo "${params.restriction_digest_analysis}" | tr "," "\n"); do seqkit grep -s -p $seq > $seq.fastq; done
+//     seqkit stats -a -N 50,90 -T *.fastq > digest_stats.txt
+//     """
+// }
