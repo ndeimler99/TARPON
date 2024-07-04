@@ -1,17 +1,17 @@
 process putative_isolation {
 
-    label 'seqkit'
+    label 'tarpon'
 
     input:
-        path(reads_file), stageAs: "input.fastq"
+        path(reads_file), stageAs: "input.fastq.gz"
     
     output:
-        path("input.fastq")
+        path("input.fastq.gz")
         path("putative_reads.fastq"), emit: putative_reads
         path("non_telomeric.fastq")
     
-    publishDir "${params.outdir}/TELOMERIC/", overwrite: true, pattern: "input.fastq"
-    publishDir "${params.outdir}/FILTERED_READS/", overwrite: true, pattern: "input.fastq"
+    publishDir "${params.outdir}/TELOMERIC/", overwrite: true, pattern: "input.fastq.gz"
+    publishDir "${params.outdir}/FILTERED_READS/", overwrite: true, pattern: "input.fastq.gz"
     publishDir "${params.outdir}/TELOMERIC/", mode: 'copy', overwrite: true, pattern: "putative_reads.fastq"
     publishDir "${params.outdir}/FILTERED_READS/",  overwrite: true, pattern: "non_telomeric.fastq"
 
@@ -23,7 +23,7 @@ process putative_isolation {
 
 process reverse_complementation {
     
-    label 'seqkit'
+    label 'tarpon'
 
     input:
         path(reads)
@@ -50,7 +50,7 @@ process reverse_complementation {
 
 process identify_tagging_adaptor {
     
-    label 'seqkit'
+    label 'tarpon'
 
     input:
         path(reads)
@@ -79,7 +79,7 @@ process identify_tagging_adaptor {
 }
 
 process telo_start_identification {
-    label 'seqkit'
+    label 'tarpon'
     input:
         path(reads)
 
@@ -112,7 +112,7 @@ process telo_start_identification {
 
 process individual_read_plots {
 
-    label 'seqkit'
+    label 'tarpon'
 
     input:
         path(reads)
@@ -130,7 +130,7 @@ process individual_read_plots {
 
 process generate_plots {
 
-    label 'ggplot'
+    label 'tarpon'
 
     input:
         path(telo_stats)
@@ -150,7 +150,7 @@ process generate_plots {
 
 process generate_detailed_plots {
 
-    label 'ggplot'
+    label 'tarpon'
 
     input:
         path(telo_stats), stageAs: "old_telo_stats.txt"
@@ -177,7 +177,7 @@ process generate_detailed_plots {
 
 process summary_stats {
 
-    label 'seqkit'
+    label 'tarpon'
 
     input:
         path(telo_stats), stageAs: "telo_stats.txt"
@@ -186,43 +186,45 @@ process summary_stats {
     output:
         path("telomeric_stats.txt")
         path("filtered_stats.txt")
+        path("*.pdf")
     
     publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "*.pdf"
     publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "*.txt"
 
     script:
     """
-    seqkit stats -a -N 50,90 -T ${output_dir}/TELOMERIC/*.fastq > telomeric_stats.txt
-    seqkit stats -a -N 50,90 -T ${output_dir}/FILTERED_READS/*.fastq > filtered_stats.txt
+    seqkit stats -a -N 50,90 -T ${output_dir}/TELOMERIC/*.fastq* > telomeric_stats.txt
+    seqkit stats -a -N 50,90 -T ${output_dir}/FILTERED_READS/*.fastq* > filtered_stats.txt
 
-    Rscript ${baseDir}/bin/seqkit_stats_plots.R telomeric_stats.txt ${params.strand_comparison} telomeric_reads
-    Rscript ${baseDir}/bin/seqkit_stats_plots.R filtered_stats.txt ${params.strand_comparison} filtered_reads
-
-    if ${params.remove_intermediate_fastq}
-    then 
-        rm -r ${output_dir}/TELOMERIC/
-        rm -r ${output_dir}/FILTERED_READS/
-    fi
-    
+    Rscript ${baseDir}/bin/seqkit_stats_plots.R telomeric_stats.txt ${params.strand_comparison} telomeric
+    Rscript ${baseDir}/bin/seqkit_stats_plots.R filtered_stats.txt ${params.strand_comparison} filtered
     """
 }
 
 
-// process restriction_digest {
+process restriction_digest_analysis {
 
-//     label 'seqkit'
+    label 'tarpon'
 
-//     input:
-//         path(telo_sequences)
+    input:
+        path(telo_sequences)
     
-//     output:
-//         path("digest_stats.txt")
+    output:
+        path("digest_stats.txt")
     
-//     publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "*.txt"
+    publishDir "${params.outdir}/STATS/", mode: 'copy', overwrite: true, pattern: "*.txt"
 
-//     script:
-//     """
-//     for seq in $(echo "${params.restriction_digest_analysis}" | tr "," "\n"); do seqkit grep -s -p $seq > $seq.fastq; done
-//     seqkit stats -a -N 50,90 -T *.fastq > digest_stats.txt
-//     """
-// }
+    script:
+    """
+    for seq in \$(echo "${params.restriction_digest_analysis}" | tr "," "\n"); do seqkit grep -s -p \$seq ${telo_sequences} > \$seq.fastq; done
+    seqkit stats -a -N 50,90 -T *.fastq > digest_stats.txt
+    """
+}
+
+process cleanUp {
+
+    script:
+    """
+    rm -rf ${baseDir}/work
+    """
+}

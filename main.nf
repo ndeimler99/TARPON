@@ -29,6 +29,9 @@ include { individual_read_plots } from "./bin/process.nf"
 include { generate_plots } from "./bin/process.nf"
 include { generate_detailed_plots } from "./bin/process.nf"
 include { summary_stats } from "./bin/process.nf"
+include { restriction_digest_analysis } from "./bin/process.nf"
+
+// include { cleanUp } from "./bin/process.nf"
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN ALL WORKFLOWS
@@ -81,20 +84,23 @@ workflow {
     generate_plots(telo_stats.telomeric_stats)
 
     stats_done = summary_stats(telo_stats.telomeric_stats, file(params.outdir))
-    
+
     if (params.detailed_stats) {
         telo_stats = generate_detailed_plots(telo_stats.telomeric_stats, telo_stats.telomeric_sequences)
     }
 
-    // if (params.restriction_digest_analysis != ""){
-    //     restriction_digest_analysis(telo_stats.telomeric_sequences)
-    // }
+    //     if ${params.remove_intermediate_fastq}
+    // then 
+    //     rm -r ${output_dir}/TELOMERIC/
+    //     rm -r ${output_dir}/FILTERED_READS/
+    // fi
+
+    if (params.restriction_digest_analysis != ""){
+        restriction_digest_analysis(telo_stats.telomeric_sequences)
+    }
 
 
     // remove workdir if value true in nextflow config
-
-
-
 
     //load in files from channel/somehow split demultiplex output into different channels?
     /*
@@ -109,3 +115,17 @@ workflow {
     
 }
 
+workflow.onComplete {
+    println "Analysis Complete at: $workflow.complete"
+    println "Execution Status: ${ workflow.success ? 'OK' : 'failed' }"
+
+    if (params.remove_wd) {
+        "rm -rf ${baseDir}/work".execute()
+    }
+    
+    if (params.remove_intermediate_fastq){
+        "rm -rf ${params.outdir}/TELOMERIC".execute()
+        "rm -rf ${params.outdir}/FILTERED_READS".execute()
+    }
+
+}
