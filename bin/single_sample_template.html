@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+    <head>
+        <link rel="stylesheet" href="./report.css">
+        <style>body{ margin:0 100; background:whitesmoke; }</style>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <meta charset="utf-8" />
+    </head>
+    <body>
+        <div class="main_header"><b class="header_text">TArPON {{ pipeline_version }}</b><br>
+            Telomere Analysis Pipeline on Nanopore Sequencing Data <br>
+            Nextflow Version: {{ nextflow_version }} <br>
+            Author: Nathaniel Deimler <br>
+            DOI: {} <br>
+            <a href="https://github.com/ndeimler/TArPON">https://github.com/ndeimler/TArPON</a> 
+        </div>
+        
+        <div class="subheader">Basic Run Parameters</div>
+        <dl>
+            <dt >Input File Name</dt>
+            <dd ><samp>{{ input_file }}</samp></dd>
+            <dt >Output Directory</dt>
+            <dd ><samp>{{ out_dir }}</samp></dd>
+            <dt >Repeat</dt>
+            <dd ><samp>{{ repeat }}</samp></dd>
+            <dt >Mode</dt>
+            <dd ><samp>{{ mode }}</samp></dd>
+        </dl>
+        <div class="subheader">Read Counts Table</div>
+        {{ read_counts }}
+        <div class="subheader">Telomere Length Distribution (n = {{ n }})</div>
+        <div width="100%">
+            <div class="telo_length_hist">{{ telo_histogram_plot }}</div>
+            <div class="telo_bar_plot">{{ telo_bar_plot }}</div>
+        </div>
+        
+        <div class="subheader">Retained Reads Throughout Pipeline</div>
+        {{ retained_reads_plot }}
+        <div class="subheader">Filtered Reads Throughout Pipeline</div>
+        {{filtered_reads_plot }}
+    
+    </body>
+</html>

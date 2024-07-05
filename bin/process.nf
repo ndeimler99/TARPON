@@ -10,8 +10,8 @@ process putative_isolation {
         path("putative_reads.fastq"), emit: putative_reads
         path("non_telomeric.fastq")
     
-    publishDir "${params.outdir}/TELOMERIC/", overwrite: true, pattern: "input.fastq.gz"
-    publishDir "${params.outdir}/FILTERED_READS/", overwrite: true, pattern: "input.fastq.gz"
+    publishDir "${params.outdir}/TELOMERIC/", overwrite: true, mode: 'copy', pattern: "input.fastq.gz"
+    publishDir "${params.outdir}/FILTERED_READS/", overwrite: true, mode: 'copy', pattern: "input.fastq.gz"
     publishDir "${params.outdir}/TELOMERIC/", mode: 'copy', overwrite: true, pattern: "putative_reads.fastq"
     publishDir "${params.outdir}/FILTERED_READS/",  overwrite: true, pattern: "non_telomeric.fastq"
 
@@ -226,5 +226,23 @@ process cleanUp {
     script:
     """
     rm -rf ${baseDir}/work
+    """
+}
+
+process generate_html_report {
+
+    label 'tarpon'
+
+    input:
+        path(output_dir)
+    
+    output:
+        path("report.html")
+    
+    publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "report.html"
+
+    script:
+    """
+    python3 ${baseDir}/bin/generate_report.py ${output_dir} 0 0 ${params.input_file} ${params.repeat} ${params.outdir} ${baseDir}/bin/single_sample_template.html report.html
     """
 }

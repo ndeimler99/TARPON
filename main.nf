@@ -30,6 +30,7 @@ include { generate_plots } from "./bin/process.nf"
 include { generate_detailed_plots } from "./bin/process.nf"
 include { summary_stats } from "./bin/process.nf"
 include { restriction_digest_analysis } from "./bin/process.nf"
+include { generate_html_report } from "./bin/process.nf"
 
 // include { cleanUp } from "./bin/process.nf"
 /*
@@ -58,7 +59,6 @@ workflow {
     // check if filtered_telo is passed in
     // else - filter telomeric reads
     // #############
-
 
     //standard pipeline
     // putative identification of telomeric sequences to limit dataset size
@@ -89,18 +89,10 @@ workflow {
         telo_stats = generate_detailed_plots(telo_stats.telomeric_stats, telo_stats.telomeric_sequences)
     }
 
-    //     if ${params.remove_intermediate_fastq}
-    // then 
-    //     rm -r ${output_dir}/TELOMERIC/
-    //     rm -r ${output_dir}/FILTERED_READS/
-    // fi
-
     if (params.restriction_digest_analysis != ""){
         restriction_digest_analysis(telo_stats.telomeric_sequences)
     }
 
-
-    // remove workdir if value true in nextflow config
 
     //load in files from channel/somehow split demultiplex output into different channels?
     /*
@@ -112,6 +104,8 @@ workflow {
     Channel.fromPath("${params.input_gff}/*.gff") . map { id, reads ->
         tokens = id.tokenize(".gff") } | view
     */ 
+
+    generate_html_report(file(params.outdir))
     
 }
 
@@ -119,13 +113,14 @@ workflow.onComplete {
     println "Analysis Complete at: $workflow.complete"
     println "Execution Status: ${ workflow.success ? 'OK' : 'failed' }"
 
-    if (params.remove_wd) {
-        "rm -rf ${baseDir}/work".execute()
+    if (workflow.success){
+        if (params.remove_wd) {
+            "rm -rf ${baseDir}/work".execute()
+        }
+        
+        if (params.remove_intermediate_fastq){
+            "rm -rf ${params.outdir}/TELOMERIC".execute()
+            "rm -rf ${params.outdir}/FILTERED_READS".execute()
+        }
     }
-    
-    if (params.remove_intermediate_fastq){
-        "rm -rf ${params.outdir}/TELOMERIC".execute()
-        "rm -rf ${params.outdir}/FILTERED_READS".execute()
-    }
-
 }
