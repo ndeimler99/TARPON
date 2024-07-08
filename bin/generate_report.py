@@ -103,6 +103,7 @@ jinja_data = {
             "out_dir":sys.argv[6],
             "repeat": sys.argv[5],
             "mode": mode,
+            "css_file": sys.argv[7]
             }
 
 f = open(sys.argv[8], 'w')

@@ -1,19 +1,18 @@
-process putative_isolation {
+process PUTATIVE_ISOLATION {
 
     label 'tarpon'
 
     input:
-        path(reads_file), stageAs: "input.fastq.gz"
+        tuple val(run_name), path(reads_file, stageAs: "input.fastq.gz")
     
     output:
-        path("input.fastq.gz")
-        path("putative_reads.fastq"), emit: putative_reads
-        path("non_telomeric.fastq")
+        tuple val(run_name), path ("putative_reads.fastq"), emit: putative_reads
+        tuple val (run_name), path("non_telomeric.fastq"), emit: non_telomeric
     
-    publishDir "${params.outdir}/TELOMERIC/", overwrite: true, mode: 'copy', pattern: "input.fastq.gz"
-    publishDir "${params.outdir}/FILTERED_READS/", overwrite: true, mode: 'copy', pattern: "input.fastq.gz"
-    publishDir "${params.outdir}/TELOMERIC/", mode: 'copy', overwrite: true, pattern: "putative_reads.fastq"
-    publishDir "${params.outdir}/FILTERED_READS/",  overwrite: true, pattern: "non_telomeric.fastq"
+    //publishDir "${params.outdir}/TELOMERIC/", overwrite: true, mode: 'copy', pattern: "input.fastq.gz"
+    //publishDir "${params.outdir}/FILTERED_READS/", overwrite: true, mode: 'copy', pattern: "input.fastq.gz"
+    //publishDir "${params.outdir}/TELOMERIC/", mode: 'copy', overwrite: true, pattern: "putative_reads.fastq"
+    //publishDir "${params.outdir}/FILTERED_READS/",  overwrite: true, pattern: "non_telomeric.fastq"
 
     script:
     """
@@ -21,78 +20,100 @@ process putative_isolation {
     """
 }
 
-process reverse_complementation {
+process REVERSE_COMPLEMENTATION {
     
     label 'tarpon'
 
     input:
-        path(reads)
+        tuple val(run_name), path(reads)
 
     output:
-        path("20_80_removed_reads.fastq")
-        path("putative_reads.c_g_filtered.fastq"), emit: reversed_reads
-        path("putative.g_strand.fastq"), optional: true
-        path("putative.c_strand.fastq"), optional: true
+        tuple val(run_name), path("20_80_removed_reads.fastq"), emit: removed_reads
+        tuple val(run_name), path("putative_reads.filtered.fastq"), emit: reversed_reads
+        tuple val(run_name), path("putative.*strand.fastq"), optional: true, emit: strand_specific
     
-    publishDir "${params.outdir}/FILTERED_READS/", mode: 'copy', overwrite: true, pattern: "20_80_removed*.fastq"
-    publishDir "${params.outdir}/TELOMERIC/", mode: 'copy', overwrite: true, pattern: "putative*.fastq"
+    //publishDir "${params.outdir}/FILTERED_READS/", mode: 'copy', overwrite: true, pattern: "20_80_removed*.fastq"
+    //publishDir "${params.outdir}/TELOMERIC/", mode: 'copy', overwrite: true, pattern: "putative*.fastq"
 
     script:
     """
-    python3 ${baseDir}/bin/reverse_complement_reads.py ${reads} ${params.repeat} ${params.reverse_complement_threshold} ${params.c_strand_only} putative_reads.c_g_filtered.fastq 20_80_removed_reads.fastq
+    python3 ${baseDir}/bin/reverse_complement_reads.py ${reads} ${params.repeat} ${params.reverse_complement_threshold} ${params.c_strand_only} putative_reads.filtered.fastq 20_80_removed_reads.fastq
     if ${params.strand_comparison}
     then
-        python3 ${baseDir}/bin/separate_strands.py putative_reads.c_g_filtered.fastq putative.g_strand.fastq putative.c_strand.fastq
+        python3 ${baseDir}/bin/separate_strands.py putative_reads.filtered.fastq putative.g_strand.fastq putative.c_strand.fastq
         python3 ${baseDir}/bin/separate_strands.py 20_80_removed_reads.fastq 20_80_removed.g_strand.fastq 20_80_removed.c_strand.fastq
     fi
     """
 }
 
-process identify_tagging_adaptor {
+process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
     
     label 'tarpon'
 
     input:
-        path(reads)
+        tuple val(run_name), path(reads)
     output:
-        path("FILTERED_READS/*.fastq")
-        path("TELOMERIC/*.fastq")
-        path("TELOMERIC/adaptor.fastq"), emit: adaptor_reads
+        path("TELOMERIC/DEMUX/*.fastq"), emit: demuxed_reads
+        tuple val(run_name), path("TELOMERIC/*"), emit: retained_reads
+        tuple val(run_name), path("FILTERED_READS/*"), emit: filtered_reads
 
-    publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
-    publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
+    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
+    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
 
     script:
-    """
-    mkdir TELOMERIC
-    mkdir FILTERED_READS
-    python3 ${baseDir}/bin/identify_tagging_adaptor.py ${reads} ${params.adaptor_sequence} ${params.adaptor_sequence_errors} ${params.min_subtelo_length} ${params.subtelo_threshold} ${params.repeat} TELOMERIC/subtelo.fastq TELOMERIC/adaptor.fastq FILTERED_READS/subtelo_filtered.fastq FILTERED_READS/adaptor_filtered.fastq
-    if ${params.strand_comparison}
-    then
-        python3 ${baseDir}/bin/separate_strands.py TELOMERIC/subtelo.fastq TELOMERIC/subtelo.g_strand.fastq TELOMERIC/subtelo.c_strand.fastq
-        python3 ${baseDir}/bin/separate_strands.py TELOMERIC/adaptor.fastq TELOMERIC/adaptor.g_strand.fastq TELOMERIC/adaptor.c_strand.fastq
+    if (params.adaptor_sequence == "")
+        // no adaptor sequence provided - using ONT like approach were telomere overhang goes directly into barcode
+        // computationally not ideal
+        """
+        mkdir TELOMERIC
+        mkdir TELOMERIC/DEMUX/
+        mkdir FILTERED_READS
+        """
+    else if (params.sample_file == "")
+        // single sample provided, not multiplexed
+        """
+        mkdir TELOMERIC
+        mkdir TELOMERIC/DEMUX/
+        mkdir FILTERED_READS
+        python3 ${baseDir}/bin/identify_tagging_adaptor.py ${reads} ${params.adaptor_sequence} ${params.adaptor_sequence_errors} ${params.min_subtelo_length} ${params.subtelo_threshold} ${params.repeat} TELOMERIC/subtelo.fastq TELOMERIC/DEMUX/${params.sample_name}.fastq FILTERED_READS/subtelo_filtered.fastq FILTERED_READS/adaptor_filtered.fastq
+        if ${params.strand_comparison}
+        then
+            python3 ${baseDir}/bin/separate_strands.py TELOMERIC/subtelo.fastq TELOMERIC/subtelo.g_strand.fastq TELOMERIC/subtelo.c_strand.fastq
+            python3 ${baseDir}/bin/separate_strands.py TELOMERIC/${params.sample_name}.fastq TELOMERIC/${params.sample_name}.g_strand.fastq TELOMERIC/DEMUX/${params.sample_name}.c_strand.fastq
         
-        python3 ${baseDir}/bin/separate_strands.py FILTERED_READS/subtelo_filtered.fastq FILTERED_READS/subtelo_filtered.g_strand.fastq FILTERED_READS/subtelo_filtered.c_strand.fastq
-        python3 ${baseDir}/bin/separate_strands.py FILTERED_READS/adaptor_filtered.fastq FILTERED_READS/adaptor_filtered.g_strand.fastq FILTERED_READS/adaptor_filtered.c_strand.fastq
-    fi
-    """
+            python3 ${baseDir}/bin/separate_strands.py FILTERED_READS/subtelo_filtered.fastq FILTERED_READS/subtelo_filtered.g_strand.fastq FILTERED_READS/subtelo_filtered.c_strand.fastq
+            python3 ${baseDir}/bin/separate_strands.py FILTERED_READS/adaptor_filtered.fastq FILTERED_READS/adaptor_filtered.g_strand.fastq FILTERED_READS/adaptor_filtered.c_strand.fastq
+        fi
+        """
+    else
+        // multiple samples
+        // run adaptor identification and then demux
+        """
+        mkdir TELOMERIC
+        mkdir TELOMERIC/DEMUX/
+        mkdir FILTERED_READS
+        """
+    // else
+        // multiple samples
+            // use same scripts as with no sample file with additional step of sample assignment
+    
 }
 
-process telo_start_identification {
+process TELO_START_IDENTIFICATION {
     label 'tarpon'
+
     input:
-        path(reads)
+        tuple val(sample), path(reads)
 
     output:
-        path("TELOMERIC/telomeric.fastq"), emit: telomeric_sequences
-        path("TELOMERIC/*.fastq")
-        path("FILTERED_READS/*.fastq")
-        path("telomeric_stats.txt"), emit: telomeric_stats
+        tuple val(sample), path("TELOMERIC/telomeric.fastq"), path("telomeric_stats.txt"), emit: telomeric_sequences
+        tuple val(sample), path("TELOMERIC/*.fastq"), emit: retained_reads
+        tuple val(sample), path("FILTERED_READS/*.fastq"), emit: removed_reads
 
-    publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwite:true, pattern: "telomeric_stats.txt"
-    publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwite:true, pattern: "TELOMERIC/*", saveAs: { filename -> "telomeric.fastq" }
-    publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
-    publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
+    publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwite:true, pattern: "telomeric_stats.txt", saveAs: { filename -> "${sample}.stats.txt" }
+    publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwite:true, pattern: "TELOMERIC/*", saveAs: { filename -> "${sample}.telomeric.fastq" }
+    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
+    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
 
     script:
     """
@@ -110,17 +131,17 @@ process telo_start_identification {
     """
 }
 
-process individual_read_plots {
+process INDIVIDUAL_READ_PLOTS {
 
     label 'tarpon'
 
     input:
-        path(reads)
-        path(telo_stats)
+        tuple val(sample), path(reads), path(stats)
+
     output:
         path("*.pdf")
 
-    publishDir "${params.outdir}/FIGURES/INDIVIDUAL_READ_PLOTS/", mode:'copy', overwrite: true, pattern: "*.pdf"
+    publishDir "${params.outdir}/FIGURES/INDIVIDUAL_READ_PLOTS/${sample}/", mode:'copy', overwrite: true, pattern: "*.pdf"
 
     script:
     """
@@ -128,19 +149,19 @@ process individual_read_plots {
     """
 }
 
-process generate_plots {
+process GENERATE_PLOTS {
 
     label 'tarpon'
 
     input:
-        path(telo_stats)
+        tuple val(sample), path(telo_reads), path(telo_stats)
     
     output:
         path("*.pdf")
         path("C_G_COMPARISON/*.pdf"), optional:true
     
-    publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "*.pdf"
-    publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
+    publishDir "${params.outdir}/FIGURES/${sample}", mode:'copy', overwrite: true, pattern: "*.pdf"
+    publishDir "${params.outdir}/FIGURES/${sample}", mode:'copy', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
 
     script:
     """
@@ -148,23 +169,21 @@ process generate_plots {
     """
 }
 
-process generate_detailed_plots {
+process GENERATE_DETAILED_PLOTS {
 
     label 'tarpon'
 
     input:
-        path(telo_stats), stageAs: "old_telo_stats.txt"
-        path(telomeric_reads)
+        tuple val(sample), path(telomeric_reads), path(telo_stats, stageAs: "old_telo_stats.txt")
     
     output:
-        path("telomeric.fastq"), emit: telomeric_sequences
-        path("telomeric_stats.txt"), emit: telomeric_stats
+        tuple val(sample), path(telomeric_reads), path("telomeric_stats.txt"), emit: telomeric_sequences
         path("DETAILED_STATS/*.pdf")
         path("C_G_COMPARISON/*.pdf")
     
-    publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "DETAILED_STATS/*.pdf"
-    publishDir "${params.outdir}/FIGURES/", mode:'copy', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
-    publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwrite: true, pattern: "telomeric_stats.txt"
+    publishDir "${params.outdir}/FIGURES/${sample}", mode:'copy', overwrite: true, pattern: "DETAILED_STATS/*.pdf"
+    publishDir "${params.outdir}/FIGURES/${sample}", mode:'copy', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
+    publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwrite: true, pattern: "telomeric_stats.txt", saveAs: { filename -> "${sample}.stats.txt" }
 
     script:
     """
@@ -175,7 +194,7 @@ process generate_detailed_plots {
 }
 
 
-process summary_stats {
+process SUMMARY_STATS {
 
     label 'tarpon'
 
@@ -202,7 +221,7 @@ process summary_stats {
 }
 
 
-process restriction_digest_analysis {
+process RESTRICTION_DIGEST_ANALYSIS {
 
     label 'tarpon'
 
@@ -221,20 +240,13 @@ process restriction_digest_analysis {
     """
 }
 
-process cleanUp {
-
-    script:
-    """
-    rm -rf ${baseDir}/work
-    """
-}
-
-process generate_html_report {
+process GENERATE_HTML_REPORT {
 
     label 'tarpon'
 
     input:
         path(output_dir)
+        path(stats_file)
     
     output:
         path("report.html")
@@ -243,6 +255,6 @@ process generate_html_report {
 
     script:
     """
-    python3 ${baseDir}/bin/generate_report.py ${output_dir} 0 0 ${params.input_file} ${params.repeat} ${params.outdir} ${baseDir}/bin/single_sample_template.html report.html
+    python3 ${baseDir}/bin/generate_report.py ${output_dir} 0 0 ${params.input_file} ${params.repeat} ${params.outdir} ${baseDir}/bin/single_sample_template.html report.html ${baseDir}/bin/report.css
     """
 }

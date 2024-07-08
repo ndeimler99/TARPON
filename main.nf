@@ -21,16 +21,16 @@ println """\
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 // include { process_name } from "process_file"
-include { putative_isolation } from "./bin/process.nf"
-include { reverse_complementation } from "./bin/process.nf"
-include { identify_tagging_adaptor } from "./bin/process.nf"
-include { telo_start_identification } from "./bin/process.nf"
-include { individual_read_plots } from "./bin/process.nf"
-include { generate_plots } from "./bin/process.nf"
-include { generate_detailed_plots } from "./bin/process.nf"
-include { summary_stats } from "./bin/process.nf"
-include { restriction_digest_analysis } from "./bin/process.nf"
-include { generate_html_report } from "./bin/process.nf"
+include { PUTATIVE_ISOLATION } from "./bin/process.nf"
+include { REVERSE_COMPLEMENTATION } from "./bin/process.nf"
+include { IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX } from "./bin/process.nf"
+include { TELO_START_IDENTIFICATION } from "./bin/process.nf"
+include { INDIVIDUAL_READ_PLOTS } from "./bin/process.nf"
+include { GENERATE_PLOTS } from "./bin/process.nf"
+include { GENERATE_DETAILED_PLOTS } from "./bin/process.nf"
+include { SUMMARY_STATS } from "./bin/process.nf"
+include { RESTRICTION_DIGEST_ANALYSIS } from "./bin/process.nf"
+include { GENERATE_HTML_REPORT } from "./bin/process.nf"
 
 // include { cleanUp } from "./bin/process.nf"
 /*
@@ -40,17 +40,23 @@ include { generate_html_report } from "./bin/process.nf"
 */
 
 workflow {
-    // check if input file exists
-    input_file = file(params.input_file)
-    if (!input_file.exists() ) {
-        exit 1, "Input File Does Not Exist"
-    }
+    
+    // ###### TO DO #######
+    // check input_file is a directory or a file
+    // if directory concat all files in directory ending in .fastq.gz
+    // #############
 
-    // check if output directory exists
-    outdir = file(params.outdir)
-    if (outdir.exists() && !params.overwrite_outdir) {
-        exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
-    }
+    // check if input file exists
+    // input_file = file(params.input_file)
+    // if (!input_file.exists() ) {
+    //     exit 1, "Input File Does Not Exist"
+    // }
+
+    // // check if output directory exists
+    // outdir = file(params.outdir)
+    // if (outdir.exists() && !params.overwrite_outdir) {
+    //     exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
+    // }
 
     // check that all other parameters are valid...
     
@@ -58,60 +64,72 @@ workflow {
     // ###### TO DO #######
     // check if filtered_telo is passed in
     // else - filter telomeric reads
-    // #############
 
-    //standard pipeline
+    // reference_file for mapping has to be value channel (just leave it at params.reference)
+    // #############
+    
+    // convert all bam files to fastq
+
+    Channel.fromPath( params.input_file, checkIfExists:true)
+        .map{ it -> [params.run_name, it] }
+        .set{ input_ch }
+
+    //input_ch.view()
+
     // putative identification of telomeric sequences to limit dataset size
-    putative_sequences = putative_isolation(input_file)
+    putative_ch = PUTATIVE_ISOLATION(input_ch)
+    //putative_ch.putative_reads.view()
+    //putative_ch.non_telomeric.view()
 
     // reverse complement C strands into G strands and modify header line to include strand information
-    reverse_complemented = reverse_complementation(putative_sequences.putative_reads)
-
+    reversed_ch = REVERSE_COMPLEMENTATION(putative_ch.putative_reads)
+    //reversed_ch.reversed_reads.view()
+    //reversed_ch.removed_reads.view()
+    //reversed_ch.strand_specific.view()
+    
     // isolate reads with adaptor sequences and filter by subtelomere size
-    adaptor_identified = identify_tagging_adaptor(reverse_complemented.reversed_reads)
+    adaptor_ch = IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX(reversed_ch.reversed_reads)
+    // adaptor_ch.demuxed_reads.view()
+    
 
-    // this is where I would add demultiplexing so further processes can be ran in parallel
+    adaptor_ch.demuxed_reads
+        .map { it -> [it.baseName, it]}
+        .set { demuxed_reads }
+    // demuxed_reads.view()
+        
     //telo start and length determination
     // analyze reads and create stats file containing read_id, strand, read_len, VRR_Start, VRR_length, Telo_length
-    telo_stats = telo_start_identification(adaptor_identified.adaptor_reads)
-
-    //depending on which start is choosen create plots
+    telo_stats = TELO_START_IDENTIFICATION(demuxed_reads)
+    //telo_stats.retained_reads.view()
+    //telo_stats.removed_reads.view()
+    //telo_stats.telomeric_sequences.view()
+    
     //if individual read, create plots
     if (params.indiv_read_plots) {
-        individual_read_plots(telo_stats.telomeric_sequences, telo_stats.telomeric_stats)
+        INDIVIDUAL_READ_PLOTS(telo_stats.telomeric_sequences)
     }
 
-    generate_plots(telo_stats.telomeric_stats)
+    GENERATE_PLOTS(telo_stats.telomeric_sequences)
 
-    stats_done = summary_stats(telo_stats.telomeric_stats, file(params.outdir))
+    //     stats_done = summary_stats(telo_stats.telomeric_stats, file(params.outdir))
 
     if (params.detailed_stats) {
-        telo_stats = generate_detailed_plots(telo_stats.telomeric_stats, telo_stats.telomeric_sequences)
+        telo_stats = GENERATE_DETAILED_PLOTS(telo_stats.telomeric_sequences)
     }
 
-    if (params.restriction_digest_analysis != ""){
-        restriction_digest_analysis(telo_stats.telomeric_sequences)
-    }
+    //     if (params.restriction_digest_analysis != ""){
+    //         restriction_digest_analysis(telo_stats.telomeric_sequences)
+    //     }
 
 
-    //load in files from channel/somehow split demultiplex output into different channels?
-    /*
-    Channel.fromPath("${params.metadata}") | splitCsv(header: true) | 
-        map { row -> meta = [id:row.id, gff:file(row.gff), fasta_ref:file(row.fasta)]
-                    [meta, file(row.gff)] } | set { gff_files }
-    
-
-    Channel.fromPath("${params.input_gff}/*.gff") . map { id, reads ->
-        tokens = id.tokenize(".gff") } | view
-    */ 
-
-    generate_html_report(file(params.outdir))
-    
+    //     generate_html_report(file(params.outdir), stats_done[1])
 }
+
 
 workflow.onComplete {
     println "Analysis Complete at: $workflow.complete"
     println "Execution Status: ${ workflow.success ? 'OK' : 'failed' }"
+    println "Open the Following Report in your Browser ${ params.outdir }/report.html"
 
     if (workflow.success){
         if (params.remove_wd) {
