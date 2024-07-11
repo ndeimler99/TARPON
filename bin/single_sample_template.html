@@ -63,24 +63,26 @@
         <meta charset="utf-8" />
     </head>
     <body>
-        <div class="main_header"><b class="header_text">TArPON {{ pipeline_version }}</b><br>
+        <div class="main_header"><b class="header_text">TArPON v{{ pipeline_version }}</b><br>
             Telomere Analysis Pipeline on Nanopore Sequencing Data <br>
             Nextflow Version: {{ nextflow_version }} <br>
-            Author: Nathaniel Deimler <br>
+            Developer: {{ author }} <br>
             DOI: {} <br>
-            <a href="https://github.com/ndeimler/TArPON">https://github.com/ndeimler/TArPON</a> 
+            <a href="https://github.com/ndeimler/TArPON">{{ homePage }}</a> 
         </div>
         
         <div class="subheader">Basic Run Parameters</div>
         <dl>
+            <dt>Run Name</dt>
+            <dd><samp>{{ run_name }}</samp></dd>
             <dt >Input File Name</dt>
             <dd ><samp>{{ input_file }}</samp></dd>
             <dt >Output Directory</dt>
             <dd ><samp>{{ out_dir }}</samp></dd>
             <dt >Repeat</dt>
             <dd ><samp>{{ repeat }}</samp></dd>
-            <dt >Mode</dt>
-            <dd ><samp>{{ mode }}</samp></dd>
+            <dt >Command</dt>
+            <dd ><samp>{{ command }}</samp></dd>
         </dl>
         <div class="subheader">Read Counts Table</div>
         {{ read_counts }}
@@ -94,6 +96,9 @@
         {{ retained_reads_plot }}
         <div class="subheader">Filtered Reads Throughout Pipeline</div>
         {{filtered_reads_plot }}
-    
+        <div class="subheader">Software Versions</div>
+        {{ versions }}
+        <div class="subheader">Detailed Parameters</div>
+        {{ parameters }}
     </body>
 </html>

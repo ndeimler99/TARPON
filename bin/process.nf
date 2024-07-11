@@ -1,3 +1,5 @@
+import groovy.json.JsonOutput
+
 process PUTATIVE_ISOLATION {
 
     label 'tarpon'
@@ -8,6 +10,7 @@ process PUTATIVE_ISOLATION {
     output:
         tuple val(run_name), path ("putative_reads.fastq"), emit: putative_reads
         tuple val (run_name), path("non_telomeric.fastq"), emit: non_telomeric
+        tuple val(run_name), path("input.fastq.gz"), emit: input_ch
     
     //publishDir "${params.outdir}/TELOMERIC/", overwrite: true, mode: 'copy', pattern: "input.fastq.gz"
     //publishDir "${params.outdir}/FILTERED_READS/", overwrite: true, mode: 'copy', pattern: "input.fastq.gz"
@@ -76,9 +79,8 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
         // no adaptor sequence provided - using ONT like approach were telomere overhang goes directly into barcode
         // computationally not ideal
         """
-        mkdir TELOMERIC
-        mkdir TELOMERIC/DEMUX/
-        mkdir FILTERED_READS
+        mkdir DEMUX/
+        identify_tagging_barcodes.py ${reads} ${barcode_errors} ${params.repeat} DEMUX/ adaptor_filtered.fastq
         """
     else if (params.sample_file == "")
         // single sample provided, not multiplexed
@@ -108,12 +110,12 @@ process SUBTELO_FILTERING {
         tuple val(sample), path(reads)
     
     output:
-        tuple val(sample), path("subtelo_fail.fastq"), emit: filtered_reads
-        tuple val(sample), path("subtelo_pass.fastq"), emit: retained_reads
+        tuple val(sample), path("*subtelo_fail.fastq"), emit: filtered_reads
+        tuple val(sample), path("*subtelo_pass.fastq"), emit: retained_reads
 
     script:
     """
-    filter_by_subtelo.py ${reads} ${params.min_subtelo_length} ${params.subtelo_threshold} ${params.repeat} subtelo_pass.fastq subtelo_fail.fastq
+    filter_by_subtelo.py ${reads} ${params.min_subtelo_length} ${params.subtelo_threshold} ${params.repeat} ${sample}.subtelo_pass.fastq ${sample}.subtelo_fail.fastq
 
     """
 }
@@ -126,16 +128,17 @@ process TELO_START_IDENTIFICATION {
         tuple val(sample), path(reads)
 
     output:
-        tuple val(sample), path("TELOMERIC/telomeric.fastq"), path("telomeric_stats.txt"), emit: final_telomeric
-        tuple val(sample), path("FILTERED_READS/*.fastq"), emit: removed_reads
-        tuple val(sample), path("TELOMERIC/telomeric.fastq"), emit: retained_reads
+        tuple val(sample), path("*telomeric.fastq"), path("*telomeric_stats.txt"), emit: final_telomeric
+        tuple val(sample), path("*no_telomere_start.fastq"), emit: no_telo_start
+        tuple val(sample), path("*.below_telo_%_threshold.fastq"), emit: below_telo_threshold
+        tuple val(sample), path("*telomeric.fastq"), emit: retained_reads
 
     //publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwite:true, pattern: "telomeric_stats.txt", saveAs: { filename -> "${sample}.stats.txt" }
     //publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwite:true, pattern: "TELOMERIC/*", saveAs: { filename -> "${sample}.telomeric.fastq" }
     //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
     //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
 
-    publishDir "${params.outdir}/${sample}/telomeres.fastq", mode: 'copy', overwrite:true, pattern:"TELOMERIC/telomeric.fastq"
+    publishDir "${params.outdir}/${sample}/telomeres.fastq", mode: 'copy', overwrite:true, pattern:"*.telomeric.fastq"
     publishDir "${params.outdir}/${sample}/telomere_stats.txt", mode: 'copy', overwrite:true, pattern:"telomeric_stats.txt"
     
     script:
@@ -143,7 +146,7 @@ process TELO_START_IDENTIFICATION {
     #python script that identified telomere start. Writes out fastq file, stats file, fastq for reads removed because no telo start was found, fastq for reads removed because didnt reach minimum threshold
     mkdir TELOMERIC
     mkdir FILTERED_READS
-    identify_telo_start.py ${reads} ${params.repeat} ${params.sliding_window_size} ${params.sliding_window_interval} ${params.upper_threshold} ${params.lower_threshold} ${params.telomeric_repeat_percentage} ${params.consecutive_repeats} TELOMERIC/telomeric.fastq FILTERED_READS/no_telomere_start.fastq FILTERED_READS/below_telo_%_threshold.fastq telomeric_stats.txt
+    identify_telo_start.py ${reads} ${params.repeat} ${params.sliding_window_size} ${params.sliding_window_interval} ${params.upper_threshold} ${params.lower_threshold} ${params.telomeric_repeat_percentage} ${params.consecutive_repeats} ${sample}.telomeric.fastq ${sample}.no_telomere_start.fastq ${sample}.below_telo_%_threshold.fastq ${sample}.telomeric_stats.txt
     """
 }
 
@@ -221,13 +224,18 @@ process SUMMARY_STATS_RUN {
     output:
         tuple val(id), path("Retained_Reads.stats.txt"), emit: retained_stats
         tuple val(id), path("Filtered_Reads.stats.txt"), emit: filtered_stats
+        path("*.pdf")
        
-    publishDir "${params.outdir}", mode:'copy', overwrite:true, pattern:"*stats.txt"
-    
+    publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*stats.txt"
+    publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'copy', overwrite:true, pattern:"*pdf"
+
+
     script:
     """
     seqkit stats -a -N 50,90 -T ${retained} > Retained_Reads.stats.txt
     seqkit stats -a -N 50,90 -T ${filtered} > Filtered_Reads.stats.txt
+    Rscript ${baseDir}/bin/summary_stats_plots.R Retained_Reads.stats.txt ${params.strand_comparison} telomeric
+    Rscript ${baseDir}/bin/summary_stats_plots.R Filtered_Reads.stats.txt ${params.strand_comparison} filtered
     """
 }
 
@@ -241,15 +249,15 @@ process SUMMARY_STATS_SAMPLE {
         //path(output_dir)
     
     output:
-        tuple val(id), path("Retained_Reads.stats.txt"), emit: retained_stats
-        tuple val(id), path("Filtered_Reads.stats.txt"), emit: filtered_stats
+        tuple val(id), path("*retained.stats.txt"), emit: retained_stats
+        tuple val(id), path("*.filtered.stats.txt"), emit: filtered_stats
     
     publishDir "${params.outdir}/${id}", mode:'copy', overwrite:true, pattern:"*stats.txt"
     
     script:
     """
-    seqkit stats -a -N 50,90 -T ${retained} > Retained_Reads.stats.txt
-    seqkit stats -a -N 50,90 -T ${filtered} > Filtered_Reads.stats.txt
+    seqkit stats -a -N 50,90 -T ${retained} > ${id}.retained.stats.txt
+    seqkit stats -a -N 50,90 -T ${filtered} > ${id}.filtered.stats.txt
     """
 }
 
@@ -277,20 +285,95 @@ process GENERATE_FINAL_REPORT {
     label 'tarpon'
 
     input:
-        tuple val(run), path(stats_run_retained, stageAs: "${params.run}.retained.txt")
-        tuple val(run1), path(stats_run_filtered, stageAs: "${params.run}.filtered.txt")
-        tuple val(subtelo_pass), val(telomeric)
-        tuple val(subtelo_fail), val(no_telo_start), val(low_threshold)
-        
+        path("params.json")
+        path("versions.txt")
+        path("manifest.json")
+        tuple val(run), path(stats_run_retained)
+        tuple val(run1), path(stats_run_filtered)
+        path(sample_stats_retained)
+        path(sample_stats_filtered)
 
     output:
-        // path("report.html")
+        path("report.html")
     
     publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "report.html"
 
     script:
     """
-    //#generate_report.py ${output_dir} 0 0 ${params.input_file} ${params.repeat} ${params.outdir} ${baseDir}/bin/single_sample_template.html report.html ${baseDir}/bin/report.css
-    touch report.html
+    generate_html_report.py --workflow_name TArPON \
+                            --report report.html \
+                            --template_file ${baseDir}/bin/single_sample_template.html \
+                            --params params.json \
+                            --versions versions.txt \
+                            --manifest manifest.json \
+                            --command "${workflow.commandLine}" \
+                            --run_stats_retained ${stats_run_retained} \
+                            --run_stats_filtered ${stats_run_filtered} \
+                            --sample_stats_retained ${sample_stats_retained} \
+                            --sample_stats_filtered ${sample_stats_filtered}
+    """
+}
+
+process getParams {
+
+    label "tarpon"
+
+    output:
+        path "params.json", emit:params
+
+    script:
+    json_str = JsonOutput.toJson(params)
+    json_indented = JsonOutput.prettyPrint(json_str)
+    // NOTE: single quotes are critical here;
+    """
+    echo '${json_indented}' > "params.json"
+    """
+}
+
+
+process getVersions {
+
+    label "tarpon"
+
+    output:
+        path "versions.txt", emit: versions
+
+    script:
+    """
+    python --version | sed 's/ /,/' >> versions.txt
+    python -c "import regex; print(f'regex,{regex.__version__}')" >> versions.txt
+    python -c "import pandas; print(f'pandas,{pandas.__version__}')" >> versions.txt
+    seqkit version | sed 's/ /,/' >> versions.txt
+    """
+}
+
+process getManifest {
+    
+    label 'tarpon'
+
+    output:
+        path "manifest.json", emit:manifest
+
+    script:
+    json_str = JsonOutput.toJson(workflow.manifest)
+    json_indented = JsonOutput.prettyPrint(json_str)
+    """
+    echo '${json_indented}' > "manifest.json"
+    """
+}
+
+process COMBINE_FASTQ {
+    
+    label 'tarpon'
+
+    input:
+        tuple val(file_type), path(input_files)
+
+    output:
+        tuple val(params.run_name), path("${file_type}.fastq"), emit:combined
+
+    script:
+    """
+    cat ${input_files} > ${file_type}.fastq
     """
 }
