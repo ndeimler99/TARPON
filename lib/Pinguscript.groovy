@@ -20,9 +20,6 @@ class Pinguscript {
     }
     // Shared handler to construct a ping JSON and send it
     private static String wf_ping(nextflow, workflow, event, error_message, params) {
-        if (params.disable_ping) {
-            return "{}"
-        }
         def body_json = make_wf_ping(nextflow, workflow, event, error_message, params)
         send_ping_post("epilaby", body_json)
     }
@@ -133,10 +130,6 @@ class Pinguscript {
                     "memory": null, // placeholder, no point asking via Runtime as it will just give us the Xmx size
                 ],
                 "agent": get_meta(params.wf, "agent"), // access via original params
-                "epi2me": [
-                    "instance": get_meta(params.wf, "epi2me_instance"),
-                    "user": user,
-                ],
                 "nextflow": [
                     "version": nextflow.version.toString(),
                     "version_compat": nextflow.version.matches(workflow.manifest.nextflowVersion)

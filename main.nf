@@ -42,6 +42,7 @@ include { getVersions } from "./bin/process.nf"
 include { getManifest } from "./bin/process.nf"
 include { COMBINE_FASTQ as COMBINED_RETAINED_FASTQ } from "./bin/process.nf"
 include { COMBINE_FASTQ as COMBINED_FILTERED_FASTQ } from "./bin/process.nf"
+include { COMBINED_INPUT as COMBINED_INPUT } from "./bin/process.nf"
 include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 
 // Print help message, supply typical command line usage for the pipeline
@@ -58,31 +59,47 @@ include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 WorkflowMain.initialise(workflow, params, log)
+
 workflow {
 
     Pinguscript.ping_start(nextflow, workflow, params)
-    // if (params.help) {
-    //     log.info help(workflow, params, log)
-    //     exit 0
-    // }
 
-    
+    if (params.adaptor_sequence == "" && params.sample_file == "") {
+        println ("Adaptor Sequence and Sample File cannot both be empty")
+        exit 0
+    }
+
+    try {
+        if (params.sample_file != ""){
+            file(params.sample_file, checkIfExists:true)
+        }
+    }
+    catch (Exception e) {
+        println("Error - Sample File not Found")
+        exit 0
+    }
+
+
     // ###### TO DO #######
+    // check if provided input exists
     // check input_file is a directory or a file
     // if directory concat all files in directory ending in .fastq.gz
     // #############
 
-    // check if input file exists
-    // input_file = file(params.input_file)
-    // if (!input_file.exists() ) {
-    //     exit 1, "Input File Does Not Exist"
-    // }
+    try {
+        file(params.input_file, checkIfExists:true)
+    }
+    catch (Exception e) {
+        println("Error - Input File or Directory Does not Exist")
+        exit 0
+    }
+
 
     // // check if output directory exists
-    // outdir = file(params.outdir)
-    // if (outdir.exists() && !params.overwrite_outdir) {
-    //     exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
-    // }
+    outdir = file(params.outdir)
+    if (outdir.exists() && !params.overwrite_outdir) {
+        exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
+    }
 
     // check that all other parameters are valid...
     
@@ -97,9 +114,16 @@ workflow {
     // convert all bam files to fastq
 
     run = params.run_name 
-    Channel.fromPath( params.input_file, checkIfExists:true)
+
+    if (file(params.input_file).isDirectory()) {
+        input_ch = COMBINED_INPUT(Channel.fromPath ( "${params.input_file}/*q.gz" ).collect().map{ it -> ["input", it]})
+    }
+
+    else{
+        Channel.fromPath( params.input_file, checkIfExists:true)
         .map{ it -> [ run , it] }
         .set{ input_ch }
+    }    
 
     //input_ch.view()
 

@@ -45,7 +45,7 @@ class WorkflowMain {
         // Print workflow version and exit on --version
         if (params.version) {
             String workflow_version = NfcoreTemplate.version(workflow)
-            log.info "${workflow.manifest.name} ${workflow_version}"
+            log.info "${workflow.manifest.name} ${workflow.manifest.version}"
             System.exit(0)
         }
 
@@ -54,15 +54,14 @@ class WorkflowMain {
         // in a generic catch just in case
         try {
             if (workflow.session.config.conda.enabled) {
-                log.error "Sorry, this workflow is not compatible with Conda, please use -profile standard (Docker) or -profile singularity."
+                log.error "Sorry, this workflow is not compatible with Conda, please use -profile standard (Docker)"
                 System.exit(1)
             }
         } catch(Exception e) {}
 
         // Validate workflow parameters via the JSON schema
-        if (params.validate_params) {
-            NfcoreSchema.validateParameters(workflow, params, log)
-        }
+        NfcoreSchema.validateParameters(workflow, params, log)
+       
 
         // Print parameter summary log to screen
         log.info paramsSummaryLog(workflow, params, log)

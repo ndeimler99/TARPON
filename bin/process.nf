@@ -279,7 +279,7 @@ process RESTRICTION_DIGEST_ANALYSIS {
     output:
         tuple val(sample), path("digest_stats.txt")
     
-    publishDir "${params.outdir}/${sample}/digest_stats.txt", mode: 'copy', overwrite: true, pattern: "digest_stats.txt"
+    publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite: true, pattern: "digest_stats.txt"
 
     script:
     """
@@ -388,5 +388,22 @@ process COMBINE_FASTQ {
     script:
     """
     cat ${input_files} > ${file_type}.fastq
+    """
+}
+
+process COMBINED_INPUT {
+    
+    label 'tarpon'
+    tag "$file_type Concatenating FASTQ Files"
+
+    input:
+        tuple val(file_type), path(input_files)
+
+    output:
+        tuple val(params.run_name), path("${file_type}.fastq.gz"), emit:combined
+
+    script:
+    """
+    cat ${input_files} > ${file_type}.fastq.gz
     """
 }

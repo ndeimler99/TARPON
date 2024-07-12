@@ -15,6 +15,7 @@
                 "input_file": {
                     "type": "string",
                     "format": "path",
+                    "exists": true,
                     "title": "FASTQ Input File",
                     "description": "FASTQ File from Sequencing"
                 },
@@ -30,13 +31,15 @@
                 },
                 "sample_file":{
                     "type": "string",
+                    "format": "file-path",
+                    "pattern": "\\S+csv$",
                     "title": "Sample File",
-                    "description": "CSV file containing sample names and barcodes to use for demultiplexing. If no adaptor sequence is provided the barcodes will also be used for determing the end of the telomere"
+                    "description": "CSV file containing sample names and barcodes to use for demultiplexing. If no adaptor sequence is provided the barcodes will also be used for determing the end of the telomere",
+                    "fa_icon": "fas fa-file-csv"
                 },
                 "adaptor_sequence": {
                     "type":"string",
                     "title":"Telomere Capture Sequence",
-                    "default": "ACTTCGTTCGGT",
                     "description": "Provide the first 12 nucleotides of the capture sequence that would appear on the G strand telomeric sequences"
                 },
                 "outdir": {
@@ -185,6 +188,12 @@
             "fa_icon": "fas fa-arrow-right",
             "description": "Advanced Options regarding Mutant and Other Analyses",
             "properties": {
+                "remove_wd":{
+                    "title":"Remove Work Directory",
+                    "type":"boolean",
+                    "default":false,
+                    "description": "If true, working directory is removed on run complete. This prevents build up of unnecesary files but prevents -resume from being used"
+                },
                 "detailed_stats":{
                     "title": "Detailed Plots",
                     "type":"boolean",
