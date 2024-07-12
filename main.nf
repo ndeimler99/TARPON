@@ -57,12 +57,16 @@ include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } 
     RUN ALL WORKFLOWS
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-
+WorkflowMain.initialise(workflow, params, log)
 workflow {
-    if (params.help) {
-        log.info paramsHelp("nextflow run")
-        exit 0
-    }
+
+    Pinguscript.ping_start(nextflow, workflow, params)
+    // if (params.help) {
+    //     log.info help(workflow, params, log)
+    //     exit 0
+    // }
+
+    
     // ###### TO DO #######
     // check input_file is a directory or a file
     // if directory concat all files in directory ending in .fastq.gz
@@ -206,4 +210,9 @@ workflow.onComplete {
         }
        
     }
+    Pinguscript.ping_complete(nextflow, workflow, params)
+}
+
+workflow.onError {
+    Pinguscript.ping_error(nextflow, workflow, params)
 }

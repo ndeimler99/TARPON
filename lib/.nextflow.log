@@ -1,0 +1,128 @@
+Jul-12 08:20:43.455 [main] DEBUG nextflow.cli.Launcher - $> nextflow run ../main.nf --help
+Jul-12 08:20:43.703 [main] DEBUG nextflow.cli.CmdRun - N E X T F L O W  ~  version 24.04.3
+Jul-12 08:20:43.738 [main] DEBUG nextflow.plugin.PluginsFacade - Setting up plugin manager > mode=prod; embedded=false; plugins-dir=/home/ndeimler/.nextflow/plugins; core-plugins: nf-amazon@2.5.2,nf-azure@1.6.0,nf-cloudcache@0.4.1,nf-codecommit@0.2.0,nf-console@1.1.3,nf-ga4gh@1.3.0,nf-google@1.13.2-patch1,nf-tower@1.9.1,nf-wave@1.4.2
+Jul-12 08:20:43.782 [main] INFO  o.pf4j.DefaultPluginStatusProvider - Enabled plugins: []
+Jul-12 08:20:43.784 [main] INFO  o.pf4j.DefaultPluginStatusProvider - Disabled plugins: []
+Jul-12 08:20:43.790 [main] INFO  org.pf4j.DefaultPluginManager - PF4J version 3.10.0 in 'deployment' mode
+Jul-12 08:20:43.813 [main] INFO  org.pf4j.AbstractPluginManager - No plugins
+Jul-12 08:20:43.859 [main] DEBUG nextflow.config.ConfigBuilder - Found config base: /media/data_01/ndeimler/WORKFLOWS/TArPON/nextflow.config
+Jul-12 08:20:43.867 [main] DEBUG nextflow.config.ConfigBuilder - Parsing config file: /media/data_01/ndeimler/WORKFLOWS/TArPON/nextflow.config
+Jul-12 08:20:43.939 [main] DEBUG n.secret.LocalSecretsProvider - Secrets store: /home/ndeimler/.nextflow/secrets/store.json
+Jul-12 08:20:43.946 [main] DEBUG nextflow.secret.SecretsLoader - Discovered secrets providers: [nextflow.secret.LocalSecretsProvider@5d05ef57] - activable => nextflow.secret.LocalSecretsProvider@5d05ef57
+Jul-12 08:20:43.972 [main] DEBUG nextflow.config.ConfigBuilder - Applying config profile: `standard`
+Jul-12 08:20:45.289 [main] DEBUG nextflow.cli.CmdRun - Applied DSL=2 from script declaration
+Jul-12 08:20:45.317 [main] DEBUG nextflow.cli.CmdRun - Launching `../main.nf` [insane_lamarr] DSL2 - revision: 8923e31b52
+Jul-12 08:20:45.321 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins declared=[nf-schema@2.0.0]
+Jul-12 08:20:45.322 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins default=[]
+Jul-12 08:20:45.323 [main] DEBUG nextflow.plugin.PluginsFacade - Plugins resolved requirement=[nf-schema@2.0.0]
+Jul-12 08:20:45.323 [main] DEBUG nextflow.plugin.PluginUpdater - Installing plugin nf-schema version: 2.0.0
+Jul-12 08:20:45.355 [main] INFO  org.pf4j.AbstractPluginManager - Plugin 'nf-schema@2.0.0' resolved
+Jul-12 08:20:45.355 [main] INFO  org.pf4j.AbstractPluginManager - Start plugin 'nf-schema@2.0.0'
+Jul-12 08:20:45.368 [main] DEBUG nextflow.plugin.BasePlugin - Plugin started nf-schema@2.0.0
+Jul-12 08:20:45.470 [main] DEBUG nextflow.Session - Session UUID: 2468dbf9-867c-4047-86be-41a6777fccd7
+Jul-12 08:20:45.471 [main] DEBUG nextflow.Session - Run name: insane_lamarr
+Jul-12 08:20:45.472 [main] DEBUG nextflow.Session - Executor pool size: 96
+Jul-12 08:20:45.486 [main] DEBUG nextflow.file.FilePorter - File porter settings maxRetries=3; maxTransfers=50; pollTimeout=null
+Jul-12 08:20:45.496 [main] DEBUG nextflow.util.ThreadPoolBuilder - Creating thread pool 'FileTransfer' minSize=10; maxSize=288; workQueue=LinkedBlockingQueue[10000]; allowCoreThreadTimeout=false
+Jul-12 08:20:45.531 [main] DEBUG nextflow.cli.CmdRun - 
+  Version: 24.04.3 build 5916
+  Created: 09-07-2024 19:35 UTC 
+  System: Linux 5.15.0-101-generic
+  Runtime: Groovy 4.0.21 on OpenJDK 64-Bit Server VM 19.0.1+10-21
+  Encoding: UTF-8 (UTF-8)
+  Process: 3912009@bonsai-agbaumann [127.0.1.1]
+  CPUs: 96 - Mem: 1.5 TB (832.4 GB) - Swap: 8 GB (8 GB)
+Jul-12 08:20:45.720 [main] DEBUG nextflow.Session - Work-dir: /media/data_01/ndeimler/WORKFLOWS/TArPON/lib/work [nfs]
+Jul-12 08:20:45.813 [main] DEBUG nextflow.executor.ExecutorFactory - Extension executors providers=[]
+Jul-12 08:20:45.829 [main] DEBUG nextflow.Session - Observer factory: DefaultObserverFactory
+Jul-12 08:20:45.947 [main] DEBUG nextflow.cache.CacheFactory - Using Nextflow cache factory: nextflow.cache.DefaultCacheFactory
+Jul-12 08:20:45.962 [main] DEBUG nextflow.util.CustomThreadPool - Creating default thread pool > poolSize: 97; maxThreads: 1000
+Jul-12 08:20:46.506 [main] DEBUG nextflow.Session - Session start
+Jul-12 08:20:46.514 [main] DEBUG nextflow.trace.TraceFileObserver - Workflow started -- trace file: /media/data_01/ndeimler/WORKFLOWS/TArPON/lib/output/pipeline_info/execution_trace.txt
+Jul-12 08:20:46.547 [main] DEBUG nextflow.Session - Using default localLib path: /media/data_01/ndeimler/WORKFLOWS/TArPON/lib
+Jul-12 08:20:46.581 [main] DEBUG nextflow.Session - Adding to the classpath library: /media/data_01/ndeimler/WORKFLOWS/TArPON/lib
+Jul-12 08:20:46.583 [main] DEBUG nextflow.Session - Adding to the classpath library: /media/data_01/ndeimler/WORKFLOWS/TArPON/lib/nfcore_external_java_deps.jar
+Jul-12 08:20:48.535 [main] DEBUG nextflow.script.ScriptRunner - > Launching execution
+Jul-12 08:20:48.557 [main] INFO  nextflow.script.BaseScript - TArPON - Telomere Analysis Pipeline on Nanopore Sequencing Data
+================================================
+v0.0.1
+
+Jul-12 08:20:49.452 [main] DEBUG nextflow.script.IncludeDef - Loading included plugin extensions with names: [validateParameters:validateParameters, paramsHelp:paramsHelp, paramsSummaryLog:paramsSummaryLog, samplesheetToList:samplesheetToList]; plugin Id: nf-schema
+Jul-12 08:20:49.478 [main] WARN  nextflow.script.ScriptBinding - Access to undefined parameter `monochrome_logs` -- Initialise it to a default value eg. `params.monochrome_logs = some_value`
+Jul-12 08:20:49.581 [main] INFO  nextflow.Nextflow - 
+[0;92m||||||||||   [0m[2m_____ ____ ___ ____  __  __ _____      _       _
+[0;92m||||||||||  [0m[2m| ____|  _ \_ _|___ \|  \/  | ____|    | | __ _| |__  ___
+[0;33m|||||       [0m[2m|  _| | |_) | |  __) | |\/| |  _| _____| |/ _` | '_ \/ __|
+[0;33m|||||       [0m[2m| |___|  __/| | / __/| |  | | |__|_____| | (_| | |_) \__ \
+[0;94m||||||||||  [0m[2m|_____|_|  |___|_____|_|  |_|_____|    |_|\__,_|_.__/|___/
+[0;94m||||||||||  [0m[1mTArPON v0.1.0[0m
+[2m--------------------------------------------------------------------------------[0m
+Typical pipeline command:
+
+  [0;36mnextflow run ndeimler99/TArPON \ 
+	--input_file 'test_data/*.fastq' --sample_file 'test_data/test_data.csv'[0m
+
+[4m[1mInput and Output Parameters[0m
+  --input_file                    [2m[string]  [0mFASTQ File from Sequencing[2m[0m
+  --run_name                      [2m[string]  [0mTitle of Sequencing Run for Generation of Output Files[2m[0m
+  --sample_name                   [2m[string]  [0mName of sample when sequencing contains only one sample[2m[0m
+  --sample_file                   [2m[string]  [0mCSV file containing sample names and barcodes to use for demultiplexing. If no adaptor sequence is provided the 
+                                            barcodes will also be used for determing the end of the telomere[2m[0m 
+  --adaptor_sequence              [2m[string]  [0mProvide the first 12 nucleotides of the capture sequence that would appear on the G strand telomeric sequences[2m 
+                                            [default: ACTTCGTTCGGT][0m 
+  --outdir                        [2m[string]  [0mThis should be a path to a directory to store the output data. The parent directory should exist. If the main 
+                                            directory does not exist it will be created[2m [default: output][0m 
+  --overwrite_outdir              [2m[boolean] [0mSet this to true if the output directory already exists but you would like to overwrite the data[2m[0m
+
+[4m[1mBasic Pipeline Options[0m
+  --repeat                        [2m[string]  [0mPlease supply the telomeric sequence found on the G strand, for examples and most vertebrata, GGTTAG[2m [default: 
+                                            GGTTAG][0m 
+  --minimum_telo_reads_per_sample [2m[number]  [0mSamples will be marked as failed if minimum number of telomeres is below this threshold[2m [default: 500][0m
+  --c_strand_only                 [2m[boolean] [0mIf the data was collected in such a way that only C strand telomeric sequences should be expected (i.e. ONT 
+                                            protocol), select this box[2m[0m 
+  --repeat_count                  [2m[number]  [0mNumber of repeats a read must contain to be considered putatively telomeric[2m [default: 10][0m
+  --reverse_complement_threshold  [2m[number]  [0mPercentage of telomeric repeats must be greater than this value to be classified as C strand. If the percentage is 
+                                            less than 1 minus this value, the read is classified as C strand. Anthing greater than 1-value but less than value 
+                                            is removed from analysis[2m [default: 0.80][0m 
+
+[4m[1mAdaptor Identification, Demultiplexing, and Subtelomeric Filtering Parameters[0m
+  --adaptor_sequence_errors       [2m[number]  [0mNumber of allowed errors to be found in the adaptor sequence. The adaptor sequence wil only be found after ten 
+                                            telomeric repeats. It is recomended this value be 2 for a 12 nucleotide adaptor sequence. For each additional 8bp, 
+                                            the number of errors should be increased by 1[2m [default: 2][0m 
+  --barcode_errors                [2m[number]  [0mNumber of allowed errors in the barcode sequence. It is recomended this value by 1/8 the length of the barcode 
+                                            assuming the hamming distance between barcodes is greater than 1/8 the barcode length[2m [default: 3][0m 
+  --min_subtelo_length            [2m[number]  [0mMinimum Read Lenth Before VRR region Telomeric Start Site to Ensure sequencing completely through telomeres[2m 
+                                            [default: 300][0m 
+  --subtelo_threshold             [2m[number]  [0mMaximum percentage of one nucleotide substitutions of telomeric sequences found within min_subtelo_length before 
+                                            read does not pass filtering criteria[2m [default: 0.3][0m 
+
+[4m[1mDetermining Telomere Start Position[0m
+  --sliding_window_size           [2m[number]  [0mLength of the sliding window analyzed for the identification of telomeric start[2m [default: 200][0m
+  --sliding_window_interval       [2m[number]  [0mHow many base pairs will the sliding window jump each time rather than operating on a nucleotide by nucleotide 
+                                            slide[2m [default: 10][0m 
+  --upper_threshold               [2m[number]  [0mThe percentage of which a sliding window must consist of one nucleotide repeat variations for the telomere to start. 
+                                            Must be a value between 0 and 1[2m [default: 0.6][0m 
+  --lower_threshold               [2m[number]  [0mSliding window one nucleotide variation percentage must not drop below this value after upper threshold has been 
+                                            surpassed.[2m [default: 0.1][0m 
+  --telomeric_repeat_percentage   [2m[number]  [0mAdditional filtering step that removes telomeres that consist of less than this percentage one nucleotide variant 
+                                            repeats from the VRR start to the adaptor sequence[2m [default: 0.7][0m 
+  --consecutive_repeats           [2m[number]  [0mAll perfect repeats existing in a strecth of x or more consecutive repeats between the VRR start and the adaptor 
+                                            will be considered in telomere length calculations[2m [default: 3][0m 
+
+[4m[1mAdvanced Options[0m
+  --detailed_stats                [2m[boolean] [0mAdditional sets of plots analysing telomeric reads are created. See README for more details[2m[0m
+  --strand_comparison             [2m[boolean] [0mGenerate Plots Directly comparing C to G strand results[2m[0m
+  --indiv_read_plots              [2m[boolean] [0mGenerate Plots showing individual reads and telomeric start identification[2m[0m
+  --plot_vrr_length               [2m[boolean] [0mIf set to true additional plots will be created mirroring those for telomere length analysis, but using the VRR 
+                                            length instead of calculated telomere length[2m[0m 
+  --restriction_digest_analysis   [2m[string]  [0mProvide a list of comma seperated restriction enzyme sites for an analysis of digestion completion[2m[0m
+  --mutant                        [2m[string]  [0mTelomeric Mutation of Interest - See Manual for more details[2m[0m
+
+[2m--------------------------------------------------------------------------------[0m
+If you use ndeimler99/TArPON for your analysis please cite:
+
+* The nf-core framework
+  https://doi.org/10.1038/s41587-020-0439-x
+
+
+
