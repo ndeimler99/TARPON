@@ -55,7 +55,7 @@ ggsave(paste(args[3], ".length_boxplot_zoomed.pdf", sep=''), device="pdf", plot=
 
 # quality score plot
 qscore <- ggplot(data=read_stats) +
-  geom_line(mapping=aes(x=file, y=AvgQual), group=1) +
+  geom_bar(mapping=aes(x=file, y=AvgQual),stat='identity') +
   ylab("Average Quality Score") +
   theme_minimal() +
   theme(axis.title.x = element_blank(),

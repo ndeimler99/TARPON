@@ -407,3 +407,20 @@ process COMBINED_INPUT {
     cat ${input_files} > ${file_type}.fastq.gz
     """
 }
+
+process BARCODE_HAMMING_CHECK {
+
+    label 'tarpon'
+    tag "$params.run_name Checking Barcode Hamming Distance"
+
+    input:
+        path(sample_file)
+    
+    output:
+        path("passed.txt"), optional:true, emit:passed
+
+    script:
+    """
+    check_hamming_distance.py ${sample_file} ${params.barcode_errors}
+    """
+}

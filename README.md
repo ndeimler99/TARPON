@@ -17,11 +17,12 @@ TArPON is a pipeline developed in the lab of Dr. Peter Baumann by PhD candidate 
 
 ## [The Pipeline](#pipeline)
 
-![pipeline_schematic](./src/TArPON_Pipeline.png)
+<img src="./src/TArPON_Pipeline.png" alt="pipeline_schematic" width=200>
+
 
 TArPON begins by identifying a set of putative telomeric sequences to reduce computational time and resources at later steps in the pipeline. By default, this is done by isolating reads that contain at least ten perfect telomeric repeats (see parameters: repeat, repeat_count ). These repeats do not have to be consecutive.  The ratio of G telomeric repeats to C telomeric repeats is calculated for all putative telomeric reads. If the ratio falls between 20 and 80% ( see parameter reverse_complement_threshold ) the reads are discarded as they are most likely chimeric sequences.  All reads that are less than 20% G telomeric repeats (these would be C strand reads) are reverse complemented so all telomeric reads are in the same orientation for further analysis. Strandedness information is retaiend throughout the pipeline and strands can be compared using the parameter --strand_comparison.  Telomeric reads are then demultiplexed and the end of the read is identified using either a provided adaptor sequence (--adaptor_sequence) or by the barcodes found in --sample_file. If no sample_file is provided all reads are considered to end in the adaptor_sequence and belong to the same sample: in this case --sample_name should also be provided.  In the case that all telomeric capture probes/sequences are unique and do not contain a shared sequence, --adaptor_sequence should be left blank and the end of the telomeric read will be determined by the barcodes present in sample_file. If both adaptor sequence and sample_file are provided, the end of the telomere will be determined by the presence of the adaptor_sequence and demultiplexed by the barcodes found in sample_file. In all cases of sequence searches, fuzzy searching is conducted based on --adaptor_sequence_errors and --barcode_errrors. It is recomended a minimum sequence length of 12 nucleotides be used with two errors, increasing by one error for every additional 8 base pairs, assuming the sequence difference between all barcodes is greater than three. The pipeline will return an error if the hamming distance of barcodes is less than the number of allowable errors.
 
-INSERT DEMULTIPLEXING SCHEMATIC HERE
+<img src="./src/demux_figure.png" alt="demux_schematic" width=800>
 
 After demultiplexing telomeric reads are filtered to ensure the telomere was completely sequenced by removing reads containing more than 30% (--subtelo_threshold) one nucleotide telomeric repeat variants in the first  300 base pairs (--min_subtelo_length). Telomere length determination is divided into two steps. The first is the identification of the Variable Repeat Rich (VRR) Region Start, followed by telomere length calculation.  During development of the pipeline it was clearly seen in both HG002 data and data collected from clinical samples, that while there was rarely a sharp and sudden increase from 0 to 100% of perfect telomeric repeats, there was a region immediately adjacent to the telomere composed of nearly 100% one nucleotide telomere repeat variants (see Deimler et al. for more information). The beginnig of this VRR region was often a very clear and suddent increase from 0% to 100%. Computationally, this region is identified by a sliding window 200bp in size (--sliding_window_size) jumping 10bp (--sliding_window_interval) at a time. Once this window reaches a threshold of being composed of 60% (--upper_threshold) one nucleotide telomere repeat variants the VRR region starts at the first one nucleotide variant repeat sequence within the sliding window, assuming it does not drop below 10% (--lower_threshold). These thresholds were determined by computationally comparing to a manually annotated truth set. The lower threshold is required to ensure that one nucleotide variation islands that exist within the subtelomere (as seen on chromosome arm WHICH CHROMOSOME ARM) do not drastically skew any length estimations. However, this entire VRR region would not be functionally relevant. Therefore telomere length is calculated as the summation of all perfect telomere repeats that exist between the VRR start and the end of the read when they occur at least 3 repeats in a row (--consecutive_repeats). All statistics and plots use this telomere length calculation metric unless --plot_vrr_length is specified. In addition, a easily readable HTML file is generated containing all relevant statistics and plots. See the output section of this documentation for a more detailed description of the output produced by this pipeline.
 
@@ -139,17 +140,14 @@ Various output files are produced when the pipeline is run with different parame
 | output/Sample_name/FIGURES |telo_length_hist.pdf| Telomere length histogram with mean telomere length dictated by solid red, vertical line |PDF|
 
 
-### With --strand_comparison
 
+## Additional Output Files
 
-### With --restriction_digest_analysis
+Specifying one of the booleans below will result in more detailed or additional results/figures being returned with little increase in computational time or cost.  The parameters are stackable and will often produce additional input when stacked. For example combining --detailed_stats with --strand_comparison will produce more information than either parameter alone.  
 
-|Parent Directory|File Name|Contents|Type|
-|:--|:--:|:--:|:--:|
-|output/sample_name|digest_stats.txt|Summary statistics on all telomeric reads (sample.telomeric.fastq) containing at least one cut site (cut_site.fastq)|txt file|
-### With --detailed_stats
-
-### With --plot_vrr_length
-
-
-With --strand_comparison activated. All statistics files will now contain the same files as previously described but an additional .c_strand.fastq and .g_strand.fastq for each file.
+| Parameter | Location | Description |
+| :--------:|:--:|:--:|
+|--strand_comparison| <nobr>sample directory / C_G_Comparison / |An additional directory within each sample containing three pdf files with direct comparisons of telo length and read length between the C and G strands|
+|<nobr>--restriction_digest_analysis | <nobr> sample directory / restriction_digest.stats.txt |Will create one additional file per sample containing the summary statistics of all reads containing each specified cut site produced by seqkit stats|
+|--plot_vrr_length|sample directory / FIGURES |Will produce additional files for all predescribed telomere statistics, but with the VRR length instead of the telo length. This compounds with --strand_comparison to produce strand specific vrr length plots |
+|--detailed_stats| sample directory / DETAILED_STATS / |Will produce multiple additional figures comparing telomere length to VRR length, looking at the percentage of perfect repeats within the sequencing data, looking at the quality of telomeric sequences, etc. All such files can be found in the sample directory under FIGURES/DETAILED_STATS. This compounds with both strand_comparison and plot_vrr_length to produce additional files in the C_G_Comparison directory |

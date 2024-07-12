@@ -44,6 +44,7 @@ include { COMBINE_FASTQ as COMBINED_RETAINED_FASTQ } from "./bin/process.nf"
 include { COMBINE_FASTQ as COMBINED_FILTERED_FASTQ } from "./bin/process.nf"
 include { COMBINED_INPUT as COMBINED_INPUT } from "./bin/process.nf"
 include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
+include { BARCODE_HAMMING_CHECK } from "./bin/process.nf"
 
 // Print help message, supply typical command line usage for the pipeline
 
@@ -94,6 +95,20 @@ workflow {
         exit 0
     }
 
+    //check to make barcodes are more different than barcode errors
+    if (params.sample_file != ''){
+        println("IN IF")
+        test = BARCODE_HAMMING_CHECK(file(params.sample_file))
+        test.branch{file(it, checkIfExists:true)}
+        // try {
+        //     Channel.fromPath(test.passed, checkIfExists:true)
+        //     println("PASSED")
+        // }
+        // catch (Exception e) {
+        //     println("Supplied Barcode Sequences are too Similar to Demultiplex Using Barcode Error Value")
+        //     exit 0 
+        // }
+    }
 
     // // check if output directory exists
     outdir = file(params.outdir)
