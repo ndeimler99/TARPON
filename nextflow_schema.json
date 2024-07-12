@@ -4,7 +4,7 @@
     "title": "ndeimler99/TArPON pipeline parameters",
     "description": "A pipeline to Analyze Telomeric sequences from Nanopore Sequencing",
     "type": "object",
-    "defs": {
+    "definitions": {
         "Input_Output": {
             "title": "Input and Output Parameters",
             "type": "object",
@@ -59,7 +59,7 @@
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
             "description": "Basic Pipeline Options",
-            "required": ["repeat", "minimum_telo_reads_per_sample", "c_strand_only"],
+            "required": ["repeat", "minimum_telo_reads_per_sample"],
             "properties": {
                 "repeat": {
                     "type": "string",
@@ -120,7 +120,7 @@
                     "description": "Minimum Read Lenth Before VRR region Telomeric Start Site to Ensure sequencing completely through telomeres"
                 },
                 "subtelo_threshold": {
-                  "type":"string",
+                  "type":"number",
                   "default":0.3,
                   "minimum":0,
                   "exclusiveMaximum": 1,
