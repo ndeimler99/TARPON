@@ -42,8 +42,14 @@ include { getVersions } from "./bin/process.nf"
 include { getManifest } from "./bin/process.nf"
 include { COMBINE_FASTQ as COMBINED_RETAINED_FASTQ } from "./bin/process.nf"
 include { COMBINE_FASTQ as COMBINED_FILTERED_FASTQ } from "./bin/process.nf"
+include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 
-// include { cleanUp } from "./bin/process.nf"
+// Print help message, supply typical command line usage for the pipeline
+
+
+// this will check json --sample_file needs to match appropriate format using schema file - how do I do that?
+//validateParameters()
+
 
 
 /*
@@ -53,7 +59,10 @@ include { COMBINE_FASTQ as COMBINED_FILTERED_FASTQ } from "./bin/process.nf"
 */
 
 workflow {
-    
+    if (params.help) {
+        log.info paramsHelp("nextflow run")
+        exit 0
+    }
     // ###### TO DO #######
     // check input_file is a directory or a file
     // if directory concat all files in directory ending in .fastq.gz

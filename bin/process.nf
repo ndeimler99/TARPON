@@ -2,6 +2,7 @@ import groovy.json.JsonOutput
 
 process PUTATIVE_ISOLATION {
 
+    tag "$run_name - Putative Isolation"
     label 'tarpon'
 
     input:
@@ -26,7 +27,7 @@ process PUTATIVE_ISOLATION {
 process SEPERATE_STRANDS {
 
     label 'tarpon'
-
+    tag "$id - Seperating $reads.baseName"
     input:
         tuple val(id), path(reads)
     
@@ -43,7 +44,7 @@ process SEPERATE_STRANDS {
 process REVERSE_COMPLEMENTATION {
     
     label 'tarpon'
-
+    tag "$run_name - Reverse Complementation"
     input:
         tuple val(run_name), path(reads)
 
@@ -63,6 +64,7 @@ process REVERSE_COMPLEMENTATION {
 process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
     
     label 'tarpon'
+    tag "$run_name - Identify Adaptor and Demultiplexing"
 
     input:
         tuple val(run_name), path(reads)
@@ -80,7 +82,7 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
         // computationally not ideal
         """
         mkdir DEMUX/
-        identify_tagging_barcodes.py ${reads} ${barcode_errors} ${params.repeat} DEMUX/ adaptor_filtered.fastq
+        identify_tagging_barcodes.py ${reads} ${params.sample_file} ${params.barcode_errors} ${params.repeat} DEMUX/ adaptor_filtered.fastq
         """
     else if (params.sample_file == "")
         // single sample provided, not multiplexed
@@ -105,7 +107,7 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
 
 process SUBTELO_FILTERING {
     label 'tarpon'
-
+    tag "$sample - Subtelomeric Filtering"
     input:
         tuple val(sample), path(reads)
     
@@ -123,7 +125,7 @@ process SUBTELO_FILTERING {
 
 process TELO_START_IDENTIFICATION {
     label 'tarpon'
-
+    tag "$sample - Identifying Telomere Start"
     input:
         tuple val(sample), path(reads)
 
@@ -138,8 +140,8 @@ process TELO_START_IDENTIFICATION {
     //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
     //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
 
-    publishDir "${params.outdir}/${sample}/telomeres.fastq", mode: 'copy', overwrite:true, pattern:"*.telomeric.fastq"
-    publishDir "${params.outdir}/${sample}/telomere_stats.txt", mode: 'copy', overwrite:true, pattern:"telomeric_stats.txt"
+    publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite:true, pattern:"*.telomeric.fastq"
+    publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite:true, pattern:"telomeric_stats.txt"
     
     script:
     """
@@ -153,6 +155,7 @@ process TELO_START_IDENTIFICATION {
 process INDIVIDUAL_READ_PLOTS {
 
     label 'tarpon'
+    tag "$sample - Plotting Individual Reads"
 
     input:
         tuple val(sample), path(reads), path(stats)
@@ -171,6 +174,7 @@ process INDIVIDUAL_READ_PLOTS {
 process GENERATE_PLOTS {
 
     label 'tarpon'
+    tag "$sample - Generating Output Plots"
 
     input:
         tuple val(sample), path(telo_reads), path(telo_stats)
@@ -184,13 +188,14 @@ process GENERATE_PLOTS {
 
     script:
     """
-    Rscript ${baseDir}/bin/basic_plots.R ${telo_stats} ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
+    basic_plots.R ${telo_stats} ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
     """
 }
 
 process GENERATE_DETAILED_PLOTS {
 
     label 'tarpon'
+    tag "$sample - Generating Detailed Output Plots"
 
     input:
         tuple val(sample), path(telomeric_reads), path(telo_stats, stageAs: "old_telo_stats.txt")
@@ -207,7 +212,7 @@ process GENERATE_DETAILED_PLOTS {
     script:
     """
     detailed_stats.py ${telomeric_reads} ${params.repeat} ${telo_stats} telomeric_stats.txt
-    Rscript ${baseDir}/bin/detailed_plots.R telomeric_stats.txt ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
+    detailed_plots.R telomeric_stats.txt ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
     """
 
 }
@@ -215,6 +220,7 @@ process GENERATE_DETAILED_PLOTS {
 process SUMMARY_STATS_RUN {
 
     label 'tarpon'
+    tag "$id - Collecting Run Summary Statistics"
 
     input:
         tuple val(id), path(retained, stageAs: "RETAINED/*")
@@ -234,14 +240,15 @@ process SUMMARY_STATS_RUN {
     """
     seqkit stats -a -N 50,90 -T ${retained} > Retained_Reads.stats.txt
     seqkit stats -a -N 50,90 -T ${filtered} > Filtered_Reads.stats.txt
-    Rscript ${baseDir}/bin/summary_stats_plots.R Retained_Reads.stats.txt ${params.strand_comparison} telomeric
-    Rscript ${baseDir}/bin/summary_stats_plots.R Filtered_Reads.stats.txt ${params.strand_comparison} filtered
+    summary_stats_plots.R Retained_Reads.stats.txt ${params.strand_comparison} telomeric
+    summary_stats_plots.R Filtered_Reads.stats.txt ${params.strand_comparison} filtered
     """
 }
 
 process SUMMARY_STATS_SAMPLE {
 
     label 'tarpon'
+    tag "$id - Collecting Sample Summary Statistics"
 
     input:
         tuple val(id), path(retained, stageAs: "RETAINED/*")
@@ -264,6 +271,7 @@ process SUMMARY_STATS_SAMPLE {
 process RESTRICTION_DIGEST_ANALYSIS {
 
     label 'tarpon'
+    tag "$sample - Performing Restriction Digest Analysis"
 
     input:
         tuple val(sample), path(telo_sequences), path(telo_stats)
@@ -283,6 +291,7 @@ process RESTRICTION_DIGEST_ANALYSIS {
 process GENERATE_FINAL_REPORT {
 
     label 'tarpon'
+    tag "Generating Final HTML Report"
 
     input:
         path("params.json")
@@ -317,6 +326,7 @@ process GENERATE_FINAL_REPORT {
 process getParams {
 
     label "tarpon"
+    tag "Getting Parameters"
 
     output:
         path "params.json", emit:params
@@ -334,6 +344,7 @@ process getParams {
 process getVersions {
 
     label "tarpon"
+    tag "Getting Versions"
 
     output:
         path "versions.txt", emit: versions
@@ -350,6 +361,7 @@ process getVersions {
 process getManifest {
     
     label 'tarpon'
+    tag "Collecting Manifest Data"
 
     output:
         path "manifest.json", emit:manifest
@@ -365,6 +377,7 @@ process getManifest {
 process COMBINE_FASTQ {
     
     label 'tarpon'
+    tag "$file_type Concatenating FASTQ Files"
 
     input:
         tuple val(file_type), path(input_files)

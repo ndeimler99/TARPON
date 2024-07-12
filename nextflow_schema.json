@@ -1,25 +1,43 @@
 {
     "$schema": "http://json-schema.org/draft-07/schema",
-    "$id": "https://raw.githubusercontent.com/./master/nextflow_schema.json",
-    "title": "ndeimler99/TArPON",
-    "workflow_title": "TArPON",
-    "description": "Telomere Analysis Pipeline On Nanopore Sequencing Data",
-    "demo_url": "demo_url",
-    "aws_demo_url": "aws_demo_url",
-    "url": "https://github.com/ndeimler99/TArPON",
+    "$id": "https://raw.githubusercontent.com/ndeimler99/TArPON/master/nextflow_schema.json",
+    "title": "ndeimler99/TArPON pipeline parameters",
+    "description": "A pipeline to Analyze Telomeric sequences from Nanopore Sequencing",
     "type": "object",
-    "definitions": {
-        "Input": {
-            "title": "Mandatory Input",
+    "defs": {
+        "Input_Output": {
+            "title": "Input and Output Parameters",
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
-            "description": "Mandatory parameters for basic analysis",
+            "description": "Mandatory Parameters to set up the Analysis",
+            "required": ["input_file", "outdir", "run_name"],
             "properties": {
                 "input_file": {
                     "type": "string",
                     "format": "path",
                     "title": "FASTQ Input File",
                     "description": "FASTQ File from Sequencing"
+                },
+                "run_name":{
+                    "type": "string",
+                    "title": "Run Name",
+                    "description": "Title of Sequencing Run for Generation of Output Files"
+                },
+                "sample_name":{
+                    "type": "string",
+                    "title": "Sample Name",
+                    "description": "Name of sample when sequencing contains only one sample"
+                },
+                "sample_file":{
+                    "type": "string",
+                    "title": "Sample File",
+                    "description": "CSV file containing sample names and barcodes to use for demultiplexing. If no adaptor sequence is provided the barcodes will also be used for determing the end of the telomere"
+                },
+                "adaptor_sequence": {
+                    "type":"string",
+                    "title":"Telomere Capture Sequence",
+                    "default": "ACTTCGTTCGGT",
+                    "description": "Provide the first 12 nucleotides of the capture sequence that would appear on the G strand telomeric sequences"
                 },
                 "outdir": {
                     "type": "string",
@@ -33,18 +51,21 @@
                     "default":false,
                     "title": "Overwrite Output Directory?",
                     "description": "Set this to true if the output directory already exists but you would like to overwrite the data"
-                },
+                }
+            }
+        },
+        "Basic_Options": {
+            "title": "Basic Pipeline Options",
+            "type": "object",
+            "fa_icon": "fas fa-arrow-right",
+            "description": "Basic Pipeline Options",
+            "required": ["repeat", "minimum_telo_reads_per_sample", "c_strand_only"],
+            "properties": {
                 "repeat": {
                     "type": "string",
                     "title": "Telomeric Repeat Sequence (G-Strand)",
                     "default": "GGTTAG",
                     "description": "Please supply the telomeric sequence found on the G strand, for examples and most vertebrata, GGTTAG"
-                },
-                "adaptor_sequence": {
-                    "type":"string",
-                    "title":"Telomere Capture Sequence",
-                    "default": "ACTTCGTTCGGT",
-                    "description": "Provide the first 12 nucleotides of the capture sequence that would appear on the G strand telomeric sequences"
                 },
                 "minimum_telo_reads_per_sample": {
                     "type": "number",
@@ -57,16 +78,41 @@
                     "default": false,
                     "title": "C Strand Analysis Only",
                     "description": "If the data was collected in such a way that only C strand telomeric sequences should be expected (i.e. ONT protocol), select this box"
+                },
+                "repeat_count": {
+                    "type": "number",
+                    "title": "Repeat Number for Putative Identification",
+                    "description": "Number of repeats a read must contain to be considered putatively telomeric",
+                    "default": 10
+                },
+                "reverse_complement_threshold": {
+                    "type": "number",
+                    "title": "Reverse Complement Threshold",
+                    "default": 0.80,
+                    "minimum":0,
+                    "exclusiveMaximum": 1,
+                    "description": "Percentage of telomeric repeats must be greater than this value to be classified as C strand. If the percentage is less than 1 minus this value, the read is classified as C strand. Anthing greater than 1-value but less than value is removed from analysis"
                 }
-            },
-            "required": ["input_file", "outdir", "repeat", "minimum_telo_reads_per_sample"]
+            }
         },
-        "Subtelomeric_Filtering": {
-            "title": "Subtelomeric Filtering Parameters",
+        "Adaptor_Demux_Filter": {
+            "title": "Adaptor Identification, Demultiplexing, and Subtelomeric Filtering Parameters",
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
-            "description": "Parameters relating to filtering telomeric reads by the length of sequence before the telomeric start site",
+            "description": "Advanced Parameters relating to the identification of adaptor sequences, demultiplexing samples, and filtering telomeric reads by their subtelomere",
             "properties" : {
+                "adaptor_sequence_errors":{
+                    "type":"number",
+                    "default":2,
+                    "title": "Allowed Errors in Adaptor Sequence",
+                    "description": "Number of allowed errors to be found in the adaptor sequence. The adaptor sequence wil only be found after ten telomeric repeats. It is recomended this value be 2 for a 12 nucleotide adaptor sequence. For each additional 8bp, the number of errors should be increased by 1"
+                },
+                "barcode_errors":{
+                    "type":"number",
+                    "default":3,
+                    "title":"Allowed Errors in Barcode Sequences",
+                    "description": "Number of allowed errors in the barcode sequence. It is recomended this value by 1/8 the length of the barcode assuming the hamming distance between barcodes is greater than 1/8 the barcode length"
+                },
                 "min_subtelo_length": {
                     "type":"number",
                     "title":"Minimum Subtelomere Length",
@@ -76,8 +122,60 @@
                 "subtelo_threshold": {
                   "type":"string",
                   "default":0.3,
+                  "minimum":0,
+                  "exclusiveMaximum": 1,
                   "title":"Maximum Telomeric Percentage",
                   "description":"Maximum percentage of one nucleotide substitutions of telomeric sequences found within min_subtelo_length before read does not pass filtering criteria"
+                }
+            }
+        },
+        "Telo_Start":{
+            "title": "Determining Telomere Start Position",
+            "type": "object",
+            "fa_icon": "fas fa-arrow-right",
+            "description": "Advanced Options regarding Telomere Start Position Analysis and Filtering",
+            "properties": {
+                "sliding_window_size":{
+                    "type":"number",
+                    "default":200,
+                    "title": "Sliding Window Size",
+                    "description": "Length of the sliding window analyzed for the identification of telomeric start"
+                },
+                "sliding_window_interval":{
+                    "type":"number",
+                    "default":10,
+                    "title":"Sliding Window Interval",
+                    "description": "How many base pairs will the sliding window jump each time rather than operating on a nucleotide by nucleotide slide"
+                },
+                "upper_threshold":{
+                    "type":"number",
+                    "default":0.6,
+                    "minimum":0,
+                    "exclusiveMaximum": 1,
+                    "title": "Upper Telomeric Threshold",
+                    "description": "The percentage of which a sliding window must consist of one nucleotide repeat variations for the telomere to start. Must be a value between 0 and 1"
+                },
+                "lower_threshold":{
+                    "type":"number",
+                    "default":0.1,
+                    "minimum":0,
+                    "exclusiveMaximum": 1,
+                    "title": "Lower Telomeric Threshold",
+                    "description": "Sliding window one nucleotide variation percentage must not drop below this value after upper threshold has been surpassed."
+                },
+                "telomeric_repeat_percentage":{
+                    "type":"number",
+                    "default":0.7,
+                    "minimum":0,
+                    "exclusiveMaximum": 1,
+                    "title": "Mimumum Telomere Percentage",
+                    "description": "Additional filtering step that removes telomeres that consist of less than this percentage one nucleotide variant repeats from the VRR start to the adaptor sequence"
+                },
+                "consecutive_repeats": {
+                    "type":"number",
+                    "default":3,
+                    "title":"Repeat Stretch Length",
+                    "description": "All perfect repeats existing in a strecth of x or more consecutive repeats between the VRR start and the adaptor will be considered in telomere length calculations"
                 }
             }
         },
@@ -87,11 +185,11 @@
             "fa_icon": "fas fa-arrow-right",
             "description": "Advanced Options regarding Mutant and Other Analyses",
             "properties": {
-                "adaptor_sequence_errors": {
-                    "type":"number",
-                    "title":"Adaptor Sequence Errors",
-                    "description":"Maximum number of errors allowed in the adaptor sequence when identifying the end of telomeric sequences",
-                    "default":2
+                "detailed_stats":{
+                    "title": "Detailed Plots",
+                    "type":"boolean",
+                    "default":false,
+                    "description": "Additional sets of plots analysing telomeric reads are created. See README for more details"
                 },
                 "strand_comparison":{
                     "title": "Strand Comparison",
@@ -105,65 +203,53 @@
                     "default":false,
                     "description": "Generate Plots showing individual reads and telomeric start identification"
                 },
+                "plot_vrr_length":{
+                    "title":"Plot VRR Length",
+                    "type":"boolean",
+                    "default":false,
+                    "description": "If set to true additional plots will be created mirroring those for telomere length analysis, but using the VRR length instead of calculated telomere length"
+                },
                 "restriction_digest_analysis": {
                     "type":"string",
                     "title":"Restrction Enzymes",
-                    "description":"Provide a list of comma seperated restriction enzyme sites for an analysis of digestion completion"
+                    "description":"Provide a list of comma seperated restriction enzyme sites for an analysis of digestion completion",
+                    "default": ""
                 },
                 "mutant": {
                     "type":"string",
                     "title":"Mutant Repeat of Interest",
-                    "description":"Telomeric Mutation of Interest - See Manual for more details"
+                    "description":"Telomeric Mutation of Interest - See Manual for more details",
+                    "default": ""
                 }
             } 
         }
     },
     "allOf": [
         {
-            "$ref": "#/definitions/Input"
+            "$ref": "#/definitions/Input_Output"
         },
         {
-            "$ref": "#/definitions/Subtelomeric_Filtering"
+            "$ref": "#/definitions/Basic_Options"
+        },
+        {
+            "$ref": "#/definitions/Adaptor_Demux_Filter"
+        },
+        {
+            "$ref": "#/definitions/Telo_Start"
         },
         {
             "$ref": "#/definitions/Advanced_Options"
         }
     ],
-    "properties": {
-        "aws_image_prefix": {
-            "type": "string",
-            "description": "AWS image prefix",
-            "hidden": true
-        },
-        "aws_queue": {
-            "type": "string",
-            "description": "AWS Queue",
-            "hidden": true
-        },
-        "monochrome_logs": {
-            "type": "boolean",
-            "description": "Monochrome logs"
-        },
-        "validate_params": {
-            "type": "boolean",
-            "description": "Validate parameters",
-            "default": true
-        },
-        "show_hidden_params": {
-            "type": "boolean",
-            "description": "Show hidden parameters"
-        }
-    },
     "resources": {
         "recommended": {
             "cpus": 2,
-            "memory": "2GB"
+            "memory": "10GB"
         },
         "minimum": {
             "cpus": 2,
-            "memory": "2GB"
+            "memory": "4GB"
         },
-        "run_time": "5 minutes per sample",
-        "arm_support": true 
+        "run_time": "Depends on Sequencing Size"
     }
 }
