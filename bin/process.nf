@@ -417,7 +417,7 @@ process BARCODE_HAMMING_CHECK {
         path(sample_file)
     
     output:
-        path("passed.txt"), optional:true, emit:passed
+        path("passed.txt"), optional:true
 
     script:
     """

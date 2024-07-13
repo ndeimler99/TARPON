@@ -18,17 +18,17 @@ with open(sample_file, 'r') as sample_fh:
 for i in range(0, len(barcodes)-1):
     for j in range(i+1, len(barcodes)):
         if barcodes[i] == barcodes[j]:
-            sys.exit()
+            sys.exit(1)
         else:
             distance = 0
             for k in range(0, len(barcodes[i])):
                 if barcodes[i][k] != barcodes[j][k]:
                     distance += 1
             if distance <= barcode_errors:
-                sys.exit()
+                sys.exit(1)
 
-f = open("passed.txt", "w")
-f.close()
+# f = open("passed.txt", "w")
+# f.close()
             
         
         

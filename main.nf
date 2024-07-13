@@ -81,12 +81,6 @@ workflow {
     }
 
 
-    // ###### TO DO #######
-    // check if provided input exists
-    // check input_file is a directory or a file
-    // if directory concat all files in directory ending in .fastq.gz
-    // #############
-
     try {
         file(params.input_file, checkIfExists:true)
     }
@@ -95,28 +89,23 @@ workflow {
         exit 0
     }
 
-    //check to make barcodes are more different than barcode errors
-    if (params.sample_file != ''){
-        println("IN IF")
-        test = BARCODE_HAMMING_CHECK(file(params.sample_file))
-        test.branch{file(it, checkIfExists:true)}
-        // try {
-        //     Channel.fromPath(test.passed, checkIfExists:true)
-        //     println("PASSED")
-        // }
-        // catch (Exception e) {
-        //     println("Supplied Barcode Sequences are too Similar to Demultiplex Using Barcode Error Value")
-        //     exit 0 
-        // }
-    }
-
     // // check if output directory exists
     outdir = file(params.outdir)
     if (outdir.exists() && !params.overwrite_outdir) {
         exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
     }
 
-    // check that all other parameters are valid...
+    //check to make barcodes are more different than barcode errors
+    // try catch is currently non-functional will simply cause pipeline error
+    if (params.sample_file != ''){
+        try {
+            barcode_check = BARCODE_HAMMING_CHECK(file(params.sample_file))
+        }
+        catch (Exception e){
+            println "Supplied Barcode Sequences are too Similar for Demultiplexing with ${params.barcode_errors} Errors Allowed. Please reduce error amount."
+            exit 0
+        }
+    }
     
     
     // ###### TO DO #######
