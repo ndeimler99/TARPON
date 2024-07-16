@@ -1,4 +1,4 @@
-FROM mambaorg/micromamba as tarpon
+FROM mambaorg/micromamba AS tarpon
 USER root
 RUN apt-get update && apt-get install -y procps python3-pip cmake r-base libcurl4-openssl-dev r-cran-lme4
 COPY --chown=$MAMBA_USER:$MAMBA_USER envs/*.yaml /

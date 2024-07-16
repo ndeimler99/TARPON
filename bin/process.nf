@@ -68,6 +68,8 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
 
     input:
         tuple val(run_name), path(reads)
+        path(barcodes_file)
+
     output:
         path("DEMUX/*.fastq"), emit: demuxed_reads
         tuple val(run_name), path("adaptor.fastq"), emit: retained_reads
@@ -82,14 +84,8 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
         // computationally not ideal
         """
         mkdir DEMUX/
-        identify_tagging_barcodes.py ${reads} ${params.sample_file} ${params.barcode_errors} ${params.repeat} DEMUX/ adaptor_filtered.fastq
-        """
-    else if (params.sample_file == "")
-        // single sample provided, not multiplexed
-        """
-        mkdir DEMUX/
-        identify_tagging_adaptor.py ${reads} ${params.adaptor_sequence} ${params.adaptor_sequence_errors} ${params.repeat} DEMUX/${params.sample_name}.fastq adaptor_filtered.fastq
-        cat DEMUX/*.fastq > adaptor.fastq
+        identify_tagging_barcodes.py ${reads} ${barcodes_file} ${params.barcode_errors} ${params.repeat} DEMUX/ adaptor_filtered.fastq
+        cat DEMUX/* > adaptor.fastq
         """
     else
         // multiple samples
@@ -103,6 +99,30 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
         // multiple samples
             // use same scripts as with no sample file with additional step of sample assignment
     
+}
+
+process IDENTIFY_TAGGING_ADAPTOR {
+    
+    label 'tarpon'
+    tag "$run_name - Identify Adaptor and Demultiplexing"
+
+    input:
+        tuple val(run_name), path(reads)
+
+    output:
+        path("${params.sample_name}.fastq"), emit: demuxed_reads
+        tuple val(run_name), path("adaptor.fastq"), emit: retained_reads
+        tuple val(run_name), path("adaptor_filtered.fastq"), emit: filtered_reads
+
+    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
+    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
+
+    script:
+    """
+    mkdir DEMUX/
+    identify_tagging_adaptor.py ${reads} ${params.adaptor_sequence} ${params.adaptor_sequence_errors} ${params.repeat} ${params.sample_name}.fastq adaptor_filtered.fastq
+    cp ${params.sample_name}.fastq adaptor.fastq
+    """
 }
 
 process SUBTELO_FILTERING {
@@ -131,6 +151,7 @@ process TELO_START_IDENTIFICATION {
 
     output:
         tuple val(sample), path("*telomeric.fastq"), path("*telomeric_stats.txt"), emit: final_telomeric
+        path("*telomeric_stats.txt"), emit: final_telo_stats
         tuple val(sample), path("*no_telomere_start.fastq"), emit: no_telo_start
         tuple val(sample), path("*.below_telo_%_threshold.fastq"), emit: below_telo_threshold
         tuple val(sample), path("*telomeric.fastq"), emit: retained_reads
@@ -202,6 +223,7 @@ process GENERATE_DETAILED_PLOTS {
     
     output:
         tuple val(sample), path(telomeric_reads), path("telomeric_stats.txt"), emit: final_telomeric
+        path("*telomeric_stats.txt"), emit: final_telo_stats
         path("DETAILED_STATS/*.pdf")
         path("C_G_COMPARISON/*.pdf"), optional: true
     
@@ -315,7 +337,7 @@ process GENERATE_FINAL_REPORT {
                             --params params.json \
                             --versions versions.txt \
                             --manifest manifest.json \
-                            --command "${workflow.commandLine}" \
+                            --commandLine "${workflow.commandLine}" \
                             --run_stats_retained ${stats_run_retained} \
                             --run_stats_filtered ${stats_run_filtered} \
                             --sample_stats_retained ${sample_stats_retained} \
@@ -423,4 +445,32 @@ process BARCODE_HAMMING_CHECK {
     """
     check_hamming_distance.py ${sample_file} ${params.barcode_errors}
     """
+}
+
+
+process FINAL_TELO_STATS {
+    
+    label 'tarpon'
+    tag "$params.run_name Final Plots and Telomere Stats Per Sample"
+
+    input:
+        path(input_files)
+
+    output:
+        tuple val(params.run_name), path("sample_stats.txt")
+        tuple val(params.run_name), path("sample_stats.VRR.txt"), optional: true
+        path("*.pdf")
+
+
+    publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "sample_stats.txt"
+    publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "sample_stats.VRR.txt"
+    publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "*.pdf"
+
+
+    script:
+    """
+    processTelomereStats.py ${input_files} ${params.plot_vrr_length}
+    combinedPlots.R combined_df.csv ${params.plot_vrr_length}
+    """
+
 }

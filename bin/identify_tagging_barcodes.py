@@ -13,10 +13,10 @@ no_adaptor = sys.argv[6]
 def identify_first_barcode(read, barcode_dict, barcode_errors, repeat):
     location_dict = {}
     for sample in barcode_dict:
-        matches = list(regex.finditer(r'(?e)(%s){e<=%s}' % (barcode_dict[sample], barcode_errors)))
+        matches = list(regex.finditer(r'(?e)(%s){e<=%s}' % (barcode_dict[sample], barcode_errors), read))
         if len(matches) > 0:
             for match in matches:
-                if read[0:match.span()[0]] >= 10:
+                if read[0:match.span()[0]].count(repeat) >= 10:
                     location_dict[sample] = match.span()[0]
     
     if len(location_dict) == 0:
@@ -33,8 +33,12 @@ def identify_first_barcode(read, barcode_dict, barcode_errors, repeat):
 
 barcode_dict = {}
 read_dict = {}
+first_line = True
 with open(sample_file, 'r') as sample_file:
     for line in sample_file:
+        if first_line:
+            first_line = False
+            continue
         line = line.strip().split(",")
         barcode_dict[line[0]] = line[1]
         read_dict[line[0]] = []

@@ -8,6 +8,7 @@ library(ggpointdensity)
 args = commandArgs(trailingOnly=TRUE)
 telo_stats <- read.table(args[1], header=TRUE)
 telo_lengths_for_binning <- c(10500, 9500, 8500, 7500, 6500, 5500, 4500, 3500, 2500, 1500, 500)
+
 read_length_hist <- ggplot(data=telo_stats) +
   geom_histogram(mapping=aes(read_len), binwidth=50) +
   geom_vline(xintercept=mean(telo_stats$read_len), color='red') +
@@ -98,6 +99,31 @@ if (args[3]){
                       values=c("#F8766D", "#E68613", "#ABA300", "#0CB702", "#00BE67", "#00BFC4", "#00A9FF", "#8494FF", "#C77CFF", "#FF61CC", "#FF68A1"))
 
   ggsave("vrr_length_bar_plot.pdf", plot = vrr_bar_hist, device="pdf", width=6, height=10)
+  
+  telo_vrr_box <- ggplot(data = telo_stats) +
+    geom_boxplot(mapping=aes(x="Telo Length", y=telo_length)) +
+    geom_boxplot(mapping=aes(x="VRR Length", y=vrr_telo_length)) +
+    theme_minimal() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_text(angle=45),
+          axis.text = element_text(size=15),
+          axis.title = element_text(size=20))
+  
+  ggsave("vrr.telo_comparison.box.pdf", plot=telo_vrr_box, device="pdf", width=6, height=10)
+  
+  telo_stats$bin_telo_length <- unlist(lapply(telo_stats$telo_length, function(x) telo_lengths_for_binning[which.min(abs(telo_lengths_for_binning-x))]))
+  telo_stats$bin_telo_length <- factor(telo_stats$bin_telo_length, levels=c(10500, 9500, 8500, 7500, 6500, 5500, 4500, 3500, 2500, 1500, 500))
+  
+  telo_vrr_bar <- ggplot(data=telo_stats) +
+    geom_bar(mapping=aes(x="Telo Length", fill=bin_telo_length), position="fill") +
+    geom_bar(mapping=aes(x="VRR Length", fill=bin_vrr_length), position="fill") +
+    theme_minimal() +
+    theme(axis.title.x = element_blank(),
+          axis.text.x = element_text(angle=45),
+          axis.text = element_text(size=15),
+          axis.title = element_text(size=20))
+  ggsave("vrr.telo_comparison.bar.pdf", plot=telo_vrr_bar, device="pdf", width=6, height=10)
+  
 }
 
 if (args[4]) {

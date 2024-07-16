@@ -24,6 +24,7 @@ println """\
 include { PUTATIVE_ISOLATION } from "./bin/process.nf"
 include { REVERSE_COMPLEMENTATION } from "./bin/process.nf"
 include { IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX } from "./bin/process.nf"
+include { IDENTIFY_TAGGING_ADAPTOR } from "./bin/process.nf"
 include { TELO_START_IDENTIFICATION } from "./bin/process.nf"
 include { INDIVIDUAL_READ_PLOTS } from "./bin/process.nf"
 include { GENERATE_PLOTS } from "./bin/process.nf"
@@ -45,6 +46,7 @@ include { COMBINE_FASTQ as COMBINED_FILTERED_FASTQ } from "./bin/process.nf"
 include { COMBINED_INPUT as COMBINED_INPUT } from "./bin/process.nf"
 include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 include { BARCODE_HAMMING_CHECK } from "./bin/process.nf"
+include { FINAL_TELO_STATS } from "./bin/process.nf"
 
 // Print help message, supply typical command line usage for the pipeline
 
@@ -140,9 +142,19 @@ workflow {
     //reversed_ch.removed_reads.view()
     
     // isolate reads with adaptor sequences and filter by subtelomere size
-    adaptor_ch = IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX(reversed_ch.retained_reads)
 
-    adaptor_ch.demuxed_reads
+    if (params.adaptor_sequence == ""){
+        // demux by barcode
+        adaptor_ch = IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX(reversed_ch.retained_reads, file(params.sample_file))
+    }
+    else if (params.sample_file == ""){
+        adaptor_ch = IDENTIFY_TAGGING_ADAPTOR(reversed_ch.retained_reads)
+    }
+    else {
+        adaptor_ch = IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX(reversed_ch.retained_reads, file(params.sample_file))
+    }
+
+    adaptor_ch.demuxed_reads.flatten()
         .map { it -> [it.baseName, it]}
         .set { demuxed_reads }
 
@@ -219,6 +231,7 @@ workflow {
         }.set { filtered_sample }
 
 
+    FINAL_TELO_STATS(telo_stats.final_telo_stats.collect())
     //generate_html_report(file(params.outdir), stats_done[1])
     GENERATE_FINAL_REPORT(params.params, versions.versions, manifest.manifest, \
                         run_stats.retained_stats, run_stats.filtered_stats, \
