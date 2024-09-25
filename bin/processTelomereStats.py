@@ -3,9 +3,20 @@
 import sys
 import pandas as pd
 import numpy as np
+import argparse
 
-input_files = [sys.argv[1]]
-vrr_length = sys.argv[2] == "true"
+def argparser():
+    """Argument parser for entrypoint."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--stat_files", nargs="+", required=True)
+    parser.add_argument("--vrr_length", required=True) #works
+
+    #    parser.add_argument("--restriction_digest_analysis", required=False, default="test")
+    return parser
+
+args = argparser().parse_args()
+input_files = args.stat_files
+vrr_length = args.vrr_length == "true"
 
 vrr_dict = {}
 telo_length = {}
@@ -15,19 +26,17 @@ out_df = []
 
 if vrr_length:
     vrr_fh = open("sample_stats.VRR.txt", "w")
-    vrr_fh.write("Sample_ID\tNumber of Reads\tMean VRR Telomere Length\tQ1\tQ2\tQ3\tMin VRR Telo Length\tMax VRR Telo Length\n")
+    vrr_fh.write("Sample_ID\tNumber_of_Reads\tMean VRR Telomere Length\tQ1\tQ2\tQ3\tMin VRR Telo Length\tMax VRR Telo Length\n")
 
-out_fh.write("Sample_ID\tNumber of Reads\tMean Telomere Length\tStandard Deviation Telo Length\tQ1\tQ2\tQ3\tMin Telo Length\tMax Telo Length\n")
+out_fh.write("Sample_ID\tNumber_of_Reads\tMean_Telomere_Length\tStandard Deviation Telo Length\tQ1\tQ2\tQ3\tMin Telo Length\tMax Telo Length\n")
 
 for file in input_files:
+    print(file)
     df = pd.read_table(file, sep="\t")
     # stats
     df["sample"] = file.strip().split("/")[-1].split(".")[0]
     out_df.append(df)
 
-    for i in df['telo_length']:
-        if i == 0:
-            print(i)
     out_fh.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(file.strip().split("/")[-1].split(".")[0], len(df['telo_length']), \
                                                            np.mean(df['telo_length']), np.std(df['telo_length']), np.quantile(df['telo_length'], 0.25), np.quantile(df['telo_length'], 0.5), \
                                                             np.quantile(df['telo_length'], 0.75), min(df['telo_length']), max(df['telo_length'])))

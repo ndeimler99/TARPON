@@ -47,7 +47,7 @@ include { COMBINED_INPUT as COMBINED_INPUT } from "./bin/process.nf"
 include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 include { BARCODE_HAMMING_CHECK } from "./bin/process.nf"
 include { FINAL_TELO_STATS } from "./bin/process.nf"
-
+include { GET_EMPTY_CHANNEL } from "./bin/process.nf"
 // Print help message, supply typical command line usage for the pipeline
 
 
@@ -213,7 +213,11 @@ workflow {
     }
 
     if (params.restriction_digest_analysis != ""){
-        RESTRICTION_DIGEST_ANALYSIS(telo_stats.final_telomeric)
+        restriction_digest = RESTRICTION_DIGEST_ANALYSIS(telo_stats.final_telomeric)
+    }
+    else {
+        // Channel.of("false").map { stats -> $it }.set { restriction_digest }
+        restriction_digest = GET_EMPTY_CHANNEL()
     }
 
     params = getParams()
@@ -230,12 +234,14 @@ workflow {
             stats: stats
         }.set { filtered_sample }
 
-
     FINAL_TELO_STATS(telo_stats.final_telo_stats.collect())
+
     //generate_html_report(file(params.outdir), stats_done[1])
     GENERATE_FINAL_REPORT(params.params, versions.versions, manifest.manifest, \
                         run_stats.retained_stats, run_stats.filtered_stats, \
-                        retained_sample.stats.collect(), filtered_sample.stats.collect() \
+                        retained_sample.stats.collect(), filtered_sample.stats.collect(), \
+                        telo_stats.final_telo_stats.collect(), FINAL_TELO_STATS.out.stats, \
+                        FINAL_TELO_STATS.out.combined_df, restriction_digest.stats.collect() \
         )
 }
 

@@ -299,14 +299,14 @@ process RESTRICTION_DIGEST_ANALYSIS {
         tuple val(sample), path(telo_sequences), path(telo_stats)
     
     output:
-        tuple val(sample), path("digest_stats.txt")
+        path("*digest_stats.txt"), emit: stats
     
-    publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite: true, pattern: "digest_stats.txt"
+    publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite: true, pattern: "*digest_stats.txt"
 
     script:
     """
     for seq in \$(echo "${params.restriction_digest_analysis}" | tr "," "\n"); do seqkit grep -s -p \$seq ${telo_sequences} > \$seq.fastq; done
-    seqkit stats -a -N 50,90 -T *.fastq > digest_stats.txt
+    seqkit stats -a -N 50,90 -T *.fastq > ${sample}.digest_stats.txt
     """
 }
 
@@ -323,6 +323,10 @@ process GENERATE_FINAL_REPORT {
         tuple val(run1), path(stats_run_filtered)
         path(sample_stats_retained)
         path(sample_stats_filtered)
+        path(telo_stats)
+        path(run_telo_stats_table)
+        path(run_telo_stats)
+        path(restriction_digest)
 
     output:
         path("report.html")
@@ -341,7 +345,11 @@ process GENERATE_FINAL_REPORT {
                             --run_stats_retained ${stats_run_retained} \
                             --run_stats_filtered ${stats_run_filtered} \
                             --sample_stats_retained ${sample_stats_retained} \
-                            --sample_stats_filtered ${sample_stats_filtered}
+                            --sample_stats_filtered ${sample_stats_filtered} \
+                            --sample_telo_stats ${telo_stats} \
+                            --run_telo_stats_table ${run_telo_stats_table} \
+                            --run_telo_stats ${run_telo_stats} \
+                            --restriction_digest ${restriction_digest}
     """
 }
 
@@ -362,6 +370,20 @@ process getParams {
     """
 }
 
+process GET_EMPTY_CHANNEL {
+
+    label "tarpon"
+    tag "Getting Empty Channel"
+
+    output:
+        path("false"), emit: stats
+    
+    script:
+    """
+    touch false
+    """
+
+}
 
 process getVersions {
 
@@ -457,8 +479,9 @@ process FINAL_TELO_STATS {
         path(input_files)
 
     output:
-        tuple val(params.run_name), path("sample_stats.txt")
-        tuple val(params.run_name), path("sample_stats.VRR.txt"), optional: true
+        path("sample_stats.txt"), emit: stats
+        path("sample_stats.VRR.txt"), optional: true, emit: vrr_stats
+        path("combined_df.csv"), emit: combined_df
         path("*.pdf")
 
 
@@ -469,7 +492,7 @@ process FINAL_TELO_STATS {
 
     script:
     """
-    processTelomereStats.py ${input_files} ${params.plot_vrr_length}
+    processTelomereStats.py --stat_files ${input_files} --vrr_length ${params.plot_vrr_length}
     combinedPlots.R combined_df.csv ${params.plot_vrr_length}
     """
 
