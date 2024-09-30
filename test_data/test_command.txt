@@ -1,0 +1,1 @@
+../nextflow run main.nf --adaptor_sequence ACTTCGTTCGGT --input_file ./test_data/01_HG002_SUP.fastq.gz --c_strand_only
