@@ -210,13 +210,16 @@ def main(args):
                 telo_bar_df = pd.DataFrame(list(zip(telo_bar_df[1], telo_bar_df[0])), columns=["bin_start", "bin_size"])
                 telo_bar_df["bin_start"] = telo_bar_df["bin_start"].astype("string")
                 telo_bar_df["sample"] = sample
-                telo_bar_df["bin_size"] = telo_bar_df["bin_size"] / sum(telo_bar_df["bin_size"])
+                telo_bar_df["bin_size"] = telo_bar_df["bin_size"] / sum(telo_bar_df["bin_size"]) * 100
                 master_df = pd.concat([master_df, telo_bar_df], ignore_index=True, sort=False)
+            
+
             telo_bar_plot = ezc.barplot(data=master_df, x="sample", y="bin_size", hue="bin_start", dodge=False, order=sorted(list(sample_dict.keys())), palette=bokeh.palettes.Category20[11])
+            
             telo_bar_plot._fig.yaxis.axis_label = "Percentage of Telomeres"
             telo_bar_plot._fig.xaxis.axis_label = "Sample"
             hover = telo_bar_plot._fig.select(dict(type=HoverTool))
-            hover.tooltips = [("Sample", "@sample")]
+            hover.tooltips = [("Sample", "@sample"),("% of Telomeres", "@bin_Size")]
             EZChart(telo_bar_plot, THEME)
         with tabs.add_tab("Telomere Length Boxplot"):
             df = pd.read_table(args.run_telo_stats, sep=",")

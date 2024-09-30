@@ -1,5 +1,6 @@
 import groovy.json.JsonOutput
 
+
 process PUTATIVE_ISOLATION {
 
     tag "$run_name - Putative Isolation"
@@ -20,7 +21,7 @@ process PUTATIVE_ISOLATION {
 
     script:
     """
-    isolate_putative_telomeric_reads.py ${reads_file} ${params.repeat} ${params.repeat_count} ${params.c_strand_only} putative_reads.fastq non_telomeric.fastq
+    isolate_putative_telomeric_reads.py --input_file ${reads_file} --repeat ${params.repeat} --repeat_count ${params.repeat_count} --c_strand_only ${params.c_strand_only} --out_file putative_reads.fastq --non_telo non_telomeric.fastq
     """
 }
 
@@ -37,7 +38,7 @@ process SEPERATE_STRANDS {
 
     script:
     """
-    separate_strands.py ${reads} ${reads.baseName}.g_strand.fastq ${reads.baseName}.c_strand.fastq
+    separate_strands.py --input_file ${reads} --g_file ${reads.baseName}.g_strand.fastq --c_file ${reads.baseName}.c_strand.fastq
     """
 
 }
@@ -57,7 +58,12 @@ process REVERSE_COMPLEMENTATION {
 
     script:
     """
-    reverse_complement_reads.py ${reads} ${params.repeat} ${params.reverse_complement_threshold} ${params.c_strand_only} putative_reads.filtered.fastq 20_80_removed_reads.fastq
+    reverse_complement_reads.py --input_file ${reads} \
+        --repeat ${params.repeat} \
+        --threshold ${params.reverse_complement_threshold} \
+        --c_strand_only ${params.c_strand_only} \
+        --out_file putative_reads.filtered.fastq \
+        --removed_reads 20_80_removed_reads.fastq
     """
 }
 
@@ -120,7 +126,13 @@ process IDENTIFY_TAGGING_ADAPTOR {
     script:
     """
     mkdir DEMUX/
-    identify_tagging_adaptor.py ${reads} ${params.adaptor_sequence} ${params.adaptor_sequence_errors} ${params.repeat} ${params.sample_name}.fastq adaptor_filtered.fastq
+    identify_tagging_adaptor.py --input_file ${reads} \
+        --adaptor_sequence ${params.adaptor_sequence} \
+        --adaptor_errors ${params.adaptor_sequence_errors} \
+        --repeat ${params.repeat} \
+        --adaptor_found ${params.sample_name}.fastq \
+        --no_adaptor adaptor_filtered.fastq
+
     cp ${params.sample_name}.fastq adaptor.fastq
     """
 }
@@ -137,7 +149,12 @@ process SUBTELO_FILTERING {
 
     script:
     """
-    filter_by_subtelo.py ${reads} ${params.min_subtelo_length} ${params.subtelo_threshold} ${params.repeat} ${sample}.subtelo_pass.fastq ${sample}.subtelo_fail.fastq
+    filter_by_subtelo.py --input_file ${reads} \
+        --min_subtelo_length ${params.min_subtelo_length} \
+        --min_subtelo_threshold ${params.subtelo_threshold} \
+        --repeat ${params.repeat} \
+        --passes_subtelo ${sample}.subtelo_pass.fastq \
+        --fails_subtelo ${sample}.subtelo_fail.fastq
 
     """
 }
@@ -169,7 +186,17 @@ process TELO_START_IDENTIFICATION {
     #python script that identified telomere start. Writes out fastq file, stats file, fastq for reads removed because no telo start was found, fastq for reads removed because didnt reach minimum threshold
     mkdir TELOMERIC
     mkdir FILTERED_READS
-    identify_telo_start.py ${reads} ${params.repeat} ${params.sliding_window_size} ${params.sliding_window_interval} ${params.upper_threshold} ${params.lower_threshold} ${params.telomeric_repeat_percentage} ${params.consecutive_repeats} ${sample}.telomeric.fastq ${sample}.no_telomere_start.fastq ${sample}.below_telo_%_threshold.fastq ${sample}.telomeric_stats.txt
+    identify_telo_start.py --input_file ${reads} --repeat ${params.repeat} --sliding_window ${params.sliding_window_size} \
+        --sliding_window_interval ${params.sliding_window_interval} \
+        --upper_threshold ${params.upper_threshold} \
+        --lower_threshold ${params.lower_threshold} \
+        --telomeric_rep_perc ${params.telomeric_repeat_percentage} \
+        --consecutive_repeats ${params.consecutive_repeats} \
+        --consecutive_threshold ${params.consecutive_threshold} \
+        --telomeric_fastq_out ${sample}.telomeric.fastq \
+        --no_telomere_out ${sample}.no_telomere_start.fastq \
+        --filtered_out ${sample}.below_telo_%_threshold.fastq \
+        --stats_fh ${sample}.telomeric_stats.txt
     """
 }
 
@@ -188,7 +215,7 @@ process INDIVIDUAL_READ_PLOTS {
 
     script:
     """
-    indiv_read_plots.py ${reads} ${params.repeat} ${stats} ${params.sliding_window_size} ${params.sliding_window_interval}
+    indiv_read_plots.py --input_file ${reads} --repeat ${params.repeat} --telo_stats ${stats} --sliding_window ${params.sliding_window_size} --sliding_window_interval ${params.sliding_window_interval}
     """
 }
 
@@ -233,7 +260,7 @@ process GENERATE_DETAILED_PLOTS {
 
     script:
     """
-    detailed_stats.py ${telomeric_reads} ${params.repeat} ${telo_stats} telomeric_stats.txt
+    detailed_stats.py --fastq_file ${telomeric_reads} --repeat ${params.repeat} --stats_in ${telo_stats} --stats_out telomeric_stats.txt
     detailed_plots.R telomeric_stats.txt ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
     """
 
@@ -465,7 +492,7 @@ process BARCODE_HAMMING_CHECK {
 
     script:
     """
-    check_hamming_distance.py ${sample_file} ${params.barcode_errors}
+    check_hamming_distance.py --sample_file ${sample_file} --barcode_errors ${params.barcode_errors}
     """
 }
 
