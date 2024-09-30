@@ -312,7 +312,7 @@ def barplot(
     estimator='mean', errorbar=('ci', 95), n_boot=1000, units=None, seed=None,
     orient=None, color=None, palette=None, saturation=1.0, width=0.8,
     errcolor='.26', errwidth=None, capsize=None, dodge=True, ci='deprecated',
-    ax=None, nested_x=False, **kwargs,
+    ax=None, nested_x=False, plt_title=None, y_title=None, x_title=None, x_rotation=None, **kwargs,
 ):
     """Show point estimates as rectangular bars.
 
@@ -507,6 +507,15 @@ def barplot(
     if not nested_x:
         p.xaxis.axis_label = x.capitalize()
         p.yaxis.axis_label = y.capitalize()
+    
+    if plt_title is not None:
+        p.title.text = plt_title
+    if x_title is not None:
+        p.xaxis.axis_label = x_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+    if x_rotation is not None:
+        p.xaxis.major_label_orientation = x_rotation
 
     return plt
 

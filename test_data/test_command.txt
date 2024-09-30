@@ -1,1 +1,2 @@
-../nextflow run main.nf --adaptor_sequence ACTTCGTTCGGT --input_file ./test_data/01_HG002_SUP.fastq.gz --c_strand_only
+../nextflow run main.nf --adaptor_sequence ACTTCGTTCGGT --input_file ./test_data/01_HG002_SUP.fastq.gz --c_strand_only --overwrite_outdir
+../nextflow run main.nf --sample_file ./test_data/demux_test.barcodes.csv --input_file ./test_data/demux_test.fastq.gz --c_strand_only --outdir ./TArPON_outdir --overwrite_outdir

@@ -90,7 +90,7 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
         // computationally not ideal
         """
         mkdir DEMUX/
-        identify_tagging_barcodes.py ${reads} ${barcodes_file} ${params.barcode_errors} ${params.repeat} DEMUX/ adaptor_filtered.fastq
+        identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} --out_fh DEMUX/ --no_adaptor adaptor_filtered.fastq
         cat DEMUX/* > adaptor.fastq
         """
     else

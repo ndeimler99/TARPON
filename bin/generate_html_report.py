@@ -30,18 +30,43 @@ from bokeh.plotting import figure
 import bokeh.palettes
 
 
+#  Sample Comparison Telomere Length Barchart – add hover
+#  Sample Comparison Telomere Length Boxplot – add hover
+#        a.	Use custom boxplot function that takes in dataframe containing precalculated Quartile values – similar to seqkit boxplot function
+
+#  Individual Sample – histogram add hover
+#  Individual Sample boxplot add hover
+#  Individual Sample scatterplot add better hover
+#  Individual Sample histogram and boxplot add red line denoting mean
+#  Individual sample boxplot and barchart remove x axis tick labels
+#  Add Manifest tablel similar to params table
+#  Report page – remove provided by Oxford Nanopore Technologies
+#  Report page – remove About footer – or at least modify text
+#  Report page – remove Epi2Me logo and replace with TArPON cartoon
+
+
 
 THEME = 'epi2melabs'
 
+def get_nextflow_attributes(attribute_file):
+
+    attribute_file = open(attribute_file)
+    attribute = attribute_file.read()
+    attribute = json.loads(attribute)
+    return attribute
+
 def main(args):
 
-    params_file = open(args.params)
-    params = params_file.read()
-    params = json.loads(params)
+    params = get_nextflow_attributes(args.params)
+    # params_file = open(args.params)
+    # params = params_file.read()
+    # params = json.loads(params)
 
-    manifest_file = open(args.manifest)
-    manifest = manifest_file.read()
-    manifest = json.loads(manifest)
+    manifest = get_nextflow_attributes(args.manifest)
+    # manifest_file = open(args.manifest)
+    # manifest = manifest_file.read()
+    # manifest = json.loads(manifest)
+
 
     versions = pd.read_table(args.versions, sep=",", header=None)
     versions.set_axis(["Software", "Version"], axis=1)
@@ -86,17 +111,25 @@ def main(args):
             df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
             df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
             with tabs.add_dropdown_tab('Read Count'):
-                plt = ezc.barplot(data=df, x="file", y="num_seqs")
-                plt._fig.title.text = "Number of Reads Retained at Each Step"
-                plt._fig.xaxis.axis_label = "Pipeline Step"
-                plt._fig.yaxis.axis_label = "Number of Retained Reads"
-                plt._fig.xaxis.major_label_orientation = 45
+                #convert to custom barplot function
+                plt = report_utils.barplot(data=df, x="file", y="num_seqs", 
+                                  x_title="Pipeline Step", x_rotation=45,
+                                  y_title="Number of Retained_Reads",
+                                  plt_title="Number of reads Retained at Each Step")
+                
+                #plt._fig.title.text = "Number of Reads Retained at Each Step"
+                #plt._fig.xaxis.axis_label = "Pipeline Step"
+                #plt._fig.yaxis.axis_label = "Number of Retained Reads"
+                #plt._fig.xaxis.major_label_orientation = 45
                 hover = plt._fig.select(dict(type=HoverTool))
                 hover.tooltips = [("Number of Reads Retained", "@top")]
+                # what is this function doing?
                 EZChart(plt,THEME)
             with tabs.add_dropdown_tab('Stats Table'):
+                # this is fine
                 DataTable.from_pandas(df, use_index=False)
             with tabs.add_dropdown_tab('Read Length'):
+                # add yaxis and axis label to function call
                 plt = report_utils.seqkit_stats_boxplot_length(df, x="file")
                 plt._fig.yaxis.axis_label = "Read Length (BP)"
                 plt._fig.xaxis.axis_label = "Pipeline Step"
@@ -108,6 +141,7 @@ def main(args):
                 EZChart(plt, THEME)
 
             with tabs.add_dropdown_tab('Read Quality'):
+                # add title, axis, etc to custom function
                 plt = report_utils.barplot(data=df, x="file", y="AvgQual")
                 plt._fig.title.text = "Average Quality of Reads Retained at Each Step"
                 plt._fig.xaxis.axis_label = "Pipeline Step"
@@ -123,6 +157,7 @@ def main(args):
             df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
 
             with tabs.add_dropdown_tab('Read Count'):
+                # convert to custom function with axis calls and title in function
                 plt=ezc.barplot(data=df, x="file", y="num_seqs")
                 plt._fig.title.text = "Number of Reads Retained at Each Step"
                 plt._fig.xaxis.axis_label = "Pipeline Step"
@@ -130,10 +165,13 @@ def main(args):
                 plt._fig.xaxis.major_label_orientation = 45
                 hover = plt._fig.select(dict(type=HoverTool))
                 hover.tooltips = [("Number of Reads Filtered", "@top")]
+                # what is this function doing
                 EZChart(plt,THEME)
             with tabs.add_dropdown_tab('Stats Table'):
+                # this is fine
                 DataTable.from_pandas(df, use_index=False)
             with tabs.add_dropdown_tab('Read Length'):
+                # add title, axis, etc to custom function
                 plt = report_utils.seqkit_stats_boxplot_length(df, x="file")
                 plt._fig.yaxis.axis_label = "Read Length (BP)"
                 plt._fig.xaxis.axis_label = "Pipeline Step"
@@ -142,9 +180,11 @@ def main(args):
                                   ("Avg Length", "@avg_len"),
                                   ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
                                    ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                # what is this function doing?
                 EZChart(plt, THEME)
 
             with tabs.add_dropdown_tab('Read Quality'):
+                # add xaxis, yaxis, title to this function
                 plt=report_utils.barplot(data=df, x="file", y="AvgQual")
                 plt._fig.title.text = "Average Quality of Reads Filtered at Each Step"
                 plt._fig.xaxis.axis_label = "Pipeline Step"
@@ -152,6 +192,7 @@ def main(args):
                 plt._fig.xaxis.major_label_orientation = 45
                 hover = plt._fig.select(dict(type=HoverTool))
                 hover.tooltips = [("File", "@file"), ("Average Quality", "@AvgQual"), ("Read Count", "@num_seqs")]
+                # what is this function doing
                 EZChart(plt,THEME)
 
     with report.add_section("Sample Comparison", "Sample Comparison"):
