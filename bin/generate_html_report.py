@@ -30,21 +30,21 @@ from bokeh.plotting import figure
 import bokeh.palettes
 
 
-# reorder statistics so input is first...
-#  Sample Comparison Telomere Length Barchart – add hover
-#  Sample Comparison Telomere Length Boxplot – add hover
-#        a.	Use custom boxplot function that takes in dataframe containing precalculated Quartile values – similar to seqkit boxplot function
 
-#  Individual Sample – histogram add hover
-#  Individual Sample boxplot add hover
-#  Individual Sample scatterplot add better hover
+
+
+
+
+
+
+# reorder statistics so input is first...
 #  Individual Sample histogram and boxplot add red line denoting mean
 #  Individual sample boxplot and barchart remove x axis tick labels
 #  Add Manifest tablel similar to params table
 #  Report page – remove provided by Oxford Nanopore Technologies
 #  Report page – remove About footer – or at least modify text
 #  Report page – remove Epi2Me logo and replace with TArPON cartoon
-# change read quality to boxplot
+#  change read quality to boxplot
 
 
 
@@ -275,9 +275,12 @@ def main(args):
                                                                          plt_title="Read Length Histogram", x_title="Read Length (BP)",
                                                                          y_title="Read Count")
   
-                        byscatter = ezc.scatterplot(data=df, x="read_len", y="telo_length")
-                        byscatter.xAxis.name = "Read Length"
-                        byscatter.yAxis.name = "Telomere Length"
+                        byscatter = report_utils.scatterplot(data=df, x="read_len", y="telo_length", 
+                                                             hover_tooltips=[("Telomere Length", "@y"), ("Read Length", "@x")],
+                                                             plt_title="Telomere Length by Read Length",
+                                                             x_title="Read Length (BP)", y_title="Telomere Length (BP)")
+                        # byscatter.xAxis.name = "Read Length"
+                        # byscatter.yAxis.name = "Telomere Length"
                         with Grid(columns=3):
                             #telo length hist, read length_hist, scatter plot
                             EZChart(telo_length_hist, THEME)
@@ -291,22 +294,21 @@ def main(args):
                     df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
                     with new_tabs.add_tab("Read Length"):
                         #bar plot
-                        plt = ezc.barplot(data=df, x="file", y="num_seqs")
-                        plt._fig.title.text = "Number of Reads Retained at Each Step"
-                        plt._fig.xaxis.axis_label = "Pipeline Step"
-                        plt._fig.yaxis.axis_label = "Number of Retained Reads"
-                        plt._fig.xaxis.major_label_orientation = 45
+                        plt = report_utils.barplot(data=df, x="file", y="num_seqs",
+                                                   plt_title="Number of Reads Retained at Each Step",
+                                                   x_title="Pipeline Step", x_rotation=45, y_title="Number of Retained Reads")
                         hover = plt._fig.select(dict(type=HoverTool))
-                        hover.tooltips = [("Number of Reads Retained", "@top")]
+                        hover.tooltips = [("Number of Reads Retained", "@num_seqs")]
                         EZChart(plt,THEME)
                     #stats
                     with new_tabs.add_tab("Read Stats"):
                         DataTable.from_pandas(df, use_index=False)
                     #length boxplot
                     with new_tabs.add_tab("Read Length"):
-                        plt = report_utils.seqkit_stats_boxplot_length(df, x="file")
-                        plt._fig.yaxis.axis_label = "Read Length (BP)"
-                        plt._fig.xaxis.axis_label = "Pipeline Step"
+                        plt = report_utils.seqkit_stats_boxplot_length(df, x="file",
+                                                                       plt_title="Read Length of Retained Reads",
+                                                                       x_title="Pipeline Step", x_rotation=45,
+                                                                       y_title="Read Length (BP)")
                         hover = plt._fig.select(dict(type=HoverTool))
                         hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
                                         ("Avg Length", "@avg_len"),
@@ -315,11 +317,10 @@ def main(args):
                         EZChart(plt, THEME)
                     #quality plot
                     with new_tabs.add_tab("Read Quality"):
-                        plt=report_utils.barplot(data=df, x="file", y="AvgQual")
-                        plt._fig.title.text = "Average Quality of Reads Retained at Each Step"
-                        plt._fig.xaxis.axis_label = "Pipeline Step"
-                        plt._fig.yaxis.axis_label = "Average Quality"
-                        plt._fig.xaxis.major_label_orientation = 45
+                        plt=report_utils.barplot(data=df, x="file", y="AvgQual",
+                                                 plt_title="Average Quality of Reads Retained",
+                                                 y_title="Average Quality",
+                                                 x_title="Pipeline Step", x_rotation=45)
                         hover = plt._fig.select(dict(type=HoverTool))
                         hover.tooltips = [("File", "@file"), ("Average Quality", "@AvgQual"), ("Read Count", "@num_seqs")]
                         EZChart(plt,THEME)
@@ -330,22 +331,22 @@ def main(args):
                     df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
                     with new_tabs.add_tab("Read Length"):
                         #bar plot
-                        plt = ezc.barplot(data=df, x="file", y="num_seqs")
-                        plt._fig.title.text = "Number of Reads Filtered at Each Step"
-                        plt._fig.xaxis.axis_label = "Pipeline Step"
-                        plt._fig.yaxis.axis_label = "Number of Retained Reads"
-                        plt._fig.xaxis.major_label_orientation = 45
+                        plt = report_utils.barplot(data=df, x="file", y="num_seqs", 
+                                                   plt_title="Number of Reads Filtered at Each Step",
+                                                   x_title="Pipeline Step", x_rotation=45,
+                                                   y_title="Number of Retained Reads")
                         hover = plt._fig.select(dict(type=HoverTool))
-                        hover.tooltips = [("Number of Reads Filtered", "@top")]
+                        hover.tooltips = [("Number of Reads Filtered", "@num_seqs")]
                         EZChart(plt,THEME)
                     #stats
                     with new_tabs.add_tab("Read Stats"):
                         DataTable.from_pandas(df, use_index=False)
                     #length boxplot
                     with new_tabs.add_tab("Read Length"):
-                        plt = report_utils.seqkit_stats_boxplot_length(df, x="file")
-                        plt._fig.yaxis.axis_label = "Read Length (BP)"
-                        plt._fig.xaxis.axis_label = "Pipeline Step"
+                        plt = report_utils.seqkit_stats_boxplot_length(df, x="file",
+                                                                       y_title="Read Length (BP)",
+                                                                       x_title="Pipeline Step",
+                                                                       x_rotation=45)
                         hover = plt._fig.select(dict(type=HoverTool))
                         hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
                                         ("Avg Length", "@avg_len"),
@@ -354,11 +355,10 @@ def main(args):
                         EZChart(plt, THEME)
                     #quality plot
                     with new_tabs.add_tab("Read Quality"):
-                        plt=report_utils.barplot(data=df, x="file", y="AvgQual")
-                        plt._fig.title.text = "Average Quality of Reads Filtered at Each Step"
-                        plt._fig.xaxis.axis_label = "Pipeline Step"
-                        plt._fig.yaxis.axis_label = "Average Quality"
-                        plt._fig.xaxis.major_label_orientation = 45
+                        plt=report_utils.barplot(data=df, x="file", y="AvgQual", 
+                                                 plt_title="Average Quality of Reads Filtered at Each Step",
+                                                 y_title="Average Quality", x_title="Pipeline Step",
+                                                 x_rotation=45)
                         hover = plt._fig.select(dict(type=HoverTool))
                         hover.tooltips = [("File", "@file"), ("Average Quality", "@AvgQual"), ("Read Count", "@num_seqs")]
                         EZChart(plt,THEME)
@@ -368,10 +368,6 @@ def main(args):
                         stats_df = pd.read_table(sample_dict[sample]["digest"], sep="\t")
                         stats_df = stats_df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
                         DataTable.from_pandas(stats_df, use_index=False)
-    # this works for optional/additional analysis
-    # if args.restriction_digest_analysis is not None:
-    #     with report.add_section("Restriction Digest Analysis", "Restriction Digest Analysis"):
-    #         pass
 
     report.write(args.report)
 
@@ -393,7 +389,7 @@ def argparser():
     parser.add_argument("--sample_telo_stats", nargs="+", required=True)
     parser.add_argument("--run_telo_stats_table", required=True)
     parser.add_argument("--run_telo_stats", required=True)
-    parser.add_argument("--restriction_digest", default=False, nargs="+")
+    parser.add_argument("--restriction_digest", required=True, nargs="+")
     #    parser.add_argument("--restriction_digest_analysis", required=False, default="test")
     
     return parser
