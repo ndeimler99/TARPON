@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 from collections import Counter
 
-from bokeh.models import ColumnDataSource, FactorRange, Whisker, Range1d
+from bokeh.models import ColumnDataSource, FactorRange, Whisker, Range1d, HoverTool
+#from bokeh.models import VSpan
 import bokeh.transform as bkt
 import numpy as np
 import pandas as pd
@@ -11,6 +12,11 @@ from ezcharts.plots import BokehPlot
 from ezcharts.plots import _HistogramPlot, util
 from seaborn._statistics import Histogram
 from scipy.stats import gaussian_kde
+from itertools import cycle
+from seaborn.relational import _ScatterPlotter
+import numbers
+
+from bokeh.plotting import figure
 
 class MakeRectangles(util.JSCode):
     """
@@ -77,8 +83,9 @@ def seqkit_stats_boxplot_length(
         orient=None, color=None, palette=None, saturation=1, fill=True,
         dodge=None, width=None, gap=None, whis=1.5, linecolor='auto', linewidth=1,
         fliersize=6, hue_norm=None, native_scale=None, log_scale=None,
-        formatter=None, legend=None, ax=None, **kwargs):
+        formatter=None, legend=None, ax=None, x_title=None, y_title=None, plt_title=None, x_rotation=None, **kwargs):
     """Draw a box plot to show distributions with respect to categories."""
+
     # deal with stuff we haven't implemented, yet
     not_implemented = [
         hue, hue_order, orient, dodge, width, ax, formatter, legend,
@@ -134,14 +141,15 @@ def seqkit_stats_boxplot_length(
 
     # outlier range
     whisker = Whisker(
-        base=x, upper="upper", lower="min_len", source=source,
+        base=x, upper="upper", lower="lower", source=source,
         line_width=linewidth, line_color=linecolor)
 
     whisker.upper_head.size = whisker.lower_head.size = 20
 
     y_max = df["upper"].max()
+    y_min = df["lower"].min()
 
-    y_range = (0, 1.1*y_max)
+    y_range = (y_min, 1.1*y_max)
     #y_range = (0, 25000)
 
     plt = BokehPlot(x_range=groups, y_range=y_range)
@@ -159,101 +167,20 @@ def seqkit_stats_boxplot_length(
     p.xgrid.grid_line_color = None
     p.xaxis.axis_label = x.capitalize()
 
+    if plt_title is not None:
+        p.title.text = plt_title
+    if x_title is not None:
+        p.xaxis.axis_label = x_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+    if x_rotation is not None:
+        p.xaxis.major_label_orientation = x_rotation
     return plt
 
-def telo_hist_plot(
-    data=None, *, x=None, y=None, hue=None, order=None, hue_order=None,
-    estimator='mean', errorbar=('ci', 95), n_boot=1000, units=None, seed=None,
-    orient=None, color=None, palette=None, saturation=1.0, width=0.8,
-    errcolor='.26', errwidth=None, capsize=None, dodge=True, ci='deprecated',
-    ax=None, nested_x=False, **kwargs,
-):
-    """Show point estimates as rectangular bars.
+def create_boxplot(df, column_name, sample, plt_title=None, x_title=None, y_title=None):
 
-    Contrary to the seaborn implementation, setting `dodge=False` does not
-    result in overlaying the bars, but rather stacking them.
-
-    nested_x: create a nested plot instead of a grouped plot, which has two X
-    axis grouping (hue as outer group)
-    """
-    # use our default palette if no colour options were provided
-    if palette is None and color is None:
-        palette = BokehPlot.colors
-
-    # A plot can either be nested or stacked, not both
-    if nested_x:
-        if hue is None or not dodge:
-            raise ValueError(
-                "`hue` and `dodge` need to be set when passing `nested_x=True`"
-            )
-        if orient == "h":
-            raise ValueError(
-                "`nested_x=True` can only work with `orient='v'`"
-            )
-
-    # Create bar plot with seaborn
-    plotter = _BarPlotter(
-        x,
-        y,
-        hue,
-        data,
-        order,
-        hue_order,
-        estimator,
-        errorbar,
-        n_boot,
-        units,
-        seed,
-        orient,
-        color,
-        palette,
-        saturation,
-        width,
-        errcolor,
-        errwidth,
-        capsize,
-        dodge,
-    )
-
-    # Nested X labeling requires the factors to be provided as a list of
-    # tuples with the hue and x levels for each value in the dataframe:
-    # factors = [
-    #   ("hue1", "x1"),
-    #   ("hue1", "x2"),
-    #   ("hue2", "x1"),
-    #   ("hue2", "x2"),
-    # ]
-    group_names = [str(x) for x in plotter.group_names]
-
-    plt = BokehPlot(x_range=group_names)
-
-    p = plt._fig
-
-    # Define plot orientation
-    # If both hue and dodge=False are provided, make a stacked bar chart
-    plot_bars_func = p.vbar_stack if not dodge and hue else p.vbar
-
-    data = ColumnDataSource(data)
-    print(data)
-    plot_bars_func(
-        x=x,
-        y=y,
-        source = data,
-        width=0.9,
-        color=plotter.colors.as_hex(),
-        **kwargs
-    )
-
-    p.xgrid.grid_line_color = None
-    p.y_range.start = 0
-
-    p.xaxis.axis_label = x.capitalize()
-    p.yaxis.axis_label = y.capitalize()
-
-    return plt
-
-def create_boxplot(df, column_name):
     """Create a boxplot for the given column."""
+
     series = df[column_name]
 
     plt = BokehPlot(tools="save", x_range=[column_name])
@@ -274,20 +201,21 @@ def create_boxplot(df, column_name):
         np.linspace(series.max(), series.min(), 100)
     ])
 
-    source = ColumnDataSource(data={'x': kde_vals, 'y': kde_support})
-    p.patch('x', 'y', source=source, alpha=0.3)
-
-    padding_top = 10
-    p.y_range = Range1d(
-        start=series.min() - padding_top,
-        end=series.max() + padding_top
-    )
-
     q1, q3 = series.quantile([0.25, 0.75])
     iqr = q3 - q1
     qmin, q1, q2, q3, qmax = series.quantile([0, 0.25, 0.5, 0.75, 1])
     upper = min(qmax, q3 + 1.5 * iqr)
     lower = max(qmin, q1 - 1.5 * iqr)
+
+    source = ColumnDataSource(data={'x': kde_vals, 'y': kde_support})
+    
+    p.patch('x', 'y', source=source, alpha=0.3)
+
+    padding_top = 10
+    p.y_range = Range1d(
+            start=series.min() - padding_top,
+            end=series.max() + padding_top
+    )
 
     hbar_height = (qmax - qmin) / 500
     whisker_width = 0.1
@@ -300,8 +228,15 @@ def create_boxplot(df, column_name):
     p.vbar([column_name], 0.2, q1, q2, line_color="black")
 
     p.xaxis.major_label_orientation = "vertical"
-    p.xaxis.axis_label = column_name
     p.yaxis.axis_label = 'Values'
+    p.xaxis.major_label_text_font_size = "0pt"
+
+    if plt_title is not None:
+        p.title.text = plt_title
+    if x_title is not None:
+        p.xaxis.axis_label = x_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
 
     return plt
 
@@ -395,8 +330,8 @@ def barplot(
         #data = dict(groups=plotter.group_names)
         data = ColumnDataSource(data)
         data.data["groups"]=plotter.group_names
-        print(data.data)
-        print(data.data[x])
+        #print(data.data)
+        #print(data.data[x])
         # simple barplot (i.e. only a single group of bars)
         if plotter.orient == "v":
             plot_bars_func(
@@ -415,6 +350,7 @@ def barplot(
                 right=plotter.statistic,
                 height=0.9,
                 color=plotter.colors.as_hex(),
+                source=data,
                 **kwargs
             )
     elif nested_x:
@@ -447,16 +383,18 @@ def barplot(
         data = dict(groups=plotter.group_names)
         data.update(dict(zip(plotter.hue_names, plotter.statistic.T)))
         data = ColumnDataSource(data)
+        #print(data)
         if not dodge:
             # stacked bars (define orientation-specific kwargs first)
+
             if plotter.orient == "v":
                 extra_kwargs = dict(x="groups", width=0.95)
             else:
                 extra_kwargs = dict(y="groups", height=0.95)
             plot_bars_func(
                 plotter.hue_names,
-                color=plotter.colors.as_hex(),
                 source=data,
+                color=plotter.colors.as_hex(),
                 legend_label=plotter.hue_names,
                 **extra_kwargs,
                 **kwargs,
@@ -625,3 +563,299 @@ def boxplot(
     p.yaxis.axis_label = y.capitalize()
 
     return plt
+
+def telo_barplot(
+    data=None, *, x=None, y=None, hue=None, order=None, hue_order=None,
+    estimator='mean', errorbar=('ci', 95), n_boot=1000, units=None, seed=None,
+    orient=None, color=None, palette=None, saturation=1.0, width=0.8,
+    errcolor='.26', errwidth=None, capsize=None, dodge=True, ci='deprecated',
+    ax=None, nested_x=False, plt_title=None, y_title=None, x_title=None, x_rotation=None,
+    legend_loc="top", legend_orientation="horizontal", hide_x_tick_labels=False, **kwargs,
+):
+    """Show point estimates as rectangular bars.
+
+    Contrary to the seaborn implementation, setting `dodge=False` does not
+    result in overlaying the bars, but rather stacking them.
+
+    nested_x: create a nested plot instead of a grouped plot, which has two X
+    axis grouping (hue as outer group)
+    """
+    # use our default palette if no colour options were provided
+    if palette is None and color is None:
+        palette = BokehPlot.colors
+
+    # Create bar plot with seaborn
+    plotter = _BarPlotter(
+        x,
+        y,
+        hue,
+        data,
+        order,
+        hue_order,
+        estimator,
+        errorbar,
+        n_boot,
+        units,
+        seed,
+        orient,
+        color,
+        palette,
+        saturation,
+        width,
+        errcolor,
+        errwidth,
+        capsize,
+        dodge,
+    )
+
+    group_names = [str(x) for x in plotter.group_names]
+
+    plt = BokehPlot(x_range=group_names,tooltips=[("Sample", "@groups"),("Bin Start", "$name"),("% of Telomeres", "@$name")], tools="hover")
+
+    p = plt._fig
+
+    # Define plot orientation
+    # If both hue and dodge=False are provided, make a stacked bar chart
+    plot_bars_func = p.vbar_stack 
+
+    data = dict(groups=plotter.group_names)
+    data.update(dict(zip(plotter.hue_names, plotter.statistic.T)))
+    data = ColumnDataSource(data)
+
+    plot_bars_func(
+        plotter.hue_names,
+        x='groups',
+        source=data,
+        color=plotter.colors.as_hex(),
+        legend_label=plotter.hue_names,
+        width=0.95,
+        **kwargs,
+    )
+    
+    p.legend.orientation = legend_orientation
+    p.legend.location = legend_loc
+    if legend_loc == "right":
+        p.add_layout(p.legend[0], "right")
+    else:
+        p.add_layout(p.legend[0], "above")
+
+    p.xgrid.grid_line_color = None
+    p.y_range.start = 0
+
+    p.xaxis.axis_label = x.capitalize()
+    p.yaxis.axis_label = y.capitalize()
+    
+    if plt_title is not None:
+        p.title.text = plt_title
+    if x_title is not None:
+        p.xaxis.axis_label = x_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+    if x_rotation is not None:
+        p.xaxis.major_label_orientation = x_rotation
+    if hide_x_tick_labels:
+        p.xaxis.major_label_text_font_size = "0pt"
+    p.legend.title = "Telomere Length"
+    
+    return plt
+
+
+def telo_length_hist(data=None, *, x=None, y=None, hue=None, weights=None,
+    stat='count', bins='auto', binwidth=None, binrange=None,
+    discrete=None, cumulative=False, common_bins=True,
+    common_norm=True, multiple='layer', element='bars',
+    fill=True, shrink=1, kde=False, kde_kws=None,
+    line_kws=None, thresh=0, pthresh=None, pmax=None,
+    cbar=False, cbar_ax=None, cbar_kws=None, palette=None,
+    hue_order=None, hue_norm=None, color=None, log_scale=None,
+        legend=True, ax=None, plt_title=None, x_title=None, y_title=None, **quad_kwargs):
+    """Plot univariate or multivariate histograms."""
+    plt = BokehPlot()
+
+    plot = figure()
+    
+    # print(plot)
+    # print(type(plot))
+    # glyph = VSpan(x=np.mean(data))
+    # plot.add_glyph(glyph)
+
+    # print(plt._fig)
+    # print(type(plt._fig))
+
+    estimate_kws = dict(
+        stat=stat,
+        bins=bins,
+        binwidth=binwidth,
+        binrange=binrange,
+        discrete=discrete,
+        cumulative=cumulative,
+    )
+    data = pd.DataFrame(data)
+
+    estimator = Histogram(**estimate_kws)
+
+    if data.ndim > 1 and data.shape[1] > 1:
+        # multivariate data
+        opacity = 0.5
+        if palette is None:
+            palette = util.choose_palette()
+    else:
+        opacity = 1.0
+        if color is None:
+            palette = util.choose_palette()
+        else:
+            palette = [color]
+    if hue:
+        data = data.pivot(columns=hue, values=data.columns[0])
+    # this just looks over values if data is 1D
+    # for var, color in zip(data, cycle(palette)):
+    for col, color in zip(data.columns, cycle(palette)):
+        quad_kwargs = {}
+        if len(data.columns) > 1:
+            quad_kwargs["legend_label"] = col
+        variable_data = data[col].dropna()
+        heights, edges = estimator(variable_data, weights=weights)
+
+        plt._fig.quad(
+            top=heights, bottom=0, left=edges[:-1], right=edges[1:],
+            fill_color=color, fill_alpha=opacity, line_color=color, **quad_kwargs
+        )
+    
+    #plt._fig.vspan(x=[np.mean(data)], line_width=[1], color="red")
+    plt._fig.y_range.start = 0
+    hover = plt._fig.select(dict(type=HoverTool))
+    hover.tooltips = [(stat.capitalize(), "@top")]
+
+    if plt_title is not None:
+        plt._fig.title.text = plt_title
+    if x_title is not None:
+        plt._fig.xaxis.axis_label = x_title
+    if y_title is not None:
+        plt._fig.yaxis.axis_label = y_title
+
+    return plt
+
+DEFAULT_PALETTE = util.choose_palette()
+DEFAULT_COLOR = DEFAULT_PALETTE[0]
+
+class Mixin:
+    """Mixin class to define how to plot lines and points."""
+
+    def plot(self, plt: BokehPlot, kws):
+        """Plot the plot."""
+        # Get the potentially normalised data from seaborn
+        data = self.plot_data.dropna()
+        if data.empty:
+            return
+
+        if 'hue' not in data:
+            # add a `hue` column (this can't be set to `None` as it would produce an
+            # empty plot)
+            data['hue'] = "values"
+
+        x_name = self.variables.get("x", None)
+        y_name = self.variables.get("y", None)
+
+        symbol_size = kws.get('s', 8)
+        if not isinstance(symbol_size, numbers.Number):
+            raise NotImplementedError(
+                "symbol size (s) currently only accepts a constant value")
+
+        line_width = kws.get('linewidth', 3)
+        if not isinstance(line_width, numbers.Number):
+            raise NotImplementedError(
+                "linewidth currently only accepts a constant value")
+
+        # Available markers/glyphs can be found here:
+        # https://docs.bokeh.org/en/latest/docs/reference/models/glyphs.html
+        marker = kws.get('marker')
+        # TODO: size and style are also grouping "semantic" variables
+
+        y_min = 0
+        for hue_name, df in data.groupby('hue'):
+            relational_kwargs = {}
+            if data['hue'].nunique() > 1:
+                relational_kwargs["legend_label"] = hue_name
+
+            y_min = min(y_min, df.y.min())
+            color = kws.get("color")
+            if self._hue_map.levels:
+                # the hue map is not empty (i.e. it was initialised with a palette); use
+                # this to override the color (in case one was passed)
+                color = self._hue_map(hue_name)
+
+            if self.series_type == 'line':
+                plt._fig.line(
+                    df.x, df.y, line_color=color,
+                    line_width=line_width, **relational_kwargs)
+
+            elif self.series_type == 'scatter':
+                plt._fig.scatter(
+                    df.x, df.y, color=color, **relational_kwargs)
+
+            if marker is not False:
+                if marker is None or marker is True:
+                    marker = 'circle'
+                # Use scatter to add the markers
+                plt._fig.scatter(
+                    df.x, df.y, size=symbol_size, marker=marker,
+                    color=color, **relational_kwargs)
+
+            plt._fig.xaxis.axis_label = x_name
+            plt._fig.yaxis.axis_label = y_name
+
+        # Default the y_range start to zero unless y contains negative values.
+        plt._fig.y_range.start = y_min
+
+        # TODO: add legend
+        return plt
+    
+def scatterplot(
+        data=None, *,
+        x=None, y=None, hue=None, size=None, style=None,
+        palette=None, hue_order=None, hue_norm=None,
+        sizes=None, size_order=None, size_norm=None,
+        markers=True, style_order=None, legend="auto", ax=None, hover_tooltips=None,
+        plt_title=None, x_title=None, y_title=None,
+        **kwargs):
+    """Draw a scatter plot with possibility of several semantic groupings."""
+    # see https://github.com/mwaskom/seaborn/blob/949dec3666ab12a366d2fc05ef18d6e90625b5fa/seaborn/relational.py#L726  # noqa
+
+    if palette is None:
+        palette = DEFAULT_PALETTE
+    
+    if not kwargs.get("color"):
+        kwargs["color"] = DEFAULT_COLOR
+    
+    variables = ScatterPlotter.get_semantics(locals())
+    p = ScatterPlotter(data=data, variables=variables, legend=legend)
+    
+
+    p.map_hue(palette=palette, order=hue_order, norm=hue_norm)
+    p.map_size(sizes=sizes, order=size_order, norm=size_norm)
+    p.map_style(markers=markers, order=style_order)
+    
+    plt = BokehPlot(title=kwargs.get('title', ""))
+    hover = plt._fig.select(dict(type=HoverTool))
+    
+    if hover_tooltips is None:
+        hover.tooltips = [(x, "@x"), (y, "@y")]
+    else:
+        hover.tooltips = hover_tooltips
+    
+    p.plot(plt, kwargs)
+
+    if plt_title is not None:
+        plt._fig.title.text = plt_title
+    if x_title is not None:
+        plt._fig.xaxis.axis_label = x_title
+    if y_title is not None:
+        plt._fig.yaxis.axis_label = y_title
+
+    return plt
+
+
+class ScatterPlotter(Mixin, _ScatterPlotter):
+    """Making scatter plots."""
+
+    series_type = 'scatter'

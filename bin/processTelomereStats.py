@@ -25,7 +25,7 @@ def main(args):
         vrr_fh = open("sample_stats.VRR.txt", "w")
         vrr_fh.write("Sample_ID\tNumber_of_Reads\tMean VRR Telomere Length\tQ1\tQ2\tQ3\tMin VRR Telo Length\tMax VRR Telo Length\n")
 
-    out_fh.write("Sample_ID\tNumber_of_Reads\tMean_Telomere_Length\tStandard Deviation Telo Length\tQ1\tQ2\tQ3\tMin Telo Length\tMax Telo Length\n")
+    out_fh.write("Sample_ID\tNumber_of_Reads\tMean_Telomere_Length\tStandard Deviation Telo Length\tQ1\tQ2\tQ3\tMin_Telo_Length\tMax_Telo_Length\n")
 
     for file in args.stat_files:
         print(file)
