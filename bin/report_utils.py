@@ -859,3 +859,51 @@ class ScatterPlotter(Mixin, _ScatterPlotter):
     """Making scatter plots."""
 
     series_type = 'scatter'
+
+
+
+def create_multisample_boxplot(df, column_names, min_q, max_q, 
+                                plt_title=None, x_title=None, y_title=None,
+                                x_rotation=None, x_labels=None):
+
+    """Create a boxplot for the given column."""
+
+
+    plt = BokehPlot(tools="save", x_range=column_names)
+    p = plt._fig
+
+    p.y_range = Range1d(start=min_q, end=max_q)
+
+    for column in column_names:
+        series = df[column]
+
+        q1, q3 = series.quantile([0.25, 0.75])
+        iqr = q3 - q1
+        qmin, q1, q2, q3, qmax = series.quantile([0, 0.25, 0.5, 0.75, 1])
+        upper = min(qmax, q3 + 1.5 * iqr)
+        lower = max(qmin, q1 - 1.5 * iqr)
+
+        hbar_height = 0.2
+        whisker_width = 0.1
+
+        p.rect([column], lower, whisker_width, hbar_height, line_color="grey")
+        p.rect([column], upper, whisker_width, hbar_height, line_color="grey")
+        p.segment([column], upper, [column], q3, line_color="grey")
+        p.segment([column], lower, [column], q1, line_color="grey")
+        p.vbar([column], 0.2, q2, q3, line_color="black")
+        p.vbar([column], 0.2, q1, q2, line_color="black")
+
+    #p.xaxis.major_label_overrides = x_labels
+    #p.xaxis.major_label_orientation = "vertical"
+    #p.xaxis.ticker = list(range(len(x_labels)))
+
+    if plt_title is not None:
+        p.title.text = plt_title
+    if x_title is not None:
+        p.xaxis.axis_label = x_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+    if x_rotation is not None:
+        p.xaxis.major_label_orientation = x_rotation
+
+    return plt
