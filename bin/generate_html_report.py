@@ -16,7 +16,9 @@ from dominate.tags import em, p
 import ezcharts as ezc
 from ezcharts.components.ezchart import EZChart
 from ezcharts.components.fastcat import SeqSummary
-from ezcharts.components.reports.labs import LabsReport
+#from ezcharts.components.reports.labs import LabsReport
+from report import LabsReport
+#from report import BasicReport
 from ezcharts.layout.snippets import DataTable
 from ezcharts.layout.snippets import Grid
 from ezcharts.layout.snippets import Tabs
