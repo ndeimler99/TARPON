@@ -6,9 +6,13 @@ import matplotlib.pyplot as plt
 
 
 def main(args):
+
+    args.sliding_window = int(args.sliding_window)
+    args.sliding_window_interval = int(args.sliding_window_interval)
+
     start_dict = {}
     linecount = 0
-    with open(telo_stats, 'r') as telo_stats_fh:
+    with open(args.telo_stats, 'r') as telo_stats_fh:
         for line in telo_stats_fh:
             if linecount == 0:
                 linecount += 1
@@ -16,7 +20,7 @@ def main(args):
             line = line.strip().split()
             start_dict[line[0]] = int(line[3])
 
-    with open(input_file, "r") as input_fh:
+    with open(args.input_file, "r") as input_fh:
         linecount = 0
         read = []
         for line in input_fh:
@@ -24,7 +28,6 @@ def main(args):
             linecount += 1
             read.append(line.strip())
             if linecount % 4 == 0:
-                print(read[0])
                 fig1, ax1 = plt.subplots(1,1)
                 fig1.set_size_inches(12,4)
                 ax1.set_xlabel("Sliding Window Start Position")
@@ -35,10 +38,10 @@ def main(args):
                 x = []
                 perf = []
                 subs = []
-                for i in range(0, len(read[1])-sliding_window, sliding_window_interval):
+                for i in range(0, len(read[1])-args.sliding_window, args.sliding_window_interval):
                     x.append(i)
-                    perf.append((read[1][i:i+sliding_window].count(repeat) * len(repeat) / sliding_window) * 100)
-                    subs.append((len(list(regex.finditer(r"(%s){s<=1}" % repeat, read[1][i:i+sliding_window]))) * len(repeat)) / sliding_window * 100)
+                    perf.append((read[1][i:i+args.sliding_window].count(args.repeat) * len(args.repeat) / args.sliding_window) * 100)
+                    subs.append((len(list(regex.finditer(r"(%s){s<=1}" % args.repeat, read[1][i:i+args.sliding_window]))) * len(args.repeat)) / args.sliding_window * 100)
                 
                 ax1.plot(x, perf, label="Perfect Repeats")
                 ax1.plot(x, subs, label="One Nucl. Substitution")

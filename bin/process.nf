@@ -211,7 +211,7 @@ process INDIVIDUAL_READ_PLOTS {
     output:
         path("*.pdf")
 
-    publishDir "${params.outdir}/${sample}/FIGURES/INDIVIDUAL_READ_PLOTS/", mode:'copy', overwrite: true, pattern: "*.pdf"
+    publishDir "${params.outdir}/${sample}/FIGURES/INDIVIDUAL_READ_PLOTS/", mode:'move', overwrite: true, pattern: "*.pdf"
 
     script:
     """
@@ -231,8 +231,8 @@ process GENERATE_PLOTS {
         path("*.pdf")
         path("C_G_COMPARISON/*.pdf"), optional:true
     
-    publishDir "${params.outdir}/${sample}/FIGURES/", mode:'copy', overwrite: true, pattern: "*.pdf"
-    publishDir "${params.outdir}/${sample}/FIGURES/", mode:'copy', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
+    publishDir "${params.outdir}/${sample}/FIGURES/", mode:'move', overwrite: true, pattern: "*.pdf"
+    publishDir "${params.outdir}/${sample}/FIGURES/", mode:'move', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
 
     script:
     """
@@ -249,19 +249,19 @@ process GENERATE_DETAILED_PLOTS {
         tuple val(sample), path(telomeric_reads), path(telo_stats, stageAs: "old_telo_stats.txt")
     
     output:
-        tuple val(sample), path(telomeric_reads), path("telomeric_stats.txt"), emit: final_telomeric
+        tuple val(sample), path(telomeric_reads), path("*telomeric_stats.txt"), emit: final_telomeric
         path("*telomeric_stats.txt"), emit: final_telo_stats
-        path("DETAILED_STATS/*.pdf")
-        path("C_G_COMPARISON/*.pdf"), optional: true
+        //path("DETAILED_STATS/*.pdf")
+        //path("C_G_COMPARISON/*.pdf"), optional: true
     
-    publishDir "${params.outdir}/${sample}/FIGURES/", mode:'copy', overwrite: true, pattern: "DETAILED_STATS/*.pdf"
-    publishDir "${params.outdir}/${sample}/FIGURES", mode:'copy', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
+    publishDir "${params.outdir}/${sample}/FIGURES/", mode:'move', overwrite: true, pattern: "DETAILED_STATS/*.pdf"
+    publishDir "${params.outdir}/${sample}/FIGURES", mode:'move', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
     publishDir "${params.outdir}/${sample}/", mode:'copy', overwrite: true, pattern: "telomeric_stats.txt", saveAs: { filename -> "${sample}.stats.txt" }
 
     script:
     """
-    detailed_stats.py --fastq_file ${telomeric_reads} --repeat ${params.repeat} --stats_in ${telo_stats} --stats_out telomeric_stats.txt
-    detailed_plots.R telomeric_stats.txt ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
+    detailed_stats.py --fastq_file ${telomeric_reads} --repeat ${params.repeat} --stats_in ${telo_stats} --stats_out ${sample}.telomeric_stats.txt
+    #detailed_plots.R telomeric_stats.txt ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
     """
 
 }
@@ -282,7 +282,7 @@ process SUMMARY_STATS_RUN {
         path("*.pdf")
        
     publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*stats.txt"
-    publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'copy', overwrite:true, pattern:"*pdf"
+    publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'move', overwrite:true, pattern:"*pdf"
 
 
     script:
@@ -326,7 +326,7 @@ process RESTRICTION_DIGEST_ANALYSIS {
         tuple val(sample), path(telo_sequences), path(telo_stats)
     
     output:
-        path("*digest_stats.txt"), emit: stats
+        path("*digest_stats.txt")
     
     publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite: true, pattern: "*digest_stats.txt"
 
@@ -350,9 +350,9 @@ process GENERATE_FINAL_REPORT {
         tuple val(run1), path(stats_run_filtered)
         path(sample_stats_retained)
         path(sample_stats_filtered)
-        path(telo_stats)
-        path(run_telo_stats_table)
-        path(run_telo_stats)
+        path(telo_stats_per_sample)
+        path(telo_descriptive_stats)
+        path(vrr_descriptive_stats)
         path(restriction_digest)
 
     output:
@@ -362,6 +362,7 @@ process GENERATE_FINAL_REPORT {
 
     script:
     """
+    
     generate_html_report.py --workflow_name TArPON \
                             --report report.html \
                             --template_file ${baseDir}/bin/single_sample_template.html \
@@ -373,10 +374,14 @@ process GENERATE_FINAL_REPORT {
                             --run_stats_filtered ${stats_run_filtered} \
                             --sample_stats_retained ${sample_stats_retained} \
                             --sample_stats_filtered ${sample_stats_filtered} \
-                            --sample_telo_stats ${telo_stats} \
-                            --run_telo_stats_table ${run_telo_stats_table} \
-                            --run_telo_stats ${run_telo_stats} \
-                            --restriction_digest ${restriction_digest}
+                            --sample_telo_stats ${telo_stats_per_sample} \
+                            --run_telo_stats ${telo_descriptive_stats} \
+                            --run_vrr_stats ${vrr_descriptive_stats} \
+                            --restriction_digest ${restriction_digest} \
+                            --plot_telo_length ${params.plot_telo_length} \
+                            --plot_vrr_length ${params.plot_vrr_length} \
+                            --strand_comparison ${params.strand_comparison} \
+                            --detailed_stats ${params.detailed_stats}
     """
 }
 
@@ -507,20 +512,20 @@ process FINAL_TELO_STATS {
 
     output:
         path("sample_stats.txt"), emit: stats
-        path("sample_stats.VRR.txt"), optional: true, emit: vrr_stats
-        path("combined_df.csv"), emit: combined_df
-        path("*.pdf")
+        path("sample_stats.VRR.txt"), emit: vrr_stats
+    //    path("combined_df.csv"), emit: combined_df
+    //    path("*.pdf")
 
 
     publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "sample_stats.txt"
     publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "sample_stats.VRR.txt"
-    publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "*.pdf"
+    //publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "*.pdf"
 
 
     script:
     """
-    processTelomereStats.py --stat_files ${input_files} --vrr_length ${params.plot_vrr_length}
-    combinedPlots.R combined_df.csv ${params.plot_vrr_length}
+    processTelomereStats.py --stat_files ${input_files} --vrr_length ${params.plot_vrr_length} --telo_length ${params.plot_telo_length}
+    #combinedPlots.R combined_df.csv ${params.plot_vrr_length}
     """
 
 }

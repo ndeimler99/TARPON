@@ -65,23 +65,21 @@ WorkflowMain.initialise(workflow, params, log)
 
 workflow {
 
-    Pinguscript.ping_start(nextflow, workflow, params)
+    // // check if output directory exists
+    // outdir_check = Channel.fromPath("${params.outdir}/report.html").ifEmpty(false)
+    
+    // outdir_check.view()
 
-    if (params.adaptor_sequence == "" && params.sample_file == "") {
-        println ("Adaptor Sequence and Sample File cannot both be empty")
-        exit 0
-    }
 
     try {
-        if (params.sample_file != ""){
-            file(params.sample_file, checkIfExists:true)
+        file("${params.outdir}/report.html", checkIfExists:true)
+        if (!params.overwrite_outdir) {
+            exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
         }
     }
     catch (Exception e) {
-        println("Error - Sample File not Found")
-        exit 0
+        
     }
-
 
     try {
         file(params.input_file, checkIfExists:true)
@@ -91,10 +89,25 @@ workflow {
         exit 0
     }
 
-    // // check if output directory exists
-    outdir = file(params.outdir)
-    if (outdir.exists() && !params.overwrite_outdir) {
-        exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
+    Pinguscript.ping_start(nextflow, workflow, params)
+
+    if (params.adaptor_sequence == "" && params.sample_file == "") {
+        println ("Adaptor Sequence and Sample File cannot both be empty")
+        exit 0
+    }
+
+    if (params.plot_telo_length && !params.plot_vrr_length) {
+        println ("Either VRR or Telomere Length Must be Set")
+        exit 0
+    }
+    try {
+        if (params.sample_file != ""){
+            file(params.sample_file, checkIfExists:true)
+        }
+    }
+    catch (Exception e) {
+        println("Error - Sample File not Found")
+        exit 0
     }
 
     //check to make barcodes are more different than barcode errors
@@ -240,8 +253,9 @@ workflow {
     GENERATE_FINAL_REPORT(params.params, versions.versions, manifest.manifest, \
                         run_stats.retained_stats, run_stats.filtered_stats, \
                         retained_sample.stats.collect(), filtered_sample.stats.collect(), \
-                        telo_stats.final_telo_stats.collect(), FINAL_TELO_STATS.out.stats, \
-                        FINAL_TELO_STATS.out.combined_df, restriction_digest.stats.collect() \
+                        telo_stats.final_telo_stats.collect(), \
+                        FINAL_TELO_STATS.out.stats, FINAL_TELO_STATS.out.vrr_stats, \
+                        restriction_digest.stats.collect() \
         )
 }
 
