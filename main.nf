@@ -70,7 +70,6 @@ workflow {
     
     // outdir_check.view()
 
-
     try {
         file("${params.outdir}/report.html", checkIfExists:true)
         if (!params.overwrite_outdir) {
@@ -96,7 +95,7 @@ workflow {
         exit 0
     }
 
-    if (params.plot_telo_length && !params.plot_vrr_length) {
+    if (!params.plot_telo_length && !params.plot_vrr_length) {
         println ("Either VRR or Telomere Length Must be Set")
         exit 0
     }

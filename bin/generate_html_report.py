@@ -55,6 +55,7 @@ def main(args):
     args.plot_telo_length = args.plot_telo_length == "true"
     args.plot_vrr_length = args.plot_vrr_length == "true"
     args.strand_comparison = args.strand_comparison == "true"
+    args.detailed_stats = args.detailed_stats == "true"
 
     params = get_nextflow_attributes(args.params)
     manifest = get_nextflow_attributes(args.manifest)
@@ -512,6 +513,7 @@ def main(args):
         with report.add_section("Detailed Analysis", "Detailed Analysis"):
             tabs = Tabs()
             for sample in sorted(list(sample_dict.keys())):
+                print(sample_dict[sample]["telo_stats"])
                 df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
                 with tabs.add_dropdown_menu(sample, change_header=False):
                     with tabs.add_dropdown_tab("Sequencing Quality"):
