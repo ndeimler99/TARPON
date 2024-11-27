@@ -89,7 +89,7 @@ def main(args):
         vrr_summary_stats = pd.read_table(args.run_vrr_stats, sep="\t")
 
     report = LabsReport(
-        f"{args.workflow_name} Report for Run: {params['run_name']}", args.workflow_name,
+        f"Report for: {params['run_name']}", args.workflow_name,
         args.params, args.versions, manifest["version"])
     
     with report.add_section("Sequencing Stats", "Sequencing Stats"):

@@ -1,9 +1,9 @@
 """Get a default report."""
 from datetime import datetime
 from typing import List, Optional, Type
-
+import os
 from dominate.tags import (
-    a, button, code, div, h4, html_tag, p, h1, section, attr)
+    a, button, code, div, h4, h2, html_tag, p, h1, section, attr)
 
 from ezcharts.components.params import ParamsTable
 from ezcharts.components.reports import Report
@@ -11,11 +11,58 @@ from ezcharts.components.theme import (
     EPI2MELabsLogo, LAB_body_resources, LAB_head_resources)
 from ezcharts.components.versions import VersionsTable
 from ezcharts.layout.base import IClasses, Snippet
-from ezcharts.layout.resource import Resource
+from ezcharts.layout.resource import Resource, ImageResource
 from ezcharts.layout.snippets.banner import Banner
 from ezcharts.layout.snippets.section import Section
-from ezcharts.layout.util import cls, css
+from ezcharts.layout.util import cls, css, inline
 from ezcharts.layout.base import IClasses, IStyles, Snippet
+
+
+class IBadgeClasses(IClasses):
+    """Section html classes."""
+
+    container: str = cls(
+        "badge", "px-3", "py-2", "mb-2", "me-3", "badge")
+    #container_bg: str = cls("bg-primary")
+    container_bg: str = cls("py-2")
+
+class IBadgeStyles(IStyles):
+    """Section inline css styles."""
+
+    container: str = css(
+        "line-height: 20px", "border-radius: 6px",
+        "font-size: 13px;")
+
+    container2: str = css(
+        "line-height: 20px", "border-radius: 6px", "margin-left: 50px",
+        "font-size: 13px;")
+
+    primary_badge: str = css("background-color: #214c46", "line-height: 20px", "border-radius: 6px",
+        "font-size: 13px;")
+    secondary_badge: str = css("background-color: #a8bdbf", "line-height: 20px", "border-radius: 6px",
+        "font-size: 13px;")
+
+class Badge(Snippet):
+    """A styled span."""
+
+    TAG = 'span'
+
+    def __init__(
+        self,
+        title: str,
+        bg_class=None,
+        style=None,
+        styles: IBadgeStyles = IBadgeStyles(),
+        classes: IBadgeClasses = IBadgeClasses(),
+    ) -> None:
+        """Create styled badge."""
+        bg = bg_class or classes.container_bg
+        super().__init__(
+            title,
+            styles=styles,
+            classes=classes,
+            className=f"{classes.container} {bg}",
+            style=style)
 
 class ILabsAddendumClasses(IClasses):
     """Section html classes."""
@@ -70,7 +117,7 @@ class ILabsNavigationClasses(IClasses):
     spacer: str = cls("d-flex")
     container: str = cls(
         "fixed-top", "d-flex", "align-items-center", "flex-wrap",
-        "justify-content-center", "bg-dark")
+        "justify-content-center")
     inner: str = cls(
         "container", "px-0", "d-flex", "flex-wrap",
         "justify-content-center", "align-items-center", "py-2")
@@ -80,7 +127,6 @@ class ILabsNavigationClasses(IClasses):
     dropdown_btn: str = cls("btn", "btn-primary", "dropdown-toggle")
     dropdown_menu: str = cls("dropdown-menu")
     dropdown_item_link: str = cls("dropdown-item")
-
 
 class LabsNavigation(Snippet):
     """A styled nav component for use in a Report."""
@@ -102,14 +148,14 @@ class LabsNavigation(Snippet):
         super().__init__(
             styles=None,
             classes=classes,
-            style=f"min-height: {header_height}px;",
+            style=f"min-height: {header_height}px; background-color: #214c46",
             className=classes.container)
 
         spacer.add(self)
         with self:
-            with div(className=self.classes.inner):
-                with a(href="https://labs.epi2me.io/", className=self.classes.logo):
-                    logo()
+            with div(className=self.classes.inner, styleName=IBannerStyles().container):
+                with a(href="https://github.com/ndeimler99/TArPON", className=self.classes.logo):
+                    h1("TArPON", className=IBannerStyles().inner, style=css("color: white"))
 
                 button(
                     "Jump to section... ",
@@ -118,7 +164,8 @@ class LabsNavigation(Snippet):
                     id="dropdownMenuButton",
                     data_bs_toggle="dropdown",
                     aria_haspopup="true",
-                    aria_expanded="false")
+                    aria_expanded="false",
+                    style=css("background-color: #7bbcb6", "border-color:#7bbcb6"))
 
                 ngroups = len(groups)
                 with div(className=self.classes.dropdown_menu):
@@ -143,49 +190,14 @@ class LabsNavigation(Snippet):
                 href=link_href,
                 className=self.classes.dropdown_item_link)
 
-# class Banner(Snippet):
-#     """A styled div tag containing a heading and badges."""
-
-#     TAG = 'div'
-
-#     def __init__(
-#         self,
-#         report_title: str,
-#         workflow_name: str,
-#         default_content: bool = True
-#     ) -> None:
-#         """Create styled banner."""
-#         super().__init__(
-#             styles=styles,
-#             classes=classes,
-#             className=classes.container,
-#             style=styles.container)
-
-#         with self:
-#             with div(className=classes.inner, style=styles.inner):
-#                 if not default_content:
-#                     return
-#                 h1(report_title)
-#                 p(
-#                     f"Results generated through the {workflow_name} nextflow "
-#                     "workflow provided by Oxford Nanopore Technologies.",
-#                     className="py-2 fs-5")
-#                 self.badges = div(className="d-flex flex-wrap")
-
-#     def add_badge(
-#         self,
-#         title: str,
-#         bg_class=None,
-
-#     ) -> None:
-#         """Add a badge to the banner."""
-#         with self.badges:
-#             Badge(title, styles=styles, classes=classes, bg_class=bg_class)
 
 class IBannerClasses(IClasses):
     """Section html classes."""
 
-    container: str = cls("px-0", "bg-dark", "labs-banner")
+    #container: str = cls("px-0", "bg-dark", "labs-banner")
+
+    container: str = cls("px-0")
+
     inner: str = cls(
         "container", "px-0", "py-2", "border-top", "text-white", "report-title")
 
@@ -195,8 +207,24 @@ class IBannerStyles(IStyles):
 
     container: str = css(
         "margin-bottom: -25px",
-        "padding-bottom: 35px !important")
+        "padding-bottom: 35px !important",
+        #"background-color: #dc6a10")
+        "background-color: #387f75")
     inner: str = css("border-color: rgba(255, 255, 255, 0.1) !important;")
+        
+class TarponLogo(div):
+    """Labs logo element."""
+
+    def __init__(self) -> None:
+        """Create a div with an SVG logo inside."""
+        print(os.getcwd())
+        super().__init__(
+            #inline(ImageResource('tarpon_logo.jpeg').data_file),
+            inline("./tarpon_logo.jpeg"),
+            tagname='div',
+            style="width: 35px; height: 35px;",
+            className="d-flex",
+            alt="TArPON Logo")
 
 class BasicReport(Report):
     """A basic labs-themed report."""
@@ -204,7 +232,7 @@ class BasicReport(Report):
     def __init__(
         self,
         report_title,
-        logo: Type[html_tag] = EPI2MELabsLogo,
+        logo: Type[html_tag] = TarponLogo,
         head_resources: List[Resource] = LAB_head_resources,
         body_resources: List[Resource] = LAB_body_resources,
     ) -> None:
@@ -219,7 +247,7 @@ class BasicReport(Report):
 
         with self.main:
             self.intro_content = section(id="intro-content", role="region")
-            self.main_content = section(id="main-content", role="region")
+            self.main_content = section(id="main-content", role="region", style=css("background-color:#c8efdf"))
 
 
     def add_section(
@@ -245,7 +273,7 @@ class LabsReport(BasicReport):
         workflow_params_path: str,
         workflow_versions_path: str,
         workflow_version: str,
-        logo: Type[html_tag] = EPI2MELabsLogo,
+        logo: Type[html_tag] = TarponLogo,
         head_resources: List[Resource] = LAB_head_resources,
         body_resources: List[Resource] = LAB_body_resources,
         created_date: Optional[str] = None
@@ -269,14 +297,17 @@ class LabsReport(BasicReport):
             #     self.banner.add_badge(created_date, bg_class="bg-secondary")
             #     self.banner.add_badge(workflow_version)
             with self.intro_content:
-                with div(className=IBannerClasses().inner):
-                    h1(report_title)
+                with div(className=IBannerClasses().container, style=IBannerStyles().container):
+                    h2(report_title, className=IBannerClasses().inner)
                     p(
                         f"Results generated through the {workflow_name} nextflow workflow",
-                        className="py-2"
+                        className=IBannerClasses().inner
                     )
-                    self.badges = div(className="d-flex flex-wrap")
-                #self.add_badge("Test")
+                    div.badges = div(className=IBadgeClasses().container, style=IBadgeStyles().container2)
+                    with div.badges:
+                        Badge("Research Use Only", style=IBadgeStyles().primary_badge)
+                        Badge(datetime.today().strftime('%Y-%m-%d'), style=IBadgeStyles().secondary_badge)
+                        Badge(workflow_version, style=IBadgeStyles().primary_badge)
 
         with self.main:
             self.meta_content = section(id="meta-content", role="region")
@@ -313,4 +344,4 @@ class LabsReport(BasicReport):
         bg_class=None
     ) -> None:
         """Add a badge to the banner."""
-        self.banner.add_badge(title, bg_class=bg_class)
+        self.add_badge(title, bg_class=bg_class)
