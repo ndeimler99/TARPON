@@ -496,7 +496,8 @@ process CONVERT_BAM_2_FASTQ {
 
     script:
     """
-    samtools fastq -@ 4 $input_file > ${file_type}.fastq.gz
+    samtools fastq -@ 4 $input_file > ${file_type}.fastq
+    gzip ${file_type}.fastq
     """
 
 }
@@ -516,6 +517,40 @@ process COMBINED_FASTQ_GZ {
     """
     cat ${input_files} > ${file_type}.fastq.gz
     """
+}
+
+process COMBINE_FASTQ_AND_ZIP {
+    label 'tarpon'
+    tag "$file_type Concatenating and Zipping FASTQ Files"
+
+    input:
+        tuple val(file_type), path(input_files)
+
+    output:
+        tuple val(params.run_name), path("${file_type}.fastq.gz"), emit:combined
+
+    script:
+    """
+    cat ${input_files} > ${file_type}.fastq
+    gzip ${file_type}.fastq
+    """
+}
+
+process COMBINE_BAM {
+    label 'tarpon'
+    tag "$file_type Combining BAM Files"
+
+    input: 
+        tuple val(file_type), path(input_files)
+
+    output:
+        tuple val(params.run_name), path("${file_type}.bam"), emit:combined
+
+    script:
+    """
+    samtools merge -o ${file_type}.bam ${input_files} 
+    """
+
 }
 
 process BARCODE_HAMMING_CHECK {

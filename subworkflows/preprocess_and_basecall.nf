@@ -1,9 +1,10 @@
 
 include { PUTATIVE_ISOLATION } from "../bin/process.nf"
-include { COMBINE_FASTQ } from "../bin/process.nf"
+include { COMBINE_FASTQ_AND_ZIP } from "../bin/process.nf"
 include { FASTQ_2_FASTQGZ } from "../bin/process.nf"
-include { COMBINED_FASTQ_GZ as COMBINED_FASTQ_GZ } from "../bin/process.nf"
+include { COMBINED_FASTQ_GZ } from "../bin/process.nf"
 include { CONVERT_BAM_2_FASTQ } from "../bin/process.nf"
+include { COMBINE_BAM } from "../bin/process.nf"
 
 workflow preprocess_data_pipeline {
     take:
@@ -13,15 +14,27 @@ workflow preprocess_data_pipeline {
     main:
 
         if (file(input_file).isDirectory()) {
-            try {
-                input_ch = COMBINED_FASTQ_GZ(Channel.fromPath ( "${input_file}/*q.gz" ).collect().map{ it -> ["input", it]})
+            if (file("${input_file}/*.fastq.gz", checkIfExists: true) == []){
+                if (file("${input_file}/*.fastq", checkIfExists: true) == []){
+                    if (file("${input_file}/*.bam", checkIfExists: true) == []){
+                        exit 1, "No Valid File Types Identified in Input Directory"
+                    }
+                    else {
+                        combined_bam = COMBINE_BAM(Channel.fromPath ( "${input_file}/*bam" ).collect().map{ it -> ["input", it]})
+                        input_ch = CONVERT_BAM_2_FASTQ(combined_bam)
+                    }
+                }
+                else{
+                    input_ch = COMBINE_FASTQ_AND_ZIP(Channel.fromPath ( "${input_file}/*fastq" ).collect().map{ it -> ["input", it]})
+                }
             }
-            
+            else {
+                input_ch = COMBINED_FASTQ_GZ(Channel.fromPath ( "${input_file}/*fastq.gz").collect().map{ it -> ["input", it]})
+            }
         }
 
         else{
             if (file(params.input_file).extension == "bam") {
-                print(file(params.input_file).extension)
                 input_ch = CONVERT_BAM_2_FASTQ(Channel.fromPath("${input_file}", checkIfExists: true).collect().map{ it -> ["input", it]})
             }
             else if (file(params.input_file).extension == "fastq") {
