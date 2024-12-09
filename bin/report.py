@@ -273,6 +273,7 @@ class LabsReport(BasicReport):
         workflow_params_path: str,
         workflow_versions_path: str,
         workflow_version: str,
+        workflow_manifest_path: str,
         logo: Type[html_tag] = TarponLogo,
         head_resources: List[Resource] = LAB_head_resources,
         body_resources: List[Resource] = LAB_body_resources,
@@ -331,7 +332,7 @@ class LabsReport(BasicReport):
                     "Workflow Manifest",
                     overflow=True
                 ):
-                    ParamsTable(workflow_params_path)
+                    ParamsTable(workflow_manifest_path)
 
         with self.footer:
             self.addendum = LabsAddendum(

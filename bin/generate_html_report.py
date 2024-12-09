@@ -90,7 +90,7 @@ def main(args):
 
     report = LabsReport(
         f"Report for: {params['run_name']}", args.workflow_name,
-        args.params, args.versions, manifest["version"])
+        args.params, args.versions, manifest["version"], args.manifest)
     
     with report.add_section("Sequencing Stats", "Sequencing Stats"):
         p("""Statistics for the entire flow cell of non-demultiplexed data""")

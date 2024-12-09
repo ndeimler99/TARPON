@@ -467,7 +467,41 @@ process COMBINE_FASTQ {
     """
 }
 
-process COMBINED_INPUT {
+process FASTQ_2_FASTQGZ {
+    label 'tarpon'
+    tag "$file_type Converting FASTQ to FASTQ.GZ"
+
+    input:
+        tuple val(file_type), path(input_file)
+    
+    output:
+        tuple val(params.run_name), path("${file_type}.fastq.gz"), emit: combined
+
+    script:
+    """
+    gzip $input_file > ${file_type}.fastq.gz
+    """
+}
+
+process CONVERT_BAM_2_FASTQ {
+
+    label 'tarpon'
+    tag "$file_type Converting FASTQ to FASTQ.GZ"
+
+    input:
+        tuple val(file_type), path(input_file)
+    
+    output:
+        tuple val(params.run_name), path("${file_type}.fastq.gz"), emit: combined
+
+    script:
+    """
+    samtools fastq -@ 4 $input_file > ${file_type}.fastq.gz
+    """
+
+}
+
+process COMBINED_FASTQ_GZ {
     
     label 'tarpon'
     tag "$file_type Concatenating FASTQ Files"

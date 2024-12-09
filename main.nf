@@ -21,7 +21,13 @@ println """\
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 // include { process_name } from "process_file"
-include { PUTATIVE_ISOLATION } from "./bin/process.nf"
+
+include { validate_parameters } from "./subworkflows/parameter_validation.nf"
+include { preprocess_data_pipeline } from "./subworkflows/preprocess_and_basecall.nf"
+include { telomere_analysis_pipeline } from "./subworkflows/telomere_analysis.nf"
+
+
+//include { PUTATIVE_ISOLATION } from "./bin/process.nf"
 include { REVERSE_COMPLEMENTATION } from "./bin/process.nf"
 include { IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX } from "./bin/process.nf"
 include { IDENTIFY_TAGGING_ADAPTOR } from "./bin/process.nf"
@@ -43,7 +49,7 @@ include { getVersions } from "./bin/process.nf"
 include { getManifest } from "./bin/process.nf"
 include { COMBINE_FASTQ as COMBINED_RETAINED_FASTQ } from "./bin/process.nf"
 include { COMBINE_FASTQ as COMBINED_FILTERED_FASTQ } from "./bin/process.nf"
-include { COMBINED_INPUT as COMBINED_INPUT } from "./bin/process.nf"
+//include { COMBINED_INPUT as COMBINED_INPUT } from "./bin/process.nf"
 include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 include { BARCODE_HAMMING_CHECK } from "./bin/process.nf"
 include { FINAL_TELO_STATS } from "./bin/process.nf"
@@ -69,59 +75,23 @@ workflow {
     // outdir_check = Channel.fromPath("${params.outdir}/report.html").ifEmpty(false)
     
     // outdir_check.view()
+    valid_params = validate_parameters()
 
-    try {
-        file("${params.outdir}/report.html", checkIfExists:true)
-        if (!params.overwrite_outdir) {
-            exit 1, "Out Directory Already Exists, Please Provide New Out Directory Name or Allow Overwriting of Pre-existing directory"
-        }
-    }
-    catch (Exception e) {
-        
+    if (valid_params.passed.value == false){
+        exit 1, "Parameter Validation Failed"
     }
 
-    try {
-        file(params.input_file, checkIfExists:true)
-    }
-    catch (Exception e) {
-        println("Error - Input File or Directory Does not Exist")
-        exit 0
-    }
+    run = params.run_name
 
-    Pinguscript.ping_start(nextflow, workflow, params)
+    if (params.real_time) {
+        real_time_pipeline()
+    }
+    else {
+        // pipeline that takes input, appropriately process it, and returns telomeric sequences
+        preprocess_data_pipeline(params.run_name, params.input_file)
+        telomere_analysis_pipeline(preprocess_data_pipeline.out, params.sample_file)
 
-    if (params.adaptor_sequence == "" && params.sample_file == "") {
-        println ("Adaptor Sequence and Sample File cannot both be empty")
-        exit 0
-    }
 
-    if (!params.plot_telo_length && !params.plot_vrr_length) {
-        println ("Either VRR or Telomere Length Must be Set")
-        exit 0
-    }
-    try {
-        if (params.sample_file != ""){
-            file(params.sample_file, checkIfExists:true)
-        }
-    }
-    catch (Exception e) {
-        println("Error - Sample File not Found")
-        exit 0
-    }
-
-    //check to make barcodes are more different than barcode errors
-    // try catch is currently non-functional will simply cause pipeline error
-    if (params.sample_file != ''){
-        try {
-            barcode_check = BARCODE_HAMMING_CHECK(file(params.sample_file))
-        }
-        catch (Exception e){
-            println "Supplied Barcode Sequences are too Similar for Demultiplexing with ${params.barcode_errors} Errors Allowed. Please reduce error amount."
-            exit 0
-        }
-    }
-    
-    
     // ###### TO DO #######
     // check if filtered_telo is passed in
     // else - filter telomeric reads
@@ -130,132 +100,7 @@ workflow {
     // #############
     
     // convert all bam files to fastq
-
-    run = params.run_name 
-
-    if (file(params.input_file).isDirectory()) {
-        input_ch = COMBINED_INPUT(Channel.fromPath ( "${params.input_file}/*q.gz" ).collect().map{ it -> ["input", it]})
     }
-
-    else{
-        Channel.fromPath( params.input_file, checkIfExists:true)
-        .map{ it -> [ run , it] }
-        .set{ input_ch }
-    }    
-
-    //input_ch.view()
-
-    // putative identification of telomeric sequences to limit dataset size
-    putative_ch = PUTATIVE_ISOLATION(input_ch)
-
-    // reverse complement C strands into G strands and modify header line to include strand information
-    reversed_ch = REVERSE_COMPLEMENTATION(putative_ch.putative_reads)
-    //reversed_ch.retained_reads.view()
-    //reversed_ch.removed_reads.view()
-    
-    // isolate reads with adaptor sequences and filter by subtelomere size
-
-    if (params.adaptor_sequence == ""){
-        // demux by barcode
-        adaptor_ch = IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX(reversed_ch.retained_reads, file(params.sample_file))
-    }
-    else if (params.sample_file == ""){
-        adaptor_ch = IDENTIFY_TAGGING_ADAPTOR(reversed_ch.retained_reads)
-    }
-    else {
-        adaptor_ch = IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX(reversed_ch.retained_reads, file(params.sample_file))
-    }
-
-    adaptor_ch.demuxed_reads.flatten()
-        .map { it -> [it.baseName, it]}
-        .set { demuxed_reads }
-
-    // filter by subtelo length 
-    subtelo_filtered_ch = SUBTELO_FILTERING(demuxed_reads)
-
-    //telo start and length determination
-    // analyze reads and create stats file containing read_id, strand, read_len, VRR_Start, VRR_length, Telo_length
-    telo_stats = TELO_START_IDENTIFICATION(subtelo_filtered_ch.retained_reads)
-
-
-    run_retained = COMBINED_RETAINED_FASTQ(subtelo_filtered_ch.retained_reads.multiMap { label, stats -> stats: stats }.collect(). map { it -> [ "subtelo_pass", it ]}.mix(
-                                                telo_stats.retained_reads.multiMap { label, stats -> stats: stats }.collect().map {it -> [ "telo_retained", it]}))
-
-    run_filtered = COMBINED_FILTERED_FASTQ(subtelo_filtered_ch.filtered_reads.multiMap {label, stats -> stats:stats}.collect().map {it -> ["subtelo_fail", it]}.mix(
-                                                telo_stats.no_telo_start.multiMap { label, stats -> stats: stats}.collect().map{it -> ["no_telo_start", it]},
-                                                telo_stats.below_telo_threshold.multiMap { label, stats -> stats: stats }.collect().map{it -> ["below_telo_threshold", it]}))
-
-    if (params.strand_comparison){
-        separate_run_filtered = SEPERATE_STRAND_RUN_FILTERING(adaptor_ch.filtered_reads.mix(run_filtered.combined))
-        separate_run_retained = SEPERATE_STRAND_RUN_RETAINED(reversed_ch.retained_reads.mix(adaptor_ch.retained_reads, run_retained.combined))
-
-
-        filtered_sample = SEPERATE_STRAND_SAMPLE_FILTERING(subtelo_filtered_ch.filtered_reads.mix(telo_stats.no_telo_start, telo_stats.below_telo_threshold))
-        retained_sample = SEPERATE_STRAND_SAMPLE_RETAINED(demuxed_reads.mix(subtelo_filtered_ch.retained_reads, telo_stats.retained_reads))
-
-        
-        //get run retained stats on all reads input, putative reads, putative strand specific, adaptor found, adaptor strand specific.
-        run_stats = SUMMARY_STATS_RUN(putative_ch.input_ch.mix(putative_ch.putative_reads, reversed_ch.retained_reads, run_retained.combined, separate_run_retained.g_strand, separate_run_retained.c_strand, adaptor_ch.retained_reads).groupTuple(), \
-                                        putative_ch.input_ch.mix(putative_ch.non_telomeric, reversed_ch.removed_reads, run_filtered.combined, adaptor_ch.filtered_reads, separate_run_filtered.c_strand, separate_run_filtered.g_strand).groupTuple())
-        // get sample retained stats on number of reads with adaptor, adaptor strand specific, subtelo pass, subtelo strand specific, telomeric, telomeric strand specfic
-        sample_stats = SUMMARY_STATS_SAMPLE(demuxed_reads.mix(subtelo_filtered_ch.retained_reads, telo_stats.retained_reads, retained_sample.c_strand, retained_sample.g_strand).groupTuple(), \
-                                        demuxed_reads.mix(subtelo_filtered_ch.filtered_reads, telo_stats.no_telo_start, telo_stats.below_telo_threshold, filtered_sample.c_strand, filtered_sample.g_strand).groupTuple())
-
-    }
-    else {
-        //get run retained stats on all reads input, putative reads, adaptor found
-        run_stats = SUMMARY_STATS_RUN(putative_ch.input_ch.mix(putative_ch.putative_reads, reversed_ch.retained_reads, adaptor_ch.retained_reads, run_retained.combined).groupTuple(), \
-                                    putative_ch.input_ch.mix(putative_ch.non_telomeric, reversed_ch.removed_reads, adaptor_ch.filtered_reads, run_filtered.combined).groupTuple())
-            
-        // get sample retained stats on number of reads with adaptor, subtelo pass, telomeric
-        sample_stats = SUMMARY_STATS_SAMPLE(demuxed_reads.mix(subtelo_filtered_ch.retained_reads, telo_stats.retained_reads).groupTuple(), \
-                                        demuxed_reads.mix(subtelo_filtered_ch.filtered_reads, telo_stats.no_telo_start, telo_stats.below_telo_threshold).groupTuple())
-    
-    }
-
-    //if individual read, create plots
-    if (params.indiv_read_plots) {
-        INDIVIDUAL_READ_PLOTS(telo_stats.final_telomeric)
-    }
-
-    GENERATE_PLOTS(telo_stats.final_telomeric)
-
-    if (params.detailed_stats) {
-        telo_stats = GENERATE_DETAILED_PLOTS(telo_stats.final_telomeric)
-    }
-
-    if (params.restriction_digest_analysis != ""){
-        restriction_digest = RESTRICTION_DIGEST_ANALYSIS(telo_stats.final_telomeric)
-    }
-    else {
-        // Channel.of("false").map { stats -> $it }.set { restriction_digest }
-        restriction_digest = GET_EMPTY_CHANNEL()
-    }
-
-    params = getParams()
-    versions = getVersions()
-    manifest = getManifest()
-
-    sample_stats.retained_stats.multiMap{ label, stats ->
-            label: label
-            stats: stats
-        }.set { retained_sample }
-
-    sample_stats.filtered_stats.multiMap{ label, stats ->
-            label: label
-            stats: stats
-        }.set { filtered_sample }
-
-    FINAL_TELO_STATS(telo_stats.final_telo_stats.collect())
-
-    //generate_html_report(file(params.outdir), stats_done[1])
-    GENERATE_FINAL_REPORT(params.params, versions.versions, manifest.manifest, \
-                        run_stats.retained_stats, run_stats.filtered_stats, \
-                        retained_sample.stats.collect(), filtered_sample.stats.collect(), \
-                        telo_stats.final_telo_stats.collect(), \
-                        FINAL_TELO_STATS.out.stats, FINAL_TELO_STATS.out.vrr_stats, \
-                        restriction_digest.stats.collect() \
-        )
 }
 
 
