@@ -2,6 +2,12 @@ import groovy.json.JsonOutput
 
 
 process PUTATIVE_ISOLATION {
+    // Process that will take a singular fastq.gz input file and isolate all putative telomeric reads
+    // based on the frequency of params.repeat (sequence) being present at least params.repeat_count times
+
+    // It will return 3 output tuples containing the putative telomeric reads, non telomeric reads, and the input channel
+    
+    // Nothing is published to the output directory
 
     tag "$run_name - Putative Isolation"
     label 'tarpon'
@@ -13,11 +19,6 @@ process PUTATIVE_ISOLATION {
         tuple val(run_name), path ("putative_reads.fastq"), emit: putative_reads
         tuple val (run_name), path("non_telomeric.fastq"), emit: non_telomeric
         tuple val(run_name), path("input.fastq.gz"), emit: input_ch
-    
-    //publishDir "${params.outdir}/TELOMERIC/", overwrite: true, mode: 'copy', pattern: "input.fastq.gz"
-    //publishDir "${params.outdir}/FILTERED_READS/", overwrite: true, mode: 'copy', pattern: "input.fastq.gz"
-    //publishDir "${params.outdir}/TELOMERIC/", mode: 'copy', overwrite: true, pattern: "putative_reads.fastq"
-    //publishDir "${params.outdir}/FILTERED_READS/",  overwrite: true, pattern: "non_telomeric.fastq"
 
     script:
     """
@@ -26,6 +27,14 @@ process PUTATIVE_ISOLATION {
 }
 
 process SEPERATE_STRANDS {
+
+    // Process that is designed to separate the G and C strand telomeric sequences into their respective categories for statistical analysis purposes
+
+    // Takes an input of a fastq file that is unzipped containg all telomeric reads
+
+    // Returns two tuples for G and C strand telomeric sequences respectively
+
+    // Nothing is published to output directory
 
     label 'tarpon'
     tag "$id - Seperating $reads.baseName"
@@ -60,8 +69,16 @@ process ISOLATE_POD5_SQUIGGLES {
     pod5 filter 
     """    
 }
+
 process REVERSE_COMPLEMENTATION {
     
+    //Process that will take all C strand reads and reverse complement them to G strand reads for pipeline simplicity
+
+    // Input is a fastq file of reads that are then filtered based on the prevalance of G and C strand repeats (chimeras removed)
+
+    // Output is two tuples - one is the reads that are chimeric, the second is all putative telomeric reads that are retained
+
+    // Nothing is published to output directory
     label 'tarpon'
     tag "$run_name - Reverse Complementation"
     input:
@@ -71,9 +88,6 @@ process REVERSE_COMPLEMENTATION {
         tuple val(run_name), path("20_80_removed_reads.fastq"), emit: removed_reads
         tuple val(run_name), path("putative_reads.filtered.fastq"), emit: retained_reads
     
-    //publishDir "${params.outdir}/FILTERED_READS/", mode: 'copy', overwrite: true, pattern: "20_80_removed*.fastq"
-    //publishDir "${params.outdir}/TELOMERIC/", mode: 'copy', overwrite: true, pattern: "putative*.fastq"
-
     script:
     """
     reverse_complement_reads.py --input_file ${reads} \
@@ -86,7 +100,17 @@ process REVERSE_COMPLEMENTATION {
 }
 
 process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
+
+    // Process that identifies the end of telomeric repeats from the presence of a barcode or an adaptor sequence
+    // and further demultiplexes input fastq based on the sample file
+
+    // takes two inputs : tuple of putative and filtered telomeric sequences and a sample file to demultiplex by
     
+    // output a channel containing all reads sucesfully demultiplexed, a tuble containing all reads where an adaptor was succesfully identified
+    // and a tuple with all reads not containing an adaptor sequence
+
+    // Nothing is published to output directory
+
     label 'tarpon'
     tag "$run_name - Identify Adaptor and Demultiplexing"
 
@@ -99,34 +123,32 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
         tuple val(run_name), path("adaptor.fastq"), emit: retained_reads
         tuple val(run_name), path("adaptor_filtered.fastq"), emit: filtered_reads
 
-    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
-    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
 
     script:
+    // if no adaptor sequence is provided telomeric reads are demultiplexed and the end is identified simultaneously based on the sequences in the sample file
     if (params.adaptor_sequence == "")
-        // no adaptor sequence provided - using ONT like approach were telomere overhang goes directly into barcode
-        // computationally not ideal
         """
         mkdir DEMUX/
         identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} --out_fh DEMUX/ --no_adaptor adaptor_filtered.fastq
         cat DEMUX/* > adaptor.fastq
         """
+    // if both an adaptor sequence and sample file are provided the telomeric end is first identified by the adaptor sequence and then downstream demultiplexed using the sample file
     else
-        // multiple samples
         // run adaptor identification and then demux
         """
         mkdir TELOMERIC
         mkdir TELOMERIC/DEMUX/
         mkdir FILTERED_READS
         """
-    // else
-        // multiple samples
-            // use same scripts as with no sample file with additional step of sample assignment
-    
 }
 
 process IDENTIFY_TAGGING_ADAPTOR {
     
+    // Identical to previous process however with no demultiplexing - this function is run when the adaptor sequence is provided but the sample file is not
+
+    // input and output are identical to previous process
+
+    // Nothing is published to output directory
     label 'tarpon'
     tag "$run_name - Identify Adaptor and Demultiplexing"
 
@@ -137,9 +159,6 @@ process IDENTIFY_TAGGING_ADAPTOR {
         path("${params.sample_name}.fastq"), emit: demuxed_reads
         tuple val(run_name), path("adaptor.fastq"), emit: retained_reads
         tuple val(run_name), path("adaptor_filtered.fastq"), emit: filtered_reads
-
-    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
-    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
 
     script:
     """
@@ -156,6 +175,13 @@ process IDENTIFY_TAGGING_ADAPTOR {
 }
 
 process SUBTELO_FILTERING {
+
+    // Process that looks at start of reasd and removes any read that contains greater than params.subtelo_threshold percentage of telomeric repeats in the first params.min_subtelo_length
+
+    // Input - Takes a fastq file of reads and outputs two tuples of failed and passed filtering reads
+
+    // Nothing is published to output directory
+
     label 'tarpon'
     tag "$sample - Subtelomeric Filtering"
     input:
@@ -179,6 +205,15 @@ process SUBTELO_FILTERING {
 
 
 process TELO_START_IDENTIFICATION {
+
+    // Process that identifies the start of telomeric reads and performs additional filtering based on sequence prior to start - see manuscript for more details
+
+    // Input fastq file of reads
+
+    // Output - telomeric reads, telomeric read stats, reads where no telomere start was identified, reads that failed filtering
+
+    // Final telomeric reads and telomeric stats are published to output directory
+
     label 'tarpon'
     tag "$sample - Identifying Telomere Start"
     input:
@@ -190,11 +225,6 @@ process TELO_START_IDENTIFICATION {
         tuple val(sample), path("*no_telomere_start.fastq"), emit: no_telo_start
         tuple val(sample), path("*.below_telo_%_threshold.fastq"), emit: below_telo_threshold
         tuple val(sample), path("*telomeric.fastq"), emit: retained_reads
-
-    //publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwite:true, pattern: "telomeric_stats.txt", saveAs: { filename -> "${sample}.stats.txt" }
-    //publishDir "${params.outdir}/FINAL_TELO/", mode:'copy', overwite:true, pattern: "TELOMERIC/*", saveAs: { filename -> "${sample}.telomeric.fastq" }
-    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "FILTERED_READS/*"
-    //publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "TELOMERIC/*"
 
     publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite:true, pattern:"*.telomeric.fastq"
     publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite:true, pattern:"telomeric_stats.txt"
@@ -220,6 +250,14 @@ process TELO_START_IDENTIFICATION {
 
 process INDIVIDUAL_READ_PLOTS {
 
+    // process that will plot telomeric repeat percentage along read for every finalized telomeric sequence
+
+    // Input : fastq reads and telomeric statistics
+
+    // output: one pdf file per read
+
+    // PDF files are published to output directory
+
     label 'tarpon'
     tag "$sample - Plotting Individual Reads"
 
@@ -238,6 +276,14 @@ process INDIVIDUAL_READ_PLOTS {
 }
 
 process GENERATE_PLOTS {
+
+    // process that generates R plots using telomeric reads and telo stats dataframe
+
+    // input = telomeric reads and statistics dataframe
+
+    // output = all relevant plots
+
+    // publishes all relevant plots to output directory
 
     label 'tarpon'
     tag "$sample - Generating Output Plots"
@@ -260,6 +306,8 @@ process GENERATE_PLOTS {
 
 process GENERATE_DETAILED_PLOTS {
 
+    // exact same as generate_plots but does so to a much greater extent
+
     label 'tarpon'
     tag "$sample - Generating Detailed Output Plots"
 
@@ -269,8 +317,6 @@ process GENERATE_DETAILED_PLOTS {
     output:
         tuple val(sample), path(telomeric_reads), path("*telomeric_stats.txt"), emit: final_telomeric
         path("*telomeric_stats.txt"), emit: final_telo_stats
-        //path("DETAILED_STATS/*.pdf")
-        //path("C_G_COMPARISON/*.pdf"), optional: true
     
     publishDir "${params.outdir}/${sample}/FIGURES/", mode:'move', overwrite: true, pattern: "DETAILED_STATS/*.pdf"
     publishDir "${params.outdir}/${sample}/FIGURES", mode:'move', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
@@ -286,13 +332,20 @@ process GENERATE_DETAILED_PLOTS {
 
 process SUMMARY_STATS_RUN {
 
+    // process that takes a list of retained and filtered fastq files and runs seqkit stats on the files for easy plotting
+
+    // input: two tuples composed of retained and filtered read locations
+
+    // output: seqkit stats output files and R plots generated from these statistics
+
+    // publishes stats and figures to output directory
+
     label 'tarpon'
     tag "$id - Collecting Run Summary Statistics"
 
     input:
         tuple val(id), path(retained, stageAs: "RETAINED/*")
         tuple val(id), path(filtered, stageAs: "FILTERED/*")
-        //path(output_dir)
     
     output:
         tuple val(id), path("Retained_Reads.stats.txt"), emit: retained_stats
@@ -314,13 +367,14 @@ process SUMMARY_STATS_RUN {
 
 process SUMMARY_STATS_SAMPLE {
 
+    // does the same thing as summary stats run but for each individual demultiplexed sample
+
     label 'tarpon'
     tag "$id - Collecting Sample Summary Statistics"
 
     input:
         tuple val(id), path(retained, stageAs: "RETAINED/*")
         tuple val(id), path(filtered, stageAs: "FILTERED/*")
-        //path(output_dir)
     
     output:
         tuple val(id), path("*retained.stats.txt"), emit: retained_stats
@@ -337,6 +391,14 @@ process SUMMARY_STATS_SAMPLE {
 
 process RESTRICTION_DIGEST_ANALYSIS {
 
+    // if the params.restriction_digest_analysis is set will search for restriction sites in the telomeric sequences based on a comma separated list
+
+    // input telomeric sequences and statistics
+
+    // output: digestion stats - one line per restriction site
+
+    // publishes stats to output directory
+     
     label 'tarpon'
     tag "$sample - Performing Restriction Digest Analysis"
 
@@ -414,7 +476,7 @@ process getParams {
     script:
     json_str = JsonOutput.toJson(params)
     json_indented = JsonOutput.prettyPrint(json_str)
-    // NOTE: single quotes are critical here;
+
     """
     echo '${json_indented}' > "params.json"
     """
@@ -600,14 +662,9 @@ process FINAL_TELO_STATS {
     output:
         path("sample_stats.txt"), emit: stats
         path("sample_stats.VRR.txt"), emit: vrr_stats
-    //    path("combined_df.csv"), emit: combined_df
-    //    path("*.pdf")
-
 
     publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "sample_stats.txt"
     publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "sample_stats.VRR.txt"
-    //publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "*.pdf"
-
 
     script:
     """

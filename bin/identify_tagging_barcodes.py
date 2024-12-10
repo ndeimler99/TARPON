@@ -4,6 +4,8 @@ import argparse
 import regex
 
 def identify_first_barcode(read, barcode_dict, barcode_errors, repeat):
+    """identifies location of the first barcode existing within a given read after ten telomeric repeats are identified:
+    returns none if no barcodes are found. returns the first barcode and its location when found"""
     location_dict = {}
     for sample in barcode_dict:
         matches = list(regex.finditer(r'(?e)(%s){e<=%s}' % (barcode_dict[sample], barcode_errors), read))
@@ -30,6 +32,7 @@ def main(args):
     barcode_dict = {}
     read_dict = {}
     first_line = True
+    # create a barcode dictionary
     with open(args.sample_file, 'r') as sample_file:
         for line in sample_file:
             if first_line:
@@ -44,13 +47,13 @@ def main(args):
         linecount = 0 
         for line in fh:
             linecount += 1
+            # iterate through reads in a fastq file. Identify barcode for every read
+            # add barcode sequence to header row for documentation
             if linecount % 4 == 0:
                 read.append(line.strip())
                 
                 barcode, location = identify_first_barcode(read[1], barcode_dict, args.barcode_errors, args.repeat)
                 if barcode is not None and location != len(read[1]):
-                    #shorten read and quality score and write out to appropriate barcode file
-                    #include 100 bp downstream in header line
                     read[1] = read[1][0:location]
                     read[3] = read[3][0:location]
                     read[0] = read[0] + "\t" + read[1][location:location+100]
@@ -61,6 +64,7 @@ def main(args):
             else:
                 read.append(line.strip())
 
+    # write out each individual fastq file from demultiplexing
     for sample in read_dict:
         with open("{}/{}.fastq".format(args.out_fh, sample), 'w') as fh:
             for read in read_dict[sample]:

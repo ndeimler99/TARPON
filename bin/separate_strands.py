@@ -2,8 +2,8 @@
 
 import argparse
 
-def main():
-    with open(input_file, 'r') as input_file_fh, open(g_file, 'w') as g_fh, open(c_file, 'w') as c_fh:
+def main(args):
+    with open(args.input_file, 'r') as input_file_fh, open(args.g_file, 'w') as g_fh, open(args.c_file, 'w') as c_fh:
         linecount = 0
         read = []
         for line in input_file_fh:
@@ -17,7 +17,7 @@ def main():
                 read = []
 
 def argparser():
-    parser = argpare.ArgumentParser()
+    parser = argparse.ArgumentParser()
     parser.add_argument("--input_file", required=True)
     parser.add_argument("--g_file", required=True)
     parser.add_argument("--c_file", required=True)

@@ -7,9 +7,12 @@ import matplotlib.pyplot as plt
 
 def main(args):
 
+    # convert parameters from strings to usable data types
+
     args.sliding_window = int(args.sliding_window)
     args.sliding_window_interval = int(args.sliding_window_interval)
 
+    # create telomere statistics dictionary to draw telo start
     start_dict = {}
     linecount = 0
     with open(args.telo_stats, 'r') as telo_stats_fh:
@@ -20,6 +23,7 @@ def main(args):
             line = line.strip().split()
             start_dict[line[0]] = int(line[3])
 
+    # for each read in fastq file draw the telomeric sequence
     with open(args.input_file, "r") as input_fh:
         linecount = 0
         read = []

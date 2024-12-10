@@ -17,28 +17,24 @@ import ezcharts as ezc
 from ezcharts.components.ezchart import EZChart
 from ezcharts.components.fastcat import SeqSummary
 #from ezcharts.components.reports.labs import LabsReport
-from report import LabsReport
+from extra.report import LabsReport
 #from report import BasicReport
 from ezcharts.layout.snippets import DataTable
 from ezcharts.layout.snippets import Grid
 from ezcharts.layout.snippets import Tabs
 import pandas as pd
-from report_utils import BokehPlot
+#from extra.report_utils import BokehPlot as report_utils.BokehPlot
 from ezcharts.components.reports.comp import ComponentReport
 from bokeh.models import HoverTool, ColumnDataSource
-import report_utils
+import extra.report_utils as report_utils
 import numpy as np
 from bokeh.plotting import figure
 import bokeh.palettes
 
 
-# reorder statistics so input is first...
+
 #  Individual Sample histogram and boxplot add red line denoting mean
 #  Individual sample boxplot and barchart remove x axis tick labels
-#  Add Manifest tablel similar to params table
-#  Report page – remove provided by Oxford Nanopore Technologies
-#  Report page – remove About footer – or at least modify text
-#  Report page – remove Epi2Me logo and replace with TArPON cartoon
 #  change read quality to boxplot
 
 

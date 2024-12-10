@@ -1,14 +1,19 @@
 #!/usr/bin/env Rscript
 
+# load appropriate libraries
 library(ggplot2)
 library(dplyr)
 library(viridis)
 library(ggpointdensity)
 
+# get args args[1] = telo_stats (file), args[2] = plot_telo_length (boolean), args[3] = plot_vrr_length (boolean), args[4] = strand_comparison (boolean)
 args = commandArgs(trailingOnly=TRUE)
+
+# open telo stats file into dataframe
 telo_stats <- read.table(args[1], header=TRUE)
 telo_lengths_for_binning <- c(10500, 9500, 8500, 7500, 6500, 5500, 4500, 3500, 2500, 1500, 500)
 
+# plot read length histogram
 read_length_hist <- ggplot(data=telo_stats) +
   geom_histogram(mapping=aes(read_len), binwidth=50) +
   geom_vline(xintercept=mean(telo_stats$read_len), color='red') +
@@ -19,8 +24,11 @@ read_length_hist <- ggplot(data=telo_stats) +
 
 ggsave("read_length_hist.pdf", device="pdf", plot=read_length_hist, width=10, height=10)
 
+
+# if plot telo length is chosen
 if (args[2]){
-  # plot telo length
+
+  # telomere length histogram
   telo_length_hist <- ggplot(data=telo_stats) +
     geom_histogram(mapping=aes(telo_length), binwidth=50) +
     geom_vline(xintercept=mean(telo_stats$telo_length), color='red') +
@@ -31,6 +39,7 @@ if (args[2]){
   
   ggsave("telo_length_hist.pdf", device="pdf", plot=telo_length_hist, width=10, height=10)
   
+  # telomere length scatter plot by read length
   telo_length_scatter <- ggplot(data=telo_stats) +
     geom_pointdensity(mapping=aes(x=telo_length, y=read_len), adjust=4) +
     scale_color_viridis() +
@@ -42,6 +51,8 @@ if (args[2]){
   
   ggsave("telo_length_by_read_length.pdf", device="pdf", plot=telo_length_scatter, width=10, height=10)
   
+
+  # telomere length grouped bar plot
   telo_stats$bin_telo_length <- unlist(lapply(telo_stats$telo_length, function(x) telo_lengths_for_binning[which.min(abs(telo_lengths_for_binning-x))]))
   telo_stats$bin_telo_length <- factor(telo_stats$bin_telo_length, levels=c(10500, 9500, 8500, 7500, 6500, 5500, 4500, 3500, 2500, 1500, 500))
   
@@ -60,8 +71,9 @@ if (args[2]){
   ggsave("telo_length_bar_plot.pdf", plot = telo_bar_hist, device="pdf", width=6, height=10)
 }
 
+# if plotting vrr length was specified
 if (args[3]){
-  # plot VRR length
+  # plot VRR length histogram
   vrr_length_hist <- ggplot(data=telo_stats) +
     geom_histogram(mapping=aes(vrr_telo_length), binwidth=50) +
     geom_vline(xintercept=mean(telo_stats$vrr_telo_length), color='red') +
@@ -72,6 +84,8 @@ if (args[3]){
   
   ggsave("vrr_length_hist.pdf", device="pdf", plot=vrr_length_hist, width=10, height=10)
   
+
+  # plot vrr length scatterplot by read length
   vrr_length_scatter <- ggplot(data=telo_stats) +
     geom_pointdensity(mapping=aes(x=vrr_telo_length, y=read_len), adjust=4) +
     scale_color_viridis() +
@@ -83,6 +97,7 @@ if (args[3]){
   
   ggsave("vrr_length_by_read_length.pdf", device="pdf", plot=vrr_length_scatter, width=10, height=10)
   
+  # plot vrr length grouped bar plot
   telo_stats$bin_vrr_length <- unlist(lapply(telo_stats$vrr_telo_length, function(x) telo_lengths_for_binning[which.min(abs(telo_lengths_for_binning-x))]))
   telo_stats$bin_vrr_length <- factor(telo_stats$bin_vrr_length, levels=c(10500, 9500, 8500, 7500, 6500, 5500, 4500, 3500, 2500, 1500, 500))
   
@@ -100,6 +115,7 @@ if (args[3]){
 
   ggsave("vrr_length_bar_plot.pdf", plot = vrr_bar_hist, device="pdf", width=6, height=10)
   
+  # plot vrr boxplot comparing telo length to vrr length
   telo_vrr_box <- ggplot(data = telo_stats) +
     geom_boxplot(mapping=aes(x="Telo Length", y=telo_length)) +
     geom_boxplot(mapping=aes(x="VRR Length", y=vrr_telo_length)) +
@@ -111,6 +127,7 @@ if (args[3]){
   
   ggsave("vrr.telo_comparison.box.pdf", plot=telo_vrr_box, device="pdf", width=6, height=10)
   
+  # plot vrr llength compared to telo length binned box plot
   telo_stats$bin_telo_length <- unlist(lapply(telo_stats$telo_length, function(x) telo_lengths_for_binning[which.min(abs(telo_lengths_for_binning-x))]))
   telo_stats$bin_telo_length <- factor(telo_stats$bin_telo_length, levels=c(10500, 9500, 8500, 7500, 6500, 5500, 4500, 3500, 2500, 1500, 500))
   
@@ -126,6 +143,8 @@ if (args[3]){
   
 }
 
+
+# if strand comparison - basically plot everything above again but now showing strand differences
 if (args[4]) {
   # plot strand comparison
   read_length_by_strand <- ggplot(data=telo_stats) +

@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
+
 import regex
 import argparse
 
 def get_mean_qual(seq):
+    """Returns the mean phred converted quality score for a given seq"""
     return sum([ord(i)-33 for i in seq]) / len(seq)
 
 def main(args):
     with open(args.fastq_file, "r") as input_fh, open(args.stats_in, "r") as stats_in, open(args.stats_out, "w") as stats_out:
-
         linecount = 0
         stats_dict = {}
+        # read in pre-existing telomeric statistics and store in a dictionary where the key is the read id and the value is the entire line
         for line in stats_in:  
             if linecount == 0:
                 linecount += 1
@@ -17,6 +19,7 @@ def main(args):
             else:
                 stats_dict[line.strip().split()[0]] = line.strip()
         
+        # for every telomeric sequence in args.fastq_file add the detailed stats to the stored dictionary and write out to a new file
         linecount = 0
         read = []
         for line in input_fh:
@@ -34,7 +37,6 @@ def main(args):
 
 
 def argparser():
-
     """Argument parser for entrypoint."""
     parser = argparse.ArgumentParser()
     parser.add_argument("--fastq_file", required=True)

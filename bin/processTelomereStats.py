@@ -15,6 +15,7 @@ def argparser():
     return parser
 
 def main(args):
+    # convert parameters from strings to usable data types
 
     args.vrr_length = args.vrr_length == "true"
     args.telo_length = args.telo_length == "true"
@@ -23,6 +24,7 @@ def main(args):
 
     out_df = []
 
+    # open stats files
     telo_fh = open("sample_stats.txt", "w")
     vrr_fh = open("sample_stats.VRR.txt", "w")
 
@@ -32,6 +34,7 @@ def main(args):
     if args.vrr_length:
         vrr_fh.write("Sample_ID\tNumber_of_Reads\tMean_VRR_Telomere_Length\tStandard_Deviation_VRR_Length\tQ1\tQ2\tQ3\tMin_VRR_Telo_Length\tMax_VRR_Telo_Length\n")
 
+    # for every sample in demultiplexed data write out telomere statistics
     for file in args.stat_files:
         df = pd.read_table(file, sep="\t")
         # stats

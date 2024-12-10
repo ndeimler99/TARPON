@@ -20,62 +20,42 @@ println """\
     Import Required Workflows and Processes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
-// include { process_name } from "process_file"
 
 include { validate_parameters } from "./subworkflows/parameter_validation.nf"
 include { preprocess_data_pipeline } from "./subworkflows/preprocess_and_basecall.nf"
 include { telomere_analysis_pipeline } from "./subworkflows/telomere_analysis.nf"
-include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
-// Print help message, supply typical command line usage for the pipeline
-
-
-// this will check json --sample_file needs to match appropriate format using schema file - how do I do that?
-//validateParameters()
-
-
+include { paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    RUN ALL WORKFLOWS
+    Run Workflow
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 */
 WorkflowMain.initialise(workflow, params, log)
 
 workflow {
 
-    // // check if output directory exists
-    // outdir_check = Channel.fromPath("${params.outdir}/report.html").ifEmpty(false)
-    
-    // outdir_check.view()
+    // validate parameters and throw an error if invalid parameters
     valid_params = validate_parameters()
 
     if (valid_params.passed.value == false){
         exit 1, "Parameter Validation Failed"
     }
 
-    run = params.run_name
-
+    // check if pipeline should be running while sequencing - this function currently does not work and will result in no output being generated
     if (params.real_time) {
         real_time_pipeline()
     }
     else {
-        // pipeline that takes input, appropriately process it, and returns telomeric sequences
+        // preprocess data pipeline takes the input files or directory and returns SUP basecalled telomeric sequences
         preprocess_data_pipeline(params.run_name, params.input_file)
+
+        // takes putative telomeric sequences returned by preprocess data pipeline and runs all relevant processes to generate descriptive stats and report.html
         telomere_analysis_pipeline(preprocess_data_pipeline.out, params.sample_file)
-
-
-    // ###### TO DO #######
-    // check if filtered_telo is passed in
-    // else - filter telomeric reads
-
-    // reference_file for mapping has to be value channel (just leave it at params.reference)
-    // #############
-    
-    // convert all bam files to fastq
     }
 }
 
-
+// When workflow finishes return basic description of finished or not and if it works remove the work directory if specified during run
 workflow.onComplete {
     println "Analysis Complete at: $workflow.complete"
     println "Execution Status: ${ workflow.success ? 'OK' : 'failed' }"
