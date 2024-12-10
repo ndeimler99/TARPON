@@ -1,3 +1,8 @@
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Import Required Workflows and Processes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
 
 include { PUTATIVE_ISOLATION } from "../bin/process.nf"
 include { COMBINE_FASTQ_AND_ZIP } from "../bin/process.nf"
@@ -6,13 +11,21 @@ include { COMBINED_FASTQ_GZ } from "../bin/process.nf"
 include { CONVERT_BAM_2_FASTQ } from "../bin/process.nf"
 include { COMBINE_BAM } from "../bin/process.nf"
 
+/*
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    Run Workflow
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+*/
+
 workflow preprocess_data_pipeline {
     take:
         run
         input_file
 
     main:
-
+        // check inf input_file parameters is a directory or a file
+            // if it is a directory look for fastq.gz, fastq, and then bam files and concatenate fastq.gz, concatenate and gzip fastq, or merge bams and convert to fastq.gz
+            // if input file is a single file - check the file extension.  If it is a bam file - convert to fastq.gz, if it is fastq - gzip. Do nothing if it is a fastq.gz
         if (file(input_file).isDirectory()) {
             if (file("${input_file}/*.fastq.gz", checkIfExists: true) == []){
                 if (file("${input_file}/*.fastq", checkIfExists: true) == []){

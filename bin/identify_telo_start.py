@@ -4,6 +4,7 @@ import regex
 import argparse
 
 def get_telo_start(read, repeat, sliding_window, sliding_window_interval, upper_threshold, lower_threshold, consecutive_threshold):
+    # identifies start of telomeric read (read).  See manuscript for more details on how this is done and why it is done each way
     telo_found = False
     telo_start = None
     below_threshold = 0
@@ -24,6 +25,7 @@ def get_telo_start(read, repeat, sliding_window, sliding_window_interval, upper_
     return telo_found, telo_start
 
 def check_valid(read, repeat, telomeric_rep_perc):
+    # check if telomeric sequence from telo start to telo end is above telomeric_rep_perc
     
     telo_perc = len(list(regex.finditer(r"(%s){s<=1}" % repeat, read))) * len(repeat) / (len(read))
     if telo_perc >= telomeric_rep_perc:
@@ -32,6 +34,7 @@ def check_valid(read, repeat, telomeric_rep_perc):
         return False
 
 def get_telo_length(telomere, sequence):
+    # return the telomere length which is currently is the number of nucleotides from telo start to telo end that are within 3 telomeric repeats in a row
     telo_matches = list(regex.finditer(sequence, telomere, overlapped=True))
     telomere = [*telomere]
     for match in telo_matches:
@@ -61,6 +64,7 @@ def argparser():
 
 def main(args):
 
+    # convert parameters from strings to usable data types
     args.sliding_window = int(args.sliding_window)
     args.sliding_window_interval = int(args.sliding_window_interval)
     args.upper_threshold = float(args.upper_threshold)
@@ -69,6 +73,7 @@ def main(args):
     args.consecutive_repeats = int(args.consecutive_repeats)
     args.telomeric_rep_perc = float(args.telomeric_rep_perc)
 
+    # isolate through fastq file to perform telo start analysis on each individual read
     with open(args.input_file, "r") as input_fh, open(args.telomeric_fastq_out, "w") as telo_out, \
     open(args.no_telomere_out, "w") as no_telo_out, open(args.filtered_out, 'w') as filtered_fh, \
     open(args.stats_fh, "w") as stats_fh:

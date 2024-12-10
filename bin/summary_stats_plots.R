@@ -4,6 +4,7 @@ library(ggplot2)
 library(dplyr)
 library(stringr)
 
+# script funtions to generate summary stats of entire sequencing run/experiment
 args = commandArgs(trailingOnly=TRUE)
 read_stats <- read.table(args[1], header=TRUE, sep="\t")
 

@@ -5,6 +5,8 @@ library(dplyr)
 library(viridis)
 library(ggpointdensity)
 
+# scripts serves the purposes to combine all multiplexed data into one set of easy to understand figures for easy sample comparison
+
 args = commandArgs(trailingOnly=TRUE)
 telo_stats <- read.table(args[1], header=TRUE, sep=",")
 

@@ -6,6 +6,8 @@ library(viridis)
 library(ggpointdensity)
 library(ggpubr)
 
+# script aims to create detailed figures from telomeric statistics
+
 args = commandArgs(trailingOnly=TRUE)
 telo_stats <- read.table(args[1], header=TRUE)
 telo_lengths_for_binning <- c(10500, 9500, 8500, 7500, 6500, 5500, 4500, 3500, 2500, 1500, 500)

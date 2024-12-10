@@ -9,9 +9,15 @@ def rev_complement(seq):
     return ''.join([rev_dict[i] for i in seq[::-1]])
 
 def main(args):
+
+    # convert parameters from strings to usable data types
+
     args.c_strand_only = args.c_strand_only == "true"
     args.repeat_count = int(args.repeat_count)
 
+    # for read in gzipped fastq file perform analysis
+    # if the argument c strand only is set convert the telomeric repeat is C strand and identify reads
+    # otherwise check for both forward and reverse telomeric repeats
     with gzip.open(args.input_file, 'rt') as input_file_fh, open(args.out_file, 'w') as out_fh, open(args.non_telo, "w") as non_telo_fh:
         linecount = 0
         read = []
