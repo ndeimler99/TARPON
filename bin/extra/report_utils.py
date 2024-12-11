@@ -115,12 +115,13 @@ def seqkit_stats_boxplot_length(
                 f"all categories ({groups}) not present in order ({order})")
 
     # compute IQR outlier bounds
-    iqr = df.Q3 - df.Q1
+    lower_iqr = df.Q2 - df.Q1
+    upper_iqr = df.Q3 - df.Q1
 
     # whiskers
     if isinstance(whis, float):
-        df["upper"] = df.Q3 + whis * iqr
-        df["lower"] = df.Q1 - whis * iqr
+        df["upper"] = df.Q3 + whis * upper_iqr
+        df["lower"] = df.Q1 - whis * lower_iqr
     else:
         raise NotImplementedError(
             f"'whis' must be float, {type(whis)} is not supported or implemented")
@@ -202,10 +203,11 @@ def create_boxplot(df, column_name, sample, plt_title=None, x_title=None, y_titl
     ])
 
     q1, q3 = series.quantile([0.25, 0.75])
-    iqr = q3 - q1
+    upper_iqr = q3 - q2 * 2
+    lower_iqr = q2 - q1 * 2
     qmin, q1, q2, q3, qmax = series.quantile([0, 0.25, 0.5, 0.75, 1])
-    upper = min(qmax, q3 + 1.5 * iqr)
-    lower = max(qmin, q1 - 1.5 * iqr)
+    upper = min(qmax, q3 + 1.5 * upper_iqr)
+    lower = max(qmin, q1 - 1.5 * lower_iqr)
 
     source = ColumnDataSource(data={'x': kde_vals, 'y': kde_support})
     

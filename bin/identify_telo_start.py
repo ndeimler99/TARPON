@@ -3,6 +3,10 @@
 import regex
 import argparse
 
+def get_read_qual(seq):
+    """Returns the mean phred converted quality score for a given seq"""
+    return sum([ord(i)-33 for i in seq]) / len(seq)
+
 def get_telo_start(read, repeat, sliding_window, sliding_window_interval, upper_threshold, lower_threshold, consecutive_threshold):
     # identifies start of telomeric read (read).  See manuscript for more details on how this is done and why it is done each way
     telo_found = False
@@ -77,7 +81,7 @@ def main(args):
     with open(args.input_file, "r") as input_fh, open(args.telomeric_fastq_out, "w") as telo_out, \
     open(args.no_telomere_out, "w") as no_telo_out, open(args.filtered_out, 'w') as filtered_fh, \
     open(args.stats_fh, "w") as stats_fh:
-        stats_fh.write("read_id\tstrand\tread_len\tvrr_start_pos\tvrr_telo_length\ttelo_length\n")
+        stats_fh.write("read_id\tstrand\tread_len\tvrr_start_pos\tvrr_telo_length\ttelo_length\tread_qual\ttelo_qual\n")
         read = []
         linecount = 0
         for line in input_fh:
@@ -99,10 +103,12 @@ def main(args):
                     continue
                 
                 telo_length = get_telo_length(read[1][telo_start:], args.repeat * args.consecutive_repeats)
+                read_qual = get_read_qual(read[3])
+                telo_qual = get_read_qual(read[3][telo_start:])
                 #write to telo out fastq file
                 telo_out.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
                 #write to stats file
-                stats_fh.write("{}\t{}\t{}\t{}\t{}\t{}\n".format(read[0].split()[0], read[0].split()[1], len(read[1]), telo_start, len(read[1])-telo_start, telo_length))
+                stats_fh.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(read[0].split()[0], read[0].split()[1], len(read[1]), telo_start, len(read[1])-telo_start, telo_length, read_qual, telo_qual))
                 read = []
             else:
                 read.append(line.strip())

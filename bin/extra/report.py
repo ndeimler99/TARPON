@@ -3,10 +3,10 @@ from datetime import datetime
 from typing import List, Optional, Type
 import os
 from dominate.tags import (
-    a, button, code, div, h4, h2, html_tag, p, h1, section, attr)
+    a, button, code, div, h4, h2, html_tag, p, h1, section, attr, main, body, footer, head, header, style, title)
 
 from ezcharts.components.params import ParamsTable
-from ezcharts.components.reports import Report
+#from ezcharts.components.reports impor
 from ezcharts.components.theme import (
     EPI2MELabsLogo, LAB_body_resources, LAB_head_resources)
 from ezcharts.components.versions import VersionsTable
@@ -17,6 +17,95 @@ from ezcharts.layout.snippets.section import Section
 from ezcharts.layout.util import cls, css, inline
 from ezcharts.layout.base import IClasses, IStyles, Snippet
 
+from typing import List, Type
+
+from bokeh.embed import components
+from dominate.util import raw
+
+from ezcharts.components.ezchart import _BokehChart
+from ezcharts.layout.base import Snippet
+from ezcharts.layout.resource import (
+    base_body_resources, base_head_resources, Resource)
+from ezcharts.layout.snippets.document import DefaultBody, DefaultHead
+from ezcharts.layout.util import write_report
+
+class Report(Snippet):
+    """A basic report."""
+
+    TAG: str = 'html'
+
+    def __init__(
+        self,
+        report_title,
+        head_tag: Type[head] = DefaultHead,
+        body_tag: Type[body] = DefaultBody,
+        head_resources: List[Resource] = base_head_resources,
+        body_resources: List[Resource] = base_body_resources
+    ) -> None:
+        """Create tag."""
+        super().__init__(
+            styles=None,
+            classes=None)
+
+        with self:
+            # Adds the generic meta tags for us!
+            self.head = head_tag()
+            # Enables scroll spy globals for us!
+            self.body = body_tag()
+
+        with self.head:
+            title(report_title)
+            for resource in head_resources:
+                resource()
+
+        with self.body:
+            self.header = header()
+            self.main = main(style=css("background-color: #c8efdf; padding-top: 75px"))
+            self.footer = footer()
+            for resource in body_resources:
+                resource()
+
+    def write(self, path):
+        """Write a report to file."""
+        # check if the report contains `Bokeh` plots
+        bokeh_charts = self.get_bokeh_charts()
+        if bokeh_charts:
+            # get the script + divs for all the plots; then place the div in the
+            # corresponding `_BokehChart` div
+            bokeh_script, bokeh_divs = components([x.plot._fig for x in bokeh_charts])
+            for chart, bokeh_div in zip(bokeh_charts, bokeh_divs):
+                with chart:
+                    raw(bokeh_div)
+            # add the script to the header
+            with self.head:
+                # make sure the plots fill out the enclosing div
+                style(
+                    """
+                    .bk-Figure {
+                        height: 100%;
+                        width: 100%;
+                    }
+                    """
+                )
+                raw(bokeh_script)
+
+        write_report(path, self)
+
+    def get_bokeh_charts(self):
+        """Return all children of the report that are of type `_BokehChart`."""
+        bokeh_charts = []
+
+        def _get_charts_in_children(s):
+            if not hasattr(s, 'children') or not s.children:
+                return
+            for child in s.children:
+                if isinstance(child, _BokehChart):
+                    bokeh_charts.append(child)
+                _get_charts_in_children(child)
+
+        _get_charts_in_children(self)
+        return bokeh_charts
+    
 
 class IBadgeClasses(IClasses):
     """Section html classes."""
@@ -34,7 +123,7 @@ class IBadgeStyles(IStyles):
         "font-size: 13px;")
 
     container2: str = css(
-        "line-height: 20px", "border-radius: 6px", "margin-left: 50px",
+        "line-height: 20px", "border-radius: 6px", "margin-left: 15%",
         "font-size: 13px;")
 
     primary_badge: str = css("background-color: #214c46", "line-height: 20px", "border-radius: 6px",
@@ -239,14 +328,15 @@ class BasicReport(Report):
         """Create tag."""
         super().__init__(
             report_title=report_title,
-            head_resources=head_resources,
-            body_resources=body_resources)
-        
+           head_resources=head_resources,
+           body_resources=body_resources
+        )
+
         with self.header:
             self.nav = LabsNavigation(logo=logo, groups=['main', 'meta'])
 
         with self.main:
-            self.intro_content = section(id="intro-content", role="region")
+            self.intro_content = section(id="intro-content", role="region", style=css("background-color:#c8efdf"))
             self.main_content = section(id="main-content", role="region", style=css("background-color:#c8efdf"))
 
 
@@ -311,7 +401,7 @@ class LabsReport(BasicReport):
                         Badge(workflow_version, style=IBadgeStyles().primary_badge)
 
         with self.main:
-            self.meta_content = section(id="meta-content", role="region")
+            self.meta_content = section(id="meta-content", role="region", style=css("background-color:#c8efdf"))
             with self.meta_content:
                 with Section(
                     "versions",

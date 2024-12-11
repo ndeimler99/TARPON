@@ -15,7 +15,7 @@ def main(args):
         for line in stats_in:  
             if linecount == 0:
                 linecount += 1
-                stats_out.write(line.strip() + "\tperc_variant\tperc_perfect\tread_quality\ttelo_quality\n")
+                stats_out.write(line.strip() + "\tperc_variant\tperc_perfect\n")
             else:
                 stats_dict[line.strip().split()[0]] = line.strip()
         
@@ -27,10 +27,9 @@ def main(args):
             read.append(line.strip())
             if linecount % 4 == 0:
                 telo_seq = read[1][int(stats_dict[read[0].split()[0]].split()[3]):]
-                telo_quality = get_mean_qual(read[3][int(stats_dict[read[0].split()[0]].split()[3]):])
                 perfect_perc = telo_seq.count(args.repeat) * len(args.repeat) / len(telo_seq) * 100
                 one_subs = len(list(regex.finditer(r'(%s){s<=1}' % args.repeat, telo_seq))) * len(args.repeat) / len(telo_seq) * 100
-                stats_out.write('{}\t{}\t{}\t{}\t{}\n'.format(stats_dict[read[0].split()[0]], one_subs, perfect_perc, get_mean_qual(read[3]), telo_quality))
+                stats_out.write('{}\t{}\t{}\t{}\t{}\n'.format(stats_dict[read[0].split()[0]], one_subs, perfect_perc))
                 read = []
             
 
