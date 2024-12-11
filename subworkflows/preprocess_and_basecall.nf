@@ -64,6 +64,14 @@ workflow preprocess_data_pipeline {
         // putative identification of telomeric sequences to limit dataset size
         putative_ch = PUTATIVE_ISOLATION(input_ch)
 
+        if (params.fast_basecalled) {
+            // rebasecall pod5 reads
+            // this will use pod5 filter -ids
+            reads_to_basecall = ISOLATE_POD5_SQUIGGLES(putative_ch.putative_reads, params.pod5_dir)
+            reduced_input = BASECALLING(reads_to_basecall.pod5)
+            putative_ch = PUTATIVE_ISOLATION2(reduced_input)
+        }
+
     emit:
         input = input_ch
         putative_reads = putative_ch.putative_reads

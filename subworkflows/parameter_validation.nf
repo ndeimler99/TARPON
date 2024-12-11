@@ -75,6 +75,11 @@ workflow validate_parameters {
             }
         }
 
+        if (params.fast_basecalled && params.pod5_dir != ""){
+            parameters_passed = false
+            println "Pod5 Directory must be set if initial reads were basecalled using the fast dorado models"
+        }
+
     emit:
         passed = parameters_passed
 }

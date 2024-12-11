@@ -52,6 +52,23 @@ process SEPERATE_STRANDS {
 
 }
 
+process ISOLATE_POD5_SQUIGGLES {
+    label 'tarpon'
+    tag "$run_name - Isolating Pod5 Files"
+
+    input:
+        tuple val(run_name), path(reads)
+        file(pod5_dir)
+
+    output:
+        file(pod5_out)
+
+    script:
+    """
+    get_read_ids.py --input_file ${reads} --output_file read_ids.txt
+    pod5 filter 
+    """    
+}
 
 process REVERSE_COMPLEMENTATION {
     
