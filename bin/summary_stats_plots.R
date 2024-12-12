@@ -7,9 +7,12 @@ library(stringr)
 # script funtions to generate summary stats of entire sequencing run/experiment
 args = commandArgs(trailingOnly=TRUE)
 read_stats <- read.table(args[1], header=TRUE, sep="\t")
+quality_stats <- read.table(args[4], header=TRUE, sep="\t")
 
 read_stats$file <- str_split_i(read_stats$file, "/", -1)
 read_stats$file <- str_split_i(read_stats$file, ".fastq*", 1)
+quality_stats$Sample <- str_split_i(quality_stats$Sample, "/", -1)
+quality_stats$Sample <- str_split_i(quality_stats$Sample, ".fastq*", 1)
 
 if(args[3] == "telomeric"){
   if (args[2]){
@@ -33,6 +36,7 @@ if(args[3] == "filtered"){
 
 
 read_stats$file <- factor(read_stats$file, levels=order)
+quality_stats$Sample <- factor(quality_stats$Sample, levels=order)
 
 # boxplot length
 length_box <- ggplot(data=read_stats) +
@@ -55,13 +59,13 @@ ggsave(paste(args[3], ".length_boxplot.pdf", sep=''), device="pdf", plot=length_
 ggsave(paste(args[3], ".length_boxplot_zoomed.pdf", sep=''), device="pdf", plot=length_box_zoomed, width=12, height=10)
 
 # quality score plot
-qscore <- ggplot(data=read_stats) +
-  geom_bar(mapping=aes(x=file, y=AvgQual),stat='identity') +
-  ylab("Average Quality Score") +
+qscore <- ggplot(data=quality_stats) +
+  geom_boxplot(mapping=aes(x=Sample, ymin=Min,lower=Q1, middle=Q2, upper=Q3, ymax=Max),stat='identity') +
   theme_minimal() +
   theme(axis.title.x = element_blank(),
         axis.text = element_text(size=15),
-        axis.title=element_text(size=20))
+        axis.title=element_text(size=20)) +
+  coord_flip() + ylab("Quality Score")
 
 ggsave(paste(args[3], ".quality_score.pdf", sep=''), device="pdf", plot=qscore, width=12, height=10)
 

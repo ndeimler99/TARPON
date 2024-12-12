@@ -72,6 +72,13 @@ def main(args):
     for i in args.sample_telo_stats:
         sample_dict[i.split(".")[0]]["telo_stats"] = i
 
+    for i in args.sample_quality_retained:
+        sample_dict[i.split(".")[0]]["retained_quality"] = i
+
+    for i in args.sample_quality_filtered:
+        sample_dict[i.split(".")[0]]["filtered_quality"] = i
+
+
     if args.restriction_digest[0] != "false":
         if i.endswith(".txt"):
             for i in args.restriction_digest:
@@ -120,12 +127,17 @@ def main(args):
                 EZChart(plt, THEME)
 
             with tabs.add_dropdown_tab('Read Quality'):
-                plt = report_utils.barplot(data=df, x="file", y="AvgQual",
-                                           x_title="Pipeline Step", y_title="Average Quality",
-                                           plt_title="Average Quality of Reads Retained at Each Step",
+                df = pd.read_table(args.run_quality_retained)
+                df["Sample"] = df["Sample"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
+                                           x_title="Pipeline Step", y_title="Quality Score",
+                                           plt_title="Quality of Reads Retained at Each Step",
                                            x_rotation=45)
                 hover = plt._fig.select(dict(type=HoverTool))
-                hover.tooltips = [("File", "@file"), ("Average Quality", "@AvgQual"), ("Read Count", "@num_seqs")]
+                hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@Mean"),
+                                  ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
+                                   ("Min Length", "@Min"), ("Max Length", "@Max")]
                 EZChart(plt,THEME)
 
         with tabs.add_dropdown_menu("Filtered Read Statistics", change_header=False):
@@ -158,13 +170,17 @@ def main(args):
                 EZChart(plt, THEME)
 
             with tabs.add_dropdown_tab('Read Quality'):
-                plt=report_utils.barplot(data=df, x="file", y="AvgQual",
-                                         x_title="Pipeline Step", y_title="Average Quality",
-                                         plt_title="Average Quality of Reads Filtered at Each Step",
-                                         x_rotation=45)
+                df = pd.read_table(args.run_quality_filtered)
+                df["Sample"] = df["Sample"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
+                                           x_title="Pipeline Step", y_title="Quality Score",
+                                           plt_title="Quality of Reads Filtered at Each Step",
+                                           x_rotation=45)
                 hover = plt._fig.select(dict(type=HoverTool))
-                hover.tooltips = [("File", "@file"), ("Average Quality", "@AvgQual"), ("Read Count", "@num_seqs")]
-                # what is this function doing
+                hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@Mean"),
+                                  ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
+                                   ("Min Length", "@Min"), ("Max Length", "@Max")]
                 EZChart(plt,THEME)
 
     with report.add_section("Sample Comparison", "Sample Comparison"):
@@ -408,7 +424,7 @@ def main(args):
                     df = pd.read_table(sample_dict[sample]["retained_reads"], sep="\t")
                     df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
                     df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
-                    with new_tabs.add_tab("Read Length"):
+                    with new_tabs.add_tab("Read Count"):
                         #bar plot
                         plt = report_utils.barplot(data=df, x="file", y="num_seqs",
                                                    plt_title="Number of Reads Retained at Each Step",
@@ -433,19 +449,24 @@ def main(args):
                         EZChart(plt, THEME)
                     #quality plot
                     with new_tabs.add_tab("Read Quality"):
-                        plt=report_utils.barplot(data=df, x="file", y="AvgQual",
-                                                 plt_title="Average Quality of Reads Retained",
-                                                 y_title="Average Quality",
-                                                 x_title="Pipeline Step", x_rotation=45)
+                        df = pd.read_table(sample_dict[sample]["retained_quality"])
+                        df["Sample"] = df["Sample"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                        plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
+                                           x_title="Pipeline Step", y_title="Quality Score",
+                                           plt_title="Quality of Reads Retained at Each Step",
+                                           x_rotation=45)
                         hover = plt._fig.select(dict(type=HoverTool))
-                        hover.tooltips = [("File", "@file"), ("Average Quality", "@AvgQual"), ("Read Count", "@num_seqs")]
+                        hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@Mean"),
+                                  ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
+                                   ("Min Length", "@Min"), ("Max Length", "@Max")]
                         EZChart(plt,THEME)
                 with tabs.add_dropdown_tab("{} Filtered Reads".format(sample)):
                     new_tabs = Tabs()
                     df = pd.read_table(sample_dict[sample]["filtered_reads"], sep="\t")
                     df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
                     df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
-                    with new_tabs.add_tab("Read Length"):
+                    with new_tabs.add_tab("Read Count"):
                         #bar plot
                         plt = report_utils.barplot(data=df, x="file", y="num_seqs", 
                                                    plt_title="Number of Reads Filtered at Each Step",
@@ -471,12 +492,17 @@ def main(args):
                         EZChart(plt, THEME)
                     #quality plot
                     with new_tabs.add_tab("Read Quality"):
-                        plt=report_utils.barplot(data=df, x="file", y="AvgQual", 
-                                                 plt_title="Average Quality of Reads Filtered at Each Step",
-                                                 y_title="Average Quality", x_title="Pipeline Step",
-                                                 x_rotation=45)
+                        df = pd.read_table(sample_dict[sample]["filtered_quality"])
+                        df["Sample"] = df["Sample"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                        plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
+                                           x_title="Pipeline Step", y_title="Quality Score",
+                                           plt_title="Quality of Reads Retained at Each Step",
+                                           x_rotation=45)
                         hover = plt._fig.select(dict(type=HoverTool))
-                        hover.tooltips = [("File", "@file"), ("Average Quality", "@AvgQual"), ("Read Count", "@num_seqs")]
+                        hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@Mean"),
+                                  ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
+                                   ("Min Length", "@Min"), ("Max Length", "@Max")]
                         EZChart(plt,THEME)
                 if args.restriction_digest[0] != "false":
                         with tabs.add_dropdown_tab("{} Restriction Digest".format(sample)):
@@ -691,8 +717,12 @@ def argparser():
     parser.add_argument("--commandLine", required=True)
     parser.add_argument("--run_stats_retained", required=True) #works but need to figure out how to get combined sample stats here
     parser.add_argument("--run_stats_filtered", required=True) #works but need to figure out how to get combined sample stats here
+    parser.add_argument("--run_quality_retained", required=True)
+    parser.add_argument("--run_quality_filtered", required=True)
     parser.add_argument("--sample_stats_retained", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
     parser.add_argument("--sample_stats_filtered", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
+    parser.add_argument("--sample_quality_retained", nargs="+", required=True)
+    parser.add_argument("--sample_quality_filtered", nargs="+", required=True)
     parser.add_argument("--sample_telo_stats", nargs="+", required=True)
     parser.add_argument("--run_telo_stats", required=True)
     parser.add_argument("--run_vrr_stats", required=True)

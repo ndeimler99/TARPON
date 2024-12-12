@@ -29,7 +29,7 @@ def main(args):
                 telo_seq = read[1][int(stats_dict[read[0].split()[0]].split()[3]):]
                 perfect_perc = telo_seq.count(args.repeat) * len(args.repeat) / len(telo_seq) * 100
                 one_subs = len(list(regex.finditer(r'(%s){s<=1}' % args.repeat, telo_seq))) * len(args.repeat) / len(telo_seq) * 100
-                stats_out.write('{}\t{}\t{}\t{}\t{}\n'.format(stats_dict[read[0].split()[0]], one_subs, perfect_perc))
+                stats_out.write('{}\t{}\t{}\n'.format(stats_dict[read[0].split()[0]], one_subs, perfect_perc))
                 read = []
             
 

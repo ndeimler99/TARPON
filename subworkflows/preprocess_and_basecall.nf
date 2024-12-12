@@ -73,7 +73,7 @@ workflow preprocess_data_pipeline {
         }
 
     emit:
-        input = input_ch
+        input = putative_ch.input_ch
         putative_reads = putative_ch.putative_reads
         non_telomeric = putative_ch.non_telomeric
 }

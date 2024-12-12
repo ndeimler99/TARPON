@@ -350,9 +350,12 @@ process SUMMARY_STATS_RUN {
     output:
         tuple val(id), path("Retained_Reads.stats.txt"), emit: retained_stats
         tuple val(id), path("Filtered_Reads.stats.txt"), emit: filtered_stats
+        tuple val(id), path("retained.quality.txt"), emit: retained_quality_stats
+        tuple val(id), path("filtered.quality.txt"), emit: filtered_quality_stats
         path("*.pdf")
        
     publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*stats.txt"
+    publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*.quality.txt"
     publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'move', overwrite:true, pattern:"*pdf"
 
 
@@ -360,8 +363,10 @@ process SUMMARY_STATS_RUN {
     """
     seqkit stats -a -N 50,90 -T ${retained} > Retained_Reads.stats.txt
     seqkit stats -a -N 50,90 -T ${filtered} > Filtered_Reads.stats.txt
-    summary_stats_plots.R Retained_Reads.stats.txt ${params.strand_comparison} telomeric
-    summary_stats_plots.R Filtered_Reads.stats.txt ${params.strand_comparison} filtered
+    getQualityDistro.py --fastq_files ${retained} > retained.quality.txt
+    getQualityDistro.py --fastq_files ${filtered} > filtered.quality.txt
+    summary_stats_plots.R Retained_Reads.stats.txt ${params.strand_comparison} telomeric retained.quality.txt
+    summary_stats_plots.R Filtered_Reads.stats.txt ${params.strand_comparison} filtered filtered.quality.txt
     """
 }
 
@@ -377,15 +382,18 @@ process SUMMARY_STATS_SAMPLE {
         tuple val(id), path(filtered, stageAs: "FILTERED/*")
     
     output:
-        tuple val(id), path("*retained.stats.txt"), emit: retained_stats
-        tuple val(id), path("*.filtered.stats.txt"), emit: filtered_stats
+        tuple val(id), path("*retained.stats.txt"), path("*.retained.quality.txt"), emit: retained_stats
+        tuple val(id), path("*.filtered.stats.txt"), path("*.filtered.quality.txt"), emit: filtered_stats
     
     publishDir "${params.outdir}/${id}", mode:'copy', overwrite:true, pattern:"*stats.txt"
+    publishDir "${params.outdir}/${id}", mode:'copy', overwrite:true, pattern:"*quality.txt"
     
     script:
     """
     seqkit stats -a -N 50,90 -T ${retained} > ${id}.retained.stats.txt
     seqkit stats -a -N 50,90 -T ${filtered} > ${id}.filtered.stats.txt
+    getQualityDistro.py --fastq_files ${retained} > ${id}.retained.quality.txt
+    getQualityDistro.py --fastq_files ${filtered} > ${id}.filtered.quality.txt
     """
 }
 
@@ -428,8 +436,12 @@ process GENERATE_FINAL_REPORT {
         path("manifest.json")
         tuple val(run), path(stats_run_retained)
         tuple val(run1), path(stats_run_filtered)
+        tuple val(run), path(quality_run_retained)
+        tuple val(run), path(quality_run_filtered)
         path(sample_stats_retained)
         path(sample_stats_filtered)
+        path(sample_quality_retained)
+        path(sample_quality_filtered)
         path(telo_stats_per_sample)
         path(telo_descriptive_stats)
         path(vrr_descriptive_stats)
@@ -452,8 +464,12 @@ process GENERATE_FINAL_REPORT {
                             --commandLine "${workflow.commandLine}" \
                             --run_stats_retained ${stats_run_retained} \
                             --run_stats_filtered ${stats_run_filtered} \
+                            --run_quality_retained ${quality_run_retained} \
+                            --run_quality_filtered ${quality_run_filtered} \
                             --sample_stats_retained ${sample_stats_retained} \
                             --sample_stats_filtered ${sample_stats_filtered} \
+                            --sample_quality_retained ${sample_quality_retained} \
+                            --sample_quality_filtered ${sample_quality_filtered} \
                             --sample_telo_stats ${telo_stats_per_sample} \
                             --run_telo_stats ${telo_descriptive_stats} \
                             --run_vrr_stats ${vrr_descriptive_stats} \
@@ -669,7 +685,6 @@ process FINAL_TELO_STATS {
     script:
     """
     processTelomereStats.py --stat_files ${input_files} --vrr_length ${params.plot_vrr_length} --telo_length ${params.plot_telo_length}
-    #combinedPlots.R combined_df.csv ${params.plot_vrr_length}
     """
 
 }
