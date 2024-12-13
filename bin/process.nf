@@ -61,12 +61,12 @@ process ISOLATE_POD5_SQUIGGLES {
         file(pod5_dir)
 
     output:
-        file(pod5_out)
+        file(filtered.pod5), emit: pod5_filtered
 
     script:
     """
     get_read_ids.py --input_file ${reads} --output_file read_ids.txt
-    pod5 filter 
+    pod5 filter ${pod5_dir}/*.pod5 --output filtered.pod5 --ids read_ids.txt --missing-ok
     """    
 }
 
