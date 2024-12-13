@@ -11,6 +11,7 @@ include { COMBINED_FASTQ_GZ } from "../bin/process.nf"
 include { CONVERT_BAM_2_FASTQ } from "../bin/process.nf"
 include { COMBINE_BAM } from "../bin/process.nf"
 include { ISOLATE_POD5_SQUIGGLES } from "../bin/process.nf"
+include {PUTATIVE_ISOLATION as PUTATIVE_ISOLATION2 } from "../bin/process.nf"
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -70,7 +71,7 @@ workflow preprocess_data_pipeline {
             // this will use pod5 filter -ids
             reads_to_basecall = ISOLATE_POD5_SQUIGGLES(putative_ch.putative_reads, params.pod5_dir)
             //reduced_input = BASECALLING(reads_to_basecall.pod5_filtereds)
-            //putative_ch = PUTATIVE_ISOLATION2(reduced_input)
+              putative_ch = PUTATIVE_ISOLATION2(reduced_input)
         }
 
     emit:
