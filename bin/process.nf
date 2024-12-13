@@ -58,10 +58,10 @@ process ISOLATE_POD5_SQUIGGLES {
 
     input:
         tuple val(run_name), path(reads)
-        file(pod5_dir)
+        path(pod5_dir)
 
     output:
-        file(filtered.pod5), emit: pod5_filtered
+        path("filtered.pod5"), emit: pod5_filtered
 
     script:
     """

@@ -1,7 +1,6 @@
 FROM mambaorg/micromamba AS tarpon
 USER root
 RUN apt-get update && apt-get install -y procps python3-pip cmake r-base libcurl4-openssl-dev r-cran-lme4
-RUN pip install -r requirements.txt
 COPY --chown=$MAMBA_USER:$MAMBA_USER envs/*.yaml /
 RUN micromamba install -y -n base --file /tarpon.yaml && \
         micromamba clean --all --yes

@@ -69,9 +69,9 @@ workflow preprocess_data_pipeline {
         if (params.fast_basecalled) {
             // rebasecall pod5 reads
             // this will use pod5 filter -ids
-            reads_to_basecall = ISOLATE_POD5_SQUIGGLES(putative_ch.putative_reads, params.pod5_dir)
+            reads_to_basecall = ISOLATE_POD5_SQUIGGLES(putative_ch.putative_reads, file(params.pod5_dir))
             //reduced_input = BASECALLING(reads_to_basecall.pod5_filtereds)
-              putative_ch = PUTATIVE_ISOLATION2(reduced_input)
+            //putative_ch = PUTATIVE_ISOLATION2(reduced_input)
         }
 
     emit:
