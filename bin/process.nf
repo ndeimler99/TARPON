@@ -203,6 +203,23 @@ process SUBTELO_FILTERING {
     """
 }
 
+process BASECALLING {
+    
+    label 'basecalling'
+    tag "Rebascalling filtered Pod5 File"
+    label 'gpu'
+
+    input:
+        path(pod5_file)
+
+    output:
+        tuple val(params.run_name), path(reads_file)
+
+    script:
+    """
+    dorado --version
+    """
+}
 
 process TELO_START_IDENTIFICATION {
 
