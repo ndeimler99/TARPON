@@ -26,12 +26,12 @@ def main(args):
                     else:
                         filtered.write('{}\t{}\n{}\n{}\n{}\n'.format(read[0], 'None', rev_complement(read[1]), read[2], ''.join([ i for i in read[3][::-1]])))
                 else:
-                    if c/(c+g) < threshold and c/(c+g) > 1-threshold:
+                    if c/(c+g) <= args.threshold and c/(c+g) >= 1-args.threshold:
                         filtered.write('{}\t{}\n{}\n{}\n{}\n'.format(read[0], 'None', rev_complement(read[1]), read[2], ''.join([ i for i in read[3][::-1]])))
-                    elif c/(c+g) >= threshold:
+                    elif c/(c+g) >= args.threshold:
                         #write out to main file and c_strand file
                         out_fh.write('{}\t{}\n{}\n{}\n{}\n'.format(read[0], 'C', rev_complement(read[1]), read[2], ''.join([ i for i in read[3][::-1]])))
-                    elif g/(c+g) >= threshold:
+                    elif g/(c+g) >= args.threshold:
                         #write out to main file and g_strand file
                         out_fh.write('{}\t{}\n{}\n{}\n{}\n'.format(read[0], 'G', read[1], read[2], read[3]))
                     
