@@ -31,8 +31,10 @@ def main(args):
                 num_seqs += 1
                 quality_list.append(get_mean_qual(line.strip()))
         fh.close()
-        print("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(file, num_seqs, min(quality_list), np.quantile(quality_list, 0.25), np.quantile(quality_list,0.50), np.quantile(quality_list, 0.75), max(quality_list), np.mean(quality_list)))
-                
+        if len(quality_list) > 0:
+            print("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(file, num_seqs, min(quality_list), np.quantile(quality_list, 0.25), np.quantile(quality_list,0.50), np.quantile(quality_list, 0.75), max(quality_list), np.mean(quality_list)))
+        else:
+            print("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}".format(file, num_seqs, 0, 0, 0, 0, 0, 0)) 
 
 if __name__ == "__main__":
     args = argparser().parse_args()
