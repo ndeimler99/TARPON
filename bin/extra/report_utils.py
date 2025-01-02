@@ -1009,3 +1009,84 @@ def create_multisample_boxplot(df, column_names, min_q, max_q,
         p.xaxis.major_label_orientation = x_rotation
 
     return plt
+
+
+
+def get_vals(series, kde_x_pos):
+
+    kde = gaussian_kde(series)
+    kde_vals = kde.evaluate(np.linspace(series.min(), series.max(), 100))
+
+    kde_scale = max(kde_vals) / 0.6
+
+    kde_vals_left = -kde_vals / kde_scale + kde_x_pos
+    kde_vals_right = kde_vals[::-1] / kde_scale + kde_x_pos
+    kde_vals = np.hstack([kde_vals_left, kde_vals_right])
+    kde_support = np.hstack([
+        np.linspace(series.min(), series.max(), 100),
+        np.linspace(series.max(), series.min(), 100)
+    ])
+
+    q1, q2, q3 = series.quantile([0.25, 0.5, 0.75])
+    upper_iqr = q3 - q2 * 2
+    lower_iqr = q2 - q1 * 2
+    qmin, q1, q2, q3, qmax = series.quantile([0, 0.25, 0.5, 0.75, 1])
+    upper = min(qmax, q3 + 1.5 * upper_iqr)
+    lower = max(qmin, q1 - 1.5 * lower_iqr)
+
+    hbar_height = (qmax - qmin) / 500
+
+    return {"kde_vals":kde_vals, "kde_support":kde_support, "lower":lower, "upper":upper, "q1":q1, "q2":q2, "q3":q3, "hbar_height":hbar_height}
+
+def create_boxplot_by_strand(df, column_name, plt_title=None, x_title=None, y_title=None):
+
+    """Create a boxplot for the given column."""
+
+
+    plt = BokehPlot(tools="save", x_range=[set(df["strand"])])
+    p = plt._fig
+    p.y_range = Range1d(start=df[column_name].min() - 10, end=df[column_name].max() + 10)
+
+    g_strand = get_vals(df[df["strand"]=="G"][column_name], 0.25)
+    c_strand = get_vals(df[df["strand"]=="C"][column_name], 0.75)
+
+    g_source = ColumnDataSource(data={'x': g_strand["kde_vals"], 'y': g_strand["kde_support"]})
+    c_source = ColumnDataSource(data={'x': c_strand["kde_vals"], 'y': c_strand["kde_support"]})
+    
+    p.patch(g_strand["kde_vals"], g_strand["kde_support"], alpha=0.3)
+    p.patch(c_strand["kde_vals"], c_strand["kde_support"], alpha=0.3)
+
+    padding_top = 10
+    p.y_range = Range1d(
+            start=df[column_name].min() - padding_top,
+            end=df[column_name].max() + padding_top
+    )
+
+    whisker_width = 0.1
+
+    p.rect(["G Strand"], g_strand["lower"], whisker_width, g_strand["hbar_height"], line_color="grey")
+    p.rect(["G Strand"], g_strand["upper"], whisker_width, g_strand["hbar_height"], line_color="grey")
+    p.segment(["G Strand"], g_strand["upper"], ["G Strand"], g_strand["q3"], line_color="grey")
+    p.segment(["G Strand"], g_strand["lower"], ["G Strand"], g_strand["q1"], line_color="grey")
+    p.vbar(["G Strand"], 0.2, g_strand["q2"], g_strand["q3"], line_color="black")
+    p.vbar(["G Strand"], 0.2, g_strand["q1"], g_strand["q2"], line_color="black")
+
+    p.rect(["C Strand"], c_strand["lower"], whisker_width, c_strand["hbar_height"], line_color="grey")
+    p.rect(["C Strand"], c_strand["upper"], whisker_width, c_strand["hbar_height"], line_color="grey")
+    p.segment(["C Strand"], c_strand["upper"], ["C Strand"], c_strand["q3"], line_color="grey")
+    p.segment(["C Strand"], c_strand["lower"], ["C Strand"], c_strand["q1"], line_color="grey")
+    p.vbar(["C Strand"], 0.2, c_strand["q2"], c_strand["q3"], line_color="black")
+    p.vbar(["C Strand"], 0.2, c_strand["q1"], c_strand["q2"], line_color="black")
+
+    p.xaxis.major_label_orientation = "vertical"
+    p.yaxis.axis_label = 'Values'
+    p.xaxis.major_label_text_font_size = "0pt"
+
+    if plt_title is not None:
+        p.title.text = plt_title
+    if x_title is not None:
+        p.xaxis.axis_label = x_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+
+    return plt

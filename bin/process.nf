@@ -373,7 +373,7 @@ process SUMMARY_STATS_RUN {
        
     publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*stats.txt"
     publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*.quality.txt"
-    publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'move', overwrite:true, pattern:"*pdf"
+    publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'copy', overwrite:true, pattern:"*pdf"
 
 
     script:
