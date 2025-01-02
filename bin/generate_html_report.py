@@ -12,8 +12,9 @@ import json
 
 #from bokeh.models import HoverTool
 from dominate import tags as html_tags
-from dominate.tags import em, p
+from dominate.tags import em, p, style
 import ezcharts as ezc
+from ezcharts.layout.base import IStyles, Snippet
 from ezcharts.components.ezchart import EZChart
 from ezcharts.components.fastcat import SeqSummary
 #from ezcharts.components.reports.labs import LabsReport
@@ -30,14 +31,8 @@ import extra.report_utils as report_utils
 import numpy as np
 from bokeh.plotting import figure
 import bokeh.palettes
-
-
-
-#  Individual Sample histogram and boxplot add red line denoting mean
-#  Individual sample boxplot and barchart remove x axis tick labels
-#  change read quality to boxplot
-
-
+from ezcharts.layout.util import css, render_template
+from typing import Optional
 
 THEME = 'epi2melabs'
 
@@ -105,6 +100,8 @@ def main(args):
             if args.strand_comparison:
                 g_strand = df[df.file.str.contains("g_strand")]
                 c_strand = df[df.file.str.contains("c_strand")]
+                g_strand["file"] = g_strand["file"].apply(lambda x: x.split(".g_strand")[0])
+                c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
                 i = df[(df.file.str.contains("strand"))].index
                 df = df.drop(i)
                 print(df)
@@ -186,7 +183,9 @@ def main(args):
                 if args.strand_comparison:
                     g_strand = df[df['Sample'].str.contains("g_strand")]
                     c_strand = df[df['Sample'].str.contains("c_strand")]
-                    i = df[(df.file.str.contains("strand"))].index
+                    g_strand["Sample"] = g_strand["Sample"].apply(lambda x: x.split(".g_strand")[0])
+                    c_strand["Sample"] = c_strand["Sample"].apply(lambda x: x.split(".c_strand")[0])
+                    i = df[(df.Sample.str.contains("strand"))].index
                     df = df.drop(i)
                 plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
                                            x_title="Pipeline Step", y_title="Quality Score",
@@ -229,6 +228,8 @@ def main(args):
             if args.strand_comparison:
                 g_strand = df[df['file'].str.contains("g_strand")]
                 c_strand = df[df['file'].str.contains("c_strand")]
+                g_strand["file"] = g_strand["file"].apply(lambda x: x.split(".g_strand")[0])
+                c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
                 i = df[(df.file.str.contains("strand"))].index
                 df = df.drop(i)
 
@@ -312,7 +313,9 @@ def main(args):
                 if args.strand_comparison:
                     g_strand = df[df['Sample'].str.contains("g_strand")]
                     c_strand = df[df['Sample'].str.contains("c_strand")]
-                    i = df[(df.file.str.contains("strand"))].index
+                    g_strand["Sample"] = g_strand["Sample"].apply(lambda x: x.split(".g_strand")[0])
+                    c_strand["Sample"] = c_strand["Sample"].apply(lambda x: x.split(".c_strand")[0])
+                    i = df[(df.Sample.str.contains("strand"))].index
                     df = df.drop(i)
 
                 plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
@@ -462,6 +465,7 @@ def main(args):
                 with tabs.add_dropdown_tab("{} Telomere Length".format(sample)):
                     df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
                     df["telo_length"] = df["telo_length"].astype("float")
+                    print(df)
                     #telo length histogram next to barplot
                     new_tabs = Tabs()
                     if args.plot_telo_length:
@@ -521,7 +525,6 @@ def main(args):
                         with new_tabs.add_tab("Telo Length Strand Comparison"):
                             with Grid(columns=3):
                                 with Grid(columns=1):
-                                    pass # strand histogram
                                     #g_plt, c_plt = report_utils.telo_length_hist_by_strand(df, x="telo_length", binwidth=200, binrange=[0, max(df["telo_length"])+200])
                                     g_plt = report_utils.telo_length_hist(df[df["strand"] == "G"]["telo_length"], binwidth=200, binrange=[0,max(df["telo_length"])+200],
                                                                             plt_title="Telomere Length G-Strand",
@@ -531,16 +534,33 @@ def main(args):
                                                                             x_title="Telomere Length (BP)", y_title="Read Count")
                                     EZChart(g_plt, THEME)
                                     EZChart(c_plt, THEME)
-                                
+
                                 telo_hist = report_utils.create_boxplot_by_strand(df, "telo_length", plt_title="Telo Length by Strand", x_title="Strand", y_title="Telomere Length (bp)")
                                 EZChart(telo_hist, THEME)
                                 
-                                telo_bar_plot = report_utils.telo_barplot(data=df, 
-                                                    x="strand", x_rotation=45, x_title="Strand",
+
+                                bins = [i*1000 for i in range(0,11)]
+                                bins.append(100000)
+                                telo_bar_df_g = np.histogram(df[df["strand"]=="G"]["telo_length"], bins=bins)
+                                telo_bar_df_g = pd.DataFrame(list(zip(telo_bar_df_g[1], telo_bar_df_g[0])), columns=["bin_start", "bin_size"])
+                                telo_bar_df_g["bin_start"] = telo_bar_df_g["bin_start"].astype("string")
+                                telo_bar_df_g["sample"] = "G"
+                                telo_bar_df_g["bin_size"] = telo_bar_df_g["bin_size"] / sum(telo_bar_df_g["bin_size"]) * 100
+
+                                telo_bar_df_c = np.histogram(df[df["strand"]=="C"]["telo_length"], bins=bins)
+                                telo_bar_df_c = pd.DataFrame(list(zip(telo_bar_df_c[1], telo_bar_df_c[0])), columns=["bin_start", "bin_size"])
+                                telo_bar_df_c["bin_start"] = telo_bar_df_c["bin_start"].astype("string")
+                                telo_bar_df_c["sample"] = "C"
+                                telo_bar_df_c["bin_size"] = telo_bar_df_c["bin_size"] / sum(telo_bar_df_c["bin_size"]) * 100
+
+
+                                telo_bar_plot = report_utils.telo_barplot(data=pd.concat([telo_bar_df_g, telo_bar_df_c]), 
+                                                    x="sample", x_rotation=45, x_title="Strand",
                                                     y="bin_size", y_title="Percentage of Reads",
                                                     hue="bin_start", dodge=False,
                                                     order=["G", "C"], 
                                                     palette=bokeh.palettes.Category20[11],
+                                                    legend_loc="right", legend_orientation="vertical",
                                                     plt_title="Telomere Length by Strand Binned Bar Plot")
                                 EZChart(telo_bar_plot, THEME)
 
@@ -636,10 +656,12 @@ def main(args):
                     df = pd.read_table(sample_dict[sample]["retained_reads"], sep="\t")
                     df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
                     if args.strand_comparison:
-                        i = df[(df.file.str.contains("strand"))].index
-                        df = df.drop(i)
                         g_strand = df[df.file.str.contains("g_strand")]
                         c_strand = df[df.file.str.contains("c_strand")]
+                        g_strand["file"] = g_strand["file"].apply(lambda x: x.split(".g_strand")[0])
+                        c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
+                        i = df[(df.file.str.contains("strand"))].index
+                        df = df.drop(i)
 
                     df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
                     with new_tabs.add_tab("Read Count"):
@@ -716,6 +738,12 @@ def main(args):
                     with new_tabs.add_tab("Read Quality"):
                         df = pd.read_table(sample_dict[sample]["retained_quality"])
                         df["Sample"] = df["Sample"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                        if args.strand_comparison:
+                            g_strand = df[df.Sample.str.contains("g_strand")]
+                            c_strand = df[df.Sample.str.contains("c_strand")]
+                            g_strand["Sample"] = g_strand["Sample"].apply(lambda x: x.split(".g_strand")[0])
+                            c_strand["Sample"] = c_strand["Sample"].apply(lambda x: x.split(".c_strand")[0])
+                            df = df.drop(i)
                         plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
                                            x_title="Pipeline Step", y_title="Quality Score",
                                            plt_title="Quality of Reads Retained at Each Step",
@@ -728,8 +756,6 @@ def main(args):
                         EZChart(plt,THEME)
 
                         if args.strand_comparison:
-                            g_strand = df[df.Sample.str.contains("g_strand")]
-                            c_strand = df[df.Sample.str.contains("c_strand")]
 
                             g_plt = report_utils.quality_boxplot_from_quantiles(data=g_strand, x="Sample",
                                                     x_title="Pipeline Step", y_title="Quality Score",
@@ -758,10 +784,13 @@ def main(args):
                     df = pd.read_table(sample_dict[sample]["filtered_reads"], sep="\t")
                     df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
                     if args.strand_comparison:
-                        i = df[(df.file.str.contains("strand"))].index
-                        df = df.drop(i)
                         g_strand = df[df.file.str.contains("g_strand")]
                         c_strand = df[df.file.str.contains("c_strand")]
+                        g_strand["file"] = g_strand["file"].apply(lambda x: x.split(".g_strand")[0])
+                        c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
+                        i = df[(df.file.str.contains("strand"))].index
+                        df = df.drop(i)
+            
                     df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
                     with new_tabs.add_tab("Read Count"):
                         #bar plot
@@ -835,6 +864,13 @@ def main(args):
                     with new_tabs.add_tab("Read Quality"):
                         df = pd.read_table(sample_dict[sample]["filtered_quality"])
                         df["Sample"] = df["Sample"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                        if args.strand_comparison:
+                            g_strand = df[df.Sample.str.contains("g_strand")]
+                            c_strand = df[df.Sample.str.contains("c_strand")]
+                            g_strand["Sample"] = g_strand["file"].apply(lambda x: x.split(".g_strand")[0])
+                            c_strand["Sample"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
+                            i = df[(df.Sample.str.contains("strand"))].index
+                            df = df.drop(i)
                         plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
                                            x_title="Pipeline Step", y_title="Quality Score",
                                            plt_title="Quality of Reads Retained at Each Step",
@@ -846,9 +882,7 @@ def main(args):
                                    ("Min Length", "@Min"), ("Max Length", "@Max")]
                         EZChart(plt,THEME)
                         if args.strand_comparison:
-                            g_strand = df[df.Sample.str.contains("g_strand")]
-                            c_strand = df[df.Sample.str.contains("c_strand")]
-
+            
                             g_plt = report_utils.quality_boxplot_from_quantiles(data=g_strand, x="Sample",
                                                     x_title="Pipeline Step", y_title="Quality Score",
                                                     plt_title="G Strand",

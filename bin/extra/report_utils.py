@@ -1017,7 +1017,7 @@ def get_vals(series, kde_x_pos):
     kde = gaussian_kde(series)
     kde_vals = kde.evaluate(np.linspace(series.min(), series.max(), 100))
 
-    kde_scale = max(kde_vals) / 0.6
+    kde_scale = max(kde_vals) / 0.4
 
     kde_vals_left = -kde_vals / kde_scale + kde_x_pos
     kde_vals_right = kde_vals[::-1] / kde_scale + kde_x_pos
@@ -1043,15 +1043,12 @@ def create_boxplot_by_strand(df, column_name, plt_title=None, x_title=None, y_ti
     """Create a boxplot for the given column."""
 
 
-    plt = BokehPlot(tools="save", x_range=[set(df["strand"])])
+    plt = BokehPlot(tools="save", x_range=["G Strand", "C Strand"])
     p = plt._fig
     p.y_range = Range1d(start=df[column_name].min() - 10, end=df[column_name].max() + 10)
 
-    g_strand = get_vals(df[df["strand"]=="G"][column_name], 0.25)
-    c_strand = get_vals(df[df["strand"]=="C"][column_name], 0.75)
-
-    g_source = ColumnDataSource(data={'x': g_strand["kde_vals"], 'y': g_strand["kde_support"]})
-    c_source = ColumnDataSource(data={'x': c_strand["kde_vals"], 'y': c_strand["kde_support"]})
+    g_strand = get_vals(df[df["strand"]=="G"][column_name], 0.5)
+    c_strand = get_vals(df[df["strand"]=="C"][column_name], 1.5)
     
     p.patch(g_strand["kde_vals"], g_strand["kde_support"], alpha=0.3)
     p.patch(c_strand["kde_vals"], c_strand["kde_support"], alpha=0.3)
@@ -1064,6 +1061,9 @@ def create_boxplot_by_strand(df, column_name, plt_title=None, x_title=None, y_ti
 
     whisker_width = 0.1
 
+    print(g_strand)
+    print(c_strand)
+    
     p.rect(["G Strand"], g_strand["lower"], whisker_width, g_strand["hbar_height"], line_color="grey")
     p.rect(["G Strand"], g_strand["upper"], whisker_width, g_strand["hbar_height"], line_color="grey")
     p.segment(["G Strand"], g_strand["upper"], ["G Strand"], g_strand["q3"], line_color="grey")
@@ -1080,7 +1080,7 @@ def create_boxplot_by_strand(df, column_name, plt_title=None, x_title=None, y_ti
 
     p.xaxis.major_label_orientation = "vertical"
     p.yaxis.axis_label = 'Values'
-    p.xaxis.major_label_text_font_size = "0pt"
+
 
     if plt_title is not None:
         p.title.text = plt_title
