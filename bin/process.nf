@@ -583,6 +583,7 @@ process COMBINE_FASTQ {
 process FASTQ_2_FASTQGZ {
     label 'tarpon'
     tag "$file_type Converting FASTQ to FASTQ.GZ"
+    stageInMode "copy"
 
     input:
         tuple val(file_type), path(input_file)
@@ -592,7 +593,8 @@ process FASTQ_2_FASTQGZ {
 
     script:
     """
-    gzip $input_file > ${file_type}.fastq.gz
+    gzip $input_file 
+    mv ${input_file}.gz ${file_type}.fastq.gz
     """
 }
 

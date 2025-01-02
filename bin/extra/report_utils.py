@@ -1028,11 +1028,11 @@ def get_vals(series, kde_x_pos):
     ])
 
     q1, q2, q3 = series.quantile([0.25, 0.5, 0.75])
-    upper_iqr = q3 - q2 * 2
-    lower_iqr = q2 - q1 * 2
+    upper_iqr = (q3 - q2) * 2
+    lower_iqr = (q2 - q1) * 2
     qmin, q1, q2, q3, qmax = series.quantile([0, 0.25, 0.5, 0.75, 1])
-    upper = min(qmax, q3 + 1.5 * upper_iqr)
-    lower = max(qmin, q1 - 1.5 * lower_iqr)
+    upper = min(qmax, q3 + (1.5 * upper_iqr))
+    lower = max(qmin, q1 - (1.5 * lower_iqr))
 
     hbar_height = (qmax - qmin) / 500
 
@@ -1088,5 +1088,68 @@ def create_boxplot_by_strand(df, column_name, plt_title=None, x_title=None, y_ti
         p.xaxis.axis_label = x_title
     if y_title is not None:
         p.yaxis.axis_label = y_title
+
+    return plt
+
+
+
+
+def telo_length_hist_by_strand(data_list=None, *, labels = None, x=None, y=None, hue=None, weights=None,
+    stat='count', bins='auto', binwidth=None, binrange=None,
+    discrete=None, cumulative=False, common_bins=True,
+    common_norm=True, multiple='layer', element='bars',
+    fill=True, shrink=1, kde=False, kde_kws=None,
+    line_kws=None, thresh=0, pthresh=None, pmax=None,
+    cbar=False, cbar_ax=None, cbar_kws=None, palette=None,
+    hue_order=None, hue_norm=None, color=None, log_scale=None,
+        legend=True, ax=None, plt_title=None, x_title=None, y_title=None, **quad_kwargs):
+    """Plot univariate or multivariate histograms."""
+    plt = BokehPlot()
+
+    plot = figure()
+
+    estimate_kws = dict(
+        stat=stat,
+        bins=bins,
+        binwidth=binwidth,
+        binrange=binrange,
+        discrete=discrete,
+        cumulative=cumulative,
+    )
+
+    #data = pd.DataFrame(data)
+
+    estimator = Histogram(**estimate_kws)
+
+        # multivariate data
+    opacity = 0.5
+    if palette is None:
+        palette = util.choose_palette()
+
+    # this just looks over values if data is 1D
+    # for var, color in zip(data, cycle(palette)):
+    for col, color, labels in zip(data_list, cycle(palette), labels):
+        quad_kwargs = {}
+        
+        quad_kwargs["legend_label"] = labels
+        variable_data = col.dropna()
+        heights, edges = estimator(variable_data, weights=weights)
+        new_heights = [height/sum(heights) * 100 for height in heights]
+        plt._fig.quad(
+            top=new_heights, bottom=0, left=edges[:-1], right=edges[1:],
+            fill_color=color, fill_alpha=opacity, line_color=color, **quad_kwargs
+        )
+    
+    #plt._fig.vspan(x=[np.mean(data)], line_width=[1], color="red")
+    plt._fig.y_range.start = 0
+    hover = plt._fig.select(dict(type=HoverTool))
+    hover.tooltips = [(stat.capitalize(), "@top")]
+
+    if plt_title is not None:
+        plt._fig.title.text = plt_title
+    if x_title is not None:
+        plt._fig.xaxis.axis_label = x_title
+    if y_title is not None:
+        plt._fig.yaxis.axis_label = y_title
 
     return plt
