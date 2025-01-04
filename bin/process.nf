@@ -136,9 +136,19 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
     else
         // run adaptor identification and then demux
         """
-        mkdir TELOMERIC
-        mkdir TELOMERIC/DEMUX/
-        mkdir FILTERED_READS
+        mkdir DEMUX/
+
+        identify_adaptor_and_demux.py --input_file ${reads} \
+            --adaptor_sequence ${params.adaptor_sequence} \
+            --adaptor_errors ${params.adaptor_sequence_errors} \
+            --repeat ${params.repeat} \
+            --no_adaptor adaptor_filtered.fastq \
+            --sample_file ${barcodes_file} \
+            --barcode_errors ${params.barcode_errors} \
+            --out_prefix DEMUX 
+
+        cat DEMUX/* > adaptor.fastq
+
         """
 }
 
