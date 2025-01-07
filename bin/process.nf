@@ -223,11 +223,12 @@ process BASECALLING {
         path(pod5_file)
 
     output:
-        tuple val(params.run_name), path(reads_file)
+        tuple val(params.run_name), path("sup_basecalled.fastq.gz")
 
     script:
     """
-    dorado --version
+    dorado basecaller sup --no-trim --emit-fastq --recursive ${pod5_file} > sup_basecalled.fastq
+    gzip sup_basecalled.fastq
     """
 }
 

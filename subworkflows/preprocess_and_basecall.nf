@@ -72,7 +72,7 @@ workflow preprocess_data_pipeline {
             // this will use pod5 filter -ids
             reads_to_basecall = ISOLATE_POD5_SQUIGGLES(putative_ch.putative_reads, file(params.pod5_dir))
             reduced_input = BASECALLING(reads_to_basecall.pod5_filtered)
-            //putative_ch = PUTATIVE_ISOLATION2(reduced_input)
+            putative_ch = PUTATIVE_ISOLATION2(reduced_input)
         }
 
     emit:
