@@ -36,6 +36,13 @@ from typing import Optional
 
 THEME = 'epi2melabs'
 
+def pass_fail_sample(row):
+
+    if row["num_seqs"] >= args.minimum_read_count:
+        return "PASS"
+    else:
+        return "FAIL"
+    
 def get_nextflow_attributes(attribute_file):
 
     attribute_file = open(attribute_file)
@@ -49,6 +56,7 @@ def main(args):
     args.plot_vrr_length = args.plot_vrr_length == "true"
     args.strand_comparison = args.strand_comparison == "true"
     args.detailed_stats = args.detailed_stats == "true"
+    args.minimum_read_count = int(args.minimum_read_count)
 
     params = get_nextflow_attributes(args.params)
     manifest = get_nextflow_attributes(args.manifest)
@@ -104,9 +112,6 @@ def main(args):
                 c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
                 i = df[(df.file.str.contains("strand"))].index
                 df = df.drop(i)
-                print(df)
-                print(g_strand)
-                print(c_strand)
             df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
             with tabs.add_dropdown_tab('Read Count'):
                 plt = report_utils.barplot(data=df, x="file", y="num_seqs", 
@@ -379,6 +384,7 @@ def main(args):
             with tabs.add_tab("Telo Stats"):
                 df = telo_summary_stats
                 df = df.set_index("Sample_ID").loc[sorted(sample_dict.keys())].reset_index()
+                df.apply(pass_fail_sample, axis=1)
                 DataTable.from_pandas(df, use_index=False)
             with tabs.add_tab("Telomere Length Barchart"):
                 master_df = pd.DataFrame()
@@ -420,6 +426,7 @@ def main(args):
             with tabs.add_tab("VRR Stats"):
                 df = vrr_summary_stats
                 df = df.set_index("Sample_ID").loc[sorted(sample_dict.keys())].reset_index()
+                df.apply(pass_fail_sample, axis=1)
                 DataTable.from_pandas(df, use_index=False)
             with tabs.add_tab("VRR Length Barchart"):
                 master_df = pd.DataFrame()
@@ -1135,6 +1142,7 @@ def argparser():
     parser.add_argument("--versions", required=True) #works  
     parser.add_argument("--manifest", required=True) #works
     parser.add_argument("--commandLine", required=True)
+    parser.add_argument("--minimum_read_count", required=True)
     parser.add_argument("--run_stats_retained", required=True) #works but need to figure out how to get combined sample stats here
     parser.add_argument("--run_stats_filtered", required=True) #works but need to figure out how to get combined sample stats here
     parser.add_argument("--run_quality_retained", required=True)

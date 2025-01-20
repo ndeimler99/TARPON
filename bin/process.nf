@@ -489,6 +489,7 @@ process GENERATE_FINAL_REPORT {
                             --params params.json \
                             --versions versions.txt \
                             --manifest manifest.json \
+                            --minimum_read_count ${params.minimum_telo_reads_per_sample} \
                             --commandLine "${workflow.commandLine}" \
                             --run_stats_retained ${stats_run_retained} \
                             --run_stats_filtered ${stats_run_filtered} \
