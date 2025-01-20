@@ -16,8 +16,21 @@
                     "type": "string",
                     "format": "path",
                     "exists": true,
-                    "title": "FASTQ Input File",
-                    "description": "FASTQ File from Sequencing"
+                    "title": "Input File",
+                    "description": "Sequencing Files - Either a file directory or a single file - BAM, fastq, or fastq.gz accepted"
+                },
+                "fast_basecalled":{
+                    "type":"boolean",
+                    "default":false,
+                    "title":"Fast Basecalled Data",
+                    "description": "Check this box and provide a pod5 directory if the data is basecalled using a fast model"
+                },
+                "pod5_dir":{
+                    "type":"string",
+                    "format":"path",
+                    "exists":true,
+                    "title":"Pod5 Directory",
+                    "description": "A directory where the raw pod5 files are stored - this is required when specifying if the data was fast basecalled or if the user is interested in modifications"
                 },
                 "run_name":{
                     "type": "string",
@@ -140,13 +153,13 @@
             "properties": {
                 "sliding_window_size":{
                     "type":"number",
-                    "default":200,
+                    "default":100,
                     "title": "Sliding Window Size",
                     "description": "Length of the sliding window analyzed for the identification of telomeric start"
                 },
                 "sliding_window_interval":{
                     "type":"number",
-                    "default":10,
+                    "default":15,
                     "title":"Sliding Window Interval",
                     "description": "How many base pairs will the sliding window jump each time rather than operating on a nucleotide by nucleotide slide"
                 },
@@ -160,7 +173,7 @@
                 },
                 "lower_threshold":{
                     "type":"number",
-                    "default":0.1,
+                    "default":0.05,
                     "minimum":0,
                     "exclusiveMaximum": 1,
                     "title": "Lower Telomeric Threshold",
@@ -174,7 +187,7 @@
                     "title": "Mimumum Telomere Percentage",
                     "description": "Additional filtering step that removes telomeres that consist of less than this percentage one nucleotide variant repeats from the VRR start to the adaptor sequence"
                 },
-                "consecutive_thresholds":{
+                "consecutive_threshold":{
                     "type":"number",
                     "default":15,
                     "minimum":0,
@@ -223,8 +236,14 @@
                 "plot_vrr_length":{
                     "title":"Plot VRR Length",
                     "type":"boolean",
-                    "default":false,
+                    "default":true,
                     "description": "If set to true additional plots will be created mirroring those for telomere length analysis, but using the VRR length instead of calculated telomere length"
+                },
+                "plot_telo_length":{
+                    "title":"Plot Telomere Length",
+                    "type":"boolean",
+                    "default":false,
+                    "description": "Calculate and plot telomere length based on the number of repeats that exist in consecutives of 3 or greater"
                 },
                 "restriction_digest_analysis": {
                     "type":"string",
