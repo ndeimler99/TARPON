@@ -37,8 +37,9 @@ from typing import Optional
 THEME = 'epi2melabs'
 
 def pass_fail_sample(row):
-
-    if row["num_seqs"] >= args.minimum_read_count:
+    print("IN FUNCTION")
+    print(row)
+    if row["Number_of_Reads"] >= args.minimum_read_count:
         return "PASS"
     else:
         return "FAIL"
@@ -104,7 +105,6 @@ def main(args):
         with tabs.add_dropdown_menu("Retained Read Statistics", change_header=False):
             df = pd.read_table(args.run_stats_retained)
             df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
-            print(df)
             if args.strand_comparison:
                 g_strand = df[df.file.str.contains("g_strand")]
                 c_strand = df[df.file.str.contains("c_strand")]
@@ -384,7 +384,11 @@ def main(args):
             with tabs.add_tab("Telo Stats"):
                 df = telo_summary_stats
                 df = df.set_index("Sample_ID").loc[sorted(sample_dict.keys())].reset_index()
-                df.apply(pass_fail_sample, axis=1)
+                print("Pre Function")
+                print(df)
+                df = df.apply(pass_fail_sample, axis=1)
+                print("Post Function")
+                print(df)
                 DataTable.from_pandas(df, use_index=False)
             with tabs.add_tab("Telomere Length Barchart"):
                 master_df = pd.DataFrame()
@@ -426,7 +430,11 @@ def main(args):
             with tabs.add_tab("VRR Stats"):
                 df = vrr_summary_stats
                 df = df.set_index("Sample_ID").loc[sorted(sample_dict.keys())].reset_index()
-                df.apply(pass_fail_sample, axis=1)
+                print("Pre Function")
+                print(df)
+                df["STATUS"] = df.apply(pass_fail_sample, axis=1)
+                print("Post Function")
+                print(df)
                 DataTable.from_pandas(df, use_index=False)
             with tabs.add_tab("VRR Length Barchart"):
                 master_df = pd.DataFrame()
@@ -472,7 +480,6 @@ def main(args):
                 with tabs.add_dropdown_tab("{} Telomere Length".format(sample)):
                     df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
                     df["telo_length"] = df["telo_length"].astype("float")
-                    print(df)
                     #telo length histogram next to barplot
                     new_tabs = Tabs()
                     if args.plot_telo_length:
@@ -941,14 +948,12 @@ def main(args):
         with report.add_section("Detailed Analysis", "Detailed Analysis"):
             tabs = Tabs()
             for sample in sorted(list(sample_dict.keys())):
-                print(sample_dict[sample]["telo_stats"])
                 df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
                 with tabs.add_dropdown_menu(sample, change_header=False):
                     with tabs.add_dropdown_tab("Sequencing Quality"):
                         new_tabs = Tabs()
                         with new_tabs.add_tab("Read vs. Telo Quality Comparison"):
                             # read quality hist
-                            print(df)
                             read_qual = report_utils.telo_length_hist(df["read_qual"], binwidth=1, 
                                                                     binrange=[0, max(df["read_qual"] + 1)],
                                                                     plt_title="Read Quality",
