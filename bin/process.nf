@@ -303,7 +303,7 @@ process INDIVIDUAL_READ_PLOTS {
     """
 }
 
-process GENERATE_PLOTS {
+process GENERATE_RETAINED_FILTERED_GLOBAL_STATS {
 
     // process that generates R plots using telomeric reads and telo stats dataframe
 
@@ -384,8 +384,8 @@ process SUMMARY_STATS_RUN {
        
     publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*stats.txt"
     publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*.quality.txt"
-    publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'copy', overwrite:true, pattern:"*pdf"
-
+    publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'copy', overwrite:true, pattern:"*!(strand)*.pdf"
+    publishDir "${params.outdir}/RUN_STATS/FIGURES/STRAND_COMPARISON/", mode:'copy', overwrite:true, pattern: "*strand*.pdf"
 
     script:
     """
