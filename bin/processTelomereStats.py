@@ -25,8 +25,8 @@ def main(args):
     out_df = []
 
     # open stats files
-    telo_fh = open("sample_stats.txt", "w")
-    vrr_fh = open("sample_stats.VRR.txt", "w")
+    telo_fh = open("combined_stats.txt", "w")
+    vrr_fh = open("combined_stats.VRR.txt", "w")
 
     if args.telo_length:
         telo_fh.write("Sample_ID\tNumber_of_Reads\tMean_Telomere_Length\tStandard_Deviation_Telo_Length\tQ1\tQ2\tQ3\tMin_Telo_Length\tMax_Telo_Length\tmin_qual\tmax_qual\tqual_q1\tqual_q2\tqual_q3\tmean_qual\n")

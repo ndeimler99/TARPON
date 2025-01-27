@@ -326,6 +326,7 @@ process GENERATE_RETAINED_FILTERED_GLOBAL_STATS {
     publishDir "${params.outdir}/${sample}/FIGURES/", mode:'move', overwrite: true, pattern: "*.pdf"
     publishDir "${params.outdir}/${sample}/FIGURES/", mode:'move', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
 
+    //not modified
     script:
     """
     basic_plots.R ${telo_stats} ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
@@ -350,6 +351,7 @@ process GENERATE_DETAILED_PLOTS {
     publishDir "${params.outdir}/${sample}/FIGURES", mode:'move', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
     publishDir "${params.outdir}/${sample}/", mode:'copy', overwrite: true, pattern: "telomeric_stats.txt", saveAs: { filename -> "${sample}.stats.txt" }
 
+    // not modified R script
     script:
     """
     detailed_stats.py --fastq_file ${telomeric_reads} --repeat ${params.repeat} --stats_in ${telo_stats} --stats_out ${sample}.telomeric_stats.txt
@@ -384,7 +386,7 @@ process SUMMARY_STATS_RUN {
        
     publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*stats.txt"
     publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*.quality.txt"
-    publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'copy', overwrite:true, pattern:"*!(strand)*.pdf"
+    publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'copy', overwrite:true, pattern:"*.pdf"
     publishDir "${params.outdir}/RUN_STATS/FIGURES/STRAND_COMPARISON/", mode:'copy', overwrite:true, pattern: "*strand*.pdf"
 
     script:
@@ -707,15 +709,21 @@ process FINAL_TELO_STATS {
         path(input_files)
 
     output:
-        path("sample_stats.txt"), emit: stats
-        path("sample_stats.VRR.txt"), emit: vrr_stats
+        path("combined_stats.txt"), emit: stats
+        path("combined_stats.VRR.txt"), emit: vrr_stats
+        path("*.pdf")
 
     publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "sample_stats.txt"
     publishDir "${params.outdir}/", overwrite: true, mode: 'copy', pattern: "sample_stats.VRR.txt"
+    publishDir "${params.outdir}/RUN_STATS/FIGURES/", overwrite: true, mode: 'copy', pattern: "*.pdf"
+    
+    // add another r script that takes input files
 
     script:
     """
     processTelomereStats.py --stat_files ${input_files} --vrr_length ${params.plot_vrr_length} --telo_length ${params.plot_telo_length}
+    sampleComparison_Plots.R ${params.plot_vrr_length} ${params.plot_telo_length}
+    sampleComparison_BarPlot.R ${params.plot_telo_length} ${params.plot_vrr_length} ${input_files}
     """
 
 }
