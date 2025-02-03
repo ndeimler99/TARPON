@@ -2,15 +2,14 @@
 
 import gzip
 import argparse
+import pysam
 
 def main(args):
-    with open(args.input_file, "r") as input_fh, open(args.output_file, "w") as out_fh:
-        linecount  = 0 
-        for line in input_fh: 
-            linecount += 1
-            if linecount % 4 == 1:
-                line = line.strip().split()[0].strip("@")
-                out_fh.write(line + "\n")
+    input_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
+    with open(args.output_file, "w") as out_fh:
+        for aln in input_fh:
+            out_fh.write(aln.query_name + "\n")
+    input_fh.close()
 
 def argparser():
     parser = argparse.ArgumentParser()

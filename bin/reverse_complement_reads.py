@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import pysam
 
 def rev_complement(seq):
     rev_dict = {'A':'T', 'T':'A', 'C':'G', 'G':'C'}
@@ -10,32 +11,38 @@ def main(args):
     args.c_strand_only = args.c_strand_only == "true"
     args.threshold = float(args.threshold)
 
-    with open(args.input_file, 'r') as input_file_fh, open(args.out_file, 'w') as out_fh, open(args.removed_reads, 'w') as filtered:
-        linecount = 0
-        read = []
-        for line in input_file_fh:
-            linecount += 1
-            read.append(line.strip())
-            if linecount % 4 == 0:
-                c = read[1].count(rev_complement(args.repeat))
-                g = read[1].count(args.repeat)
-                if args.c_strand_only:
-                    if c/(c+g) >= args.threshold:
-                        # write out to main file and c_strand file
-                        out_fh.write('{}\t{}\n{}\n{}\n{}\n'.format(read[0], 'C', rev_complement(read[1]), read[2], ''.join([ i for i in read[3][::-1]])))
-                    else:
-                        filtered.write('{}\t{}\n{}\n{}\n{}\n'.format(read[0], 'None', rev_complement(read[1]), read[2], ''.join([ i for i in read[3][::-1]])))
-                else:
-                    if c/(c+g) <= args.threshold and c/(c+g) >= 1-args.threshold:
-                        filtered.write('{}\t{}\n{}\n{}\n{}\n'.format(read[0], 'None', rev_complement(read[1]), read[2], ''.join([ i for i in read[3][::-1]])))
-                    elif c/(c+g) >= args.threshold:
-                        #write out to main file and c_strand file
-                        out_fh.write('{}\t{}\n{}\n{}\n{}\n'.format(read[0], 'C', rev_complement(read[1]), read[2], ''.join([ i for i in read[3][::-1]])))
-                    elif g/(c+g) >= args.threshold:
-                        #write out to main file and g_strand file
-                        out_fh.write('{}\t{}\n{}\n{}\n{}\n'.format(read[0], 'G', read[1], read[2], read[3]))
-                    
-                read = []
+    input_file_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
+    out_fh = pysam.AlignmentFile(args.out_file, "wb", template=input_file_fh)
+    filtered = pysam.AlignmentFile(args.removed_reads, "wb", template=input_file_fh)
+
+    for aln in input_file_fh:
+        c = aln.query_sequence.count(rev_complement(args.repeat))
+        g = aln.query_sequence.count(args.repeat)
+        if args.c_strand_only:
+            if c/(c+g) >= args.threshold:
+                q = aln.query_qualities
+                aln.query_sequence = rev_complement(aln.query_sequence)
+                aln.set_tag("XS", "C")
+                aln.query_qualities = q[::-1]
+                out_fh.write(aln)
+            else:
+                filtered.write(aln)
+        else:
+            if c/(c+g) <= args.threshold and c/(c+g) >= 1-args.threshold:
+                filtered.write(aln)
+            elif c/(c+g) >= args.threshold:
+                aln.set_tag("XS", "C")
+                q = aln.query_qualities
+                aln.query_sequence = rev_complement(aln.query_sequence)
+                aln.query_qualities = q[::-1]
+                out_fh.write(aln)
+            elif g/(c+g) >= args.threshold:
+                aln.set_tag("XS", "G")
+                out_fh.write(aln)
+
+    input_file_fh.close()
+    out_fh.close()
+    filtered.close()
 
 def argparser():
     parser = argparse.ArgumentParser()

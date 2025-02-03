@@ -2,6 +2,7 @@
 
 import argparse
 import regex
+import pysam
 
 def identify_first_barcode(header, barcode_dict, barcode_errors, repeat):
     """identifies location of the first barcode existing within a given read after ten telomeric repeats are identified:
@@ -45,55 +46,52 @@ def main(args):
     # iterate through input_file by read checking header line for adaptor sequence
     # identify the first barcode in the header sequence
     # return its identity
-    with open(args.input_file, 'r') as fh, open(args.no_adaptor, 'a') as adaptor_fail:
-        read = []
-        linecount = 0 
-        for line in fh:
-            linecount += 1
-            # iterate through reads in a fastq file. Identify barcode for every read
-            # add barcode sequence to header row for documentation
-            if linecount % 4 == 0:
-                read.append(line.strip())
-                matches = list(regex.finditer(r'(?e)(%s){e<=%s}' % (args.adaptor_sequence, args.adaptor_errors), read[1])) 
-                if len(matches) > 0:
-                    for match in matches:
+    in_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
+    adaptor_fail = pysam.AlignmentFile(args.no_adaptor, "wb", template=in_fh)
+
+    for aln in in_fh:
+
+        matches = list(regex.finditer(r'(?e)(%s){e<=%s}' % (args.adaptor_sequence, args.adaptor_errors), aln.query_sequence)) 
+        if len(matches) > 0:
+            for match in matches:
                         # identify the first match that has at least ten telomeric repeats prior to the start of the match
                             # once this has been found chop the read at the start of the adaptor sequence and add the next 100bp to the header line and stop looping (discard portion of read further downstream)
-                        if read[1][0:match.span()[0]].count(args.repeat) >= 10:
-                            #read[0] = read[0] + "\t" + read[1][match.span()[0]:match.span()[0] + 100]
-                            header = read[1][match.span()[0]:match.span()[0] + 100]
-                            read[1] = read[1][0:match.span()[0]]
-                            read[3] = read[3][0:match.span()[0]]
-                            
-                            print(header)
-                            barcode, location = identify_first_barcode(header, barcode_dict, args.barcode_errors, args.repeat)
-                            if barcode is not None and location[0] != len(header):
-                                read[0] = read[0] + "\t" + header[location[0]:location[1]]
-                                print(read[0])
-                                read_dict[barcode].append(read)
-                                break
-                            else:
-                                # no barcode found
-                                adaptor_fail.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
+                if aln.query_sequence[0:match.span()[0]].count(args.repeat) >= 10:
+                    q = aln.query_qualities
+                    barcode_seq = aln.query_sequence[match.span()[0]:match.span()[0] + 100]
+                    aln.set_tag("XB", barcode_seq)
+                    aln.query_sequence = aln.query_sequence[0:match.span()[0]]
+                    aln.query_qualities = q[0:match.span()[0]]
+
+                    
+                    barcode, location = identify_first_barcode(barcode_seq, barcode_dict, args.barcode_errors, args.repeat)
+                    if barcode is not None and location[0] != len(barcode_seq):
+                        barcode_seq = barcode_seq[location[0]:location[1]]
+                        aln.set_tag("XB", barcode_seq)
+                        read_dict[barcode].append(aln)
+                        break
                     else:
-                            # this means no adaptor sequence was found after ten telomeric repeats
-                        adaptor_fail.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
-                else:
-                    # no adaptor found at all
-                    adaptor_fail.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
-        
-                read = []
+                        # no barcode found
+                        adaptor_fail.write(aln)
             else:
-                read.append(line.strip())
+                            # this means no adaptor sequence was found after ten telomeric repeats
+                adaptor_fail.write(aln)
+        else:
+                    # no adaptor found at all
+            adaptor_fail.write(aln)
 
     # if it does not exist append to no adaptor file
     # else add to second dictionary
 
     # write out to sample files
     for sample in read_dict:
-        with open("{}/{}.fastq".format(args.out_prefix, sample), 'w') as fh:
-            for read in read_dict[sample]:
-                fh.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
+        fh = pysam.AlignmentFile("{}/{}.bam".format(args.out_prefix, sample), "wb", template=in_fh)
+        for read in read_dict[sample]:
+            fh.write(aln)
+        fh.close()
+    
+    in_fh.close()
+    adaptor_fail.close()
 
 def argparser():
     parser = argparse.ArgumentParser()

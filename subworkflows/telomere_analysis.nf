@@ -24,8 +24,8 @@
     include { getParams } from "../bin/process.nf"
     include { getVersions } from "../bin/process.nf"
     include { getManifest } from "../bin/process.nf"
-    include { COMBINE_FASTQ as COMBINED_RETAINED_FASTQ } from "../bin/process.nf"
-    include { COMBINE_FASTQ as COMBINED_FILTERED_FASTQ } from "../bin/process.nf"
+    include { COMBINE_BAM as COMBINED_RETAINED_BAM } from "../bin/process.nf"
+    include { COMBINE_BAM as COMBINED_FILTERED_BAM } from "../bin/process.nf"
     include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
     include { FINAL_TELO_STATS } from "../bin/process.nf"
     include { GET_EMPTY_CHANNEL } from "../bin/process.nf"
@@ -75,11 +75,11 @@ workflow telomere_analysis_pipeline {
         telo_stats = TELO_START_IDENTIFICATION(subtelo_filtered_ch.retained_reads)
 
         // merge all stats relevant to retained telomeric sequences
-        run_retained = COMBINED_RETAINED_FASTQ(subtelo_filtered_ch.retained_reads.multiMap { label, stats -> stats: stats }.collect(). map { it -> [ "subtelo_pass", it ]}.mix(
+        run_retained = COMBINED_RETAINED_BAM(subtelo_filtered_ch.retained_reads.multiMap { label, stats -> stats: stats }.collect(). map { it -> [ "subtelo_pass", it ]}.mix(
                                                     telo_stats.retained_reads.multiMap { label, stats -> stats: stats }.collect().map {it -> [ "telo_retained", it]}))
 
         // merge all stats relevant to filtered telomeric sequences
-        run_filtered = COMBINED_FILTERED_FASTQ(subtelo_filtered_ch.filtered_reads.multiMap {label, stats -> stats:stats}.collect().map {it -> ["subtelo_fail", it]}.mix(
+        run_filtered = COMBINED_FILTERED_BAM(subtelo_filtered_ch.filtered_reads.multiMap {label, stats -> stats:stats}.collect().map {it -> ["subtelo_fail", it]}.mix(
                                                     telo_stats.no_telo_start.multiMap { label, stats -> stats: stats}.collect().map{it -> ["no_telo_start", it]},
                                                     telo_stats.below_telo_threshold.multiMap { label, stats -> stats: stats }.collect().map{it -> ["below_telo_threshold", it]}))
 

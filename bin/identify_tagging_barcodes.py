@@ -2,6 +2,7 @@
 
 import argparse
 import regex
+import pysam 
 
 def identify_first_barcode(read, barcode_dict, barcode_errors, repeat):
     """identifies location of the first barcode existing within a given read after ten telomeric repeats are identified:
@@ -42,34 +43,38 @@ def main(args):
             barcode_dict[line[0]] = line[1]
             read_dict[line[0]] = []
 
-    with open(args.input_file, 'r') as fh, open(args.no_adaptor, 'w') as adaptor_fail:
-        read = []
-        linecount = 0 
-        for line in fh:
-            linecount += 1
-            # iterate through reads in a fastq file. Identify barcode for every read
-            # add barcode sequence to header row for documentation
-            if linecount % 4 == 0:
-                read.append(line.strip())
-                
-                barcode, location = identify_first_barcode(read[1], barcode_dict, args.barcode_errors, args.repeat)
-                if barcode is not None and location != len(read[1]):
-                    read[1] = read[1][0:location]
-                    read[3] = read[3][0:location]
-                    read[0] = read[0] + "\t" + read[1][location:location+100]
-                    read_dict[barcode].append(read)
-                else:
-                    adaptor_fail.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
-                read = []
-            else:
-                read.append(line.strip())
+    in_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
+    adaptor_fail = pysam.AlignmentFile(args.no_adaptor, "wb", template=fh)
+
+    #with open(args.input_file, 'r') as fh, open(args.no_adaptor, 'w') as adaptor_fail:
+     #   read = []
+     #   linecount = 0 
+    for aln in in_fh:
+        #linecount += 1
+        # iterate through reads in a fastq file. Identify barcode for every read
+        # add barcode sequence to header row for documentation
+        #if linecount % 4 == 0:
+            #read.append(line.strip())
+            
+        barcode, location = identify_first_barcode(aln.query_sequence, barcode_dict, args.barcode_errors, args.repeat)
+        if barcode is not None and location != len(aln.query_sequence):
+            q = aln.query_qualities
+            aln.query_sequence = aln.query_sequence[0:location]
+            aln.query_qualities = q[0:location]
+            aln.set_tag("XB", aln.query_sequence[location:location+100])
+            read_dict[barcode].append(aln)
+        else:
+            adaptor_fail.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
 
     # write out each individual fastq file from demultiplexing
     for sample in read_dict:
-        with open("{}/{}.fastq".format(args.out_fh, sample), 'w') as fh:
-            for read in read_dict[sample]:
-                fh.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
+        fh = pysam.AlignmentFile("{}/{}.bam".format(args.out_fh, sample), "wb", template=in_fh)
+        for read in read_dict[sample]:
+            fh.write(read)
+        fh.close()
 
+    adaptor_fail.close()
+    in_fh.close()
 def argparser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_file", required=True)

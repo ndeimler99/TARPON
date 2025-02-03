@@ -2,10 +2,11 @@
 
 import regex
 import argparse
+import pysam
 
 def get_read_qual(seq):
     """Returns the mean phred converted quality score for a given seq"""
-    return sum([ord(i)-33 for i in seq]) / len(seq)
+    return sum([i for i in seq]) / len(seq)
 
 def get_telo_start(read, repeat, sliding_window, sliding_window_interval, upper_threshold, lower_threshold, consecutive_threshold):
     # identifies start of telomeric read (read).  See manuscript for more details on how this is done and why it is done each way
@@ -77,41 +78,39 @@ def main(args):
     args.consecutive_repeats = int(args.consecutive_repeats)
     args.telomeric_rep_perc = float(args.telomeric_rep_perc)
 
+    input_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
+    telo_out = pysam.AlignmentFile(args.telomeric_fastq_out, "wb", template=input_fh)
+    no_telo_out = pysam.AlignmentFile(args.no_telomere_out, "wb", template=input_fh)
+    filtered_fh = pysam.AlignmentFile(args.filtered_out, "wb", template=input_fh)
+
     # isolate through fastq file to perform telo start analysis on each individual read
-    with open(args.input_file, "r") as input_fh, open(args.telomeric_fastq_out, "w") as telo_out, \
-    open(args.no_telomere_out, "w") as no_telo_out, open(args.filtered_out, 'w') as filtered_fh, \
-    open(args.stats_fh, "w") as stats_fh:
+    with open(args.stats_fh, "w") as stats_fh:
         stats_fh.write("read_id\tstrand\tread_len\tvrr_start_pos\tvrr_telo_length\ttelo_length\tread_qual\ttelo_qual\n")
-        read = []
-        linecount = 0
-        for line in input_fh:
-            linecount += 1
-            if linecount % 4 == 0:
-                read.append(line.strip())
-                #analysis
-                telo_found, telo_start = get_telo_start(read[1], args.repeat, args.sliding_window, args.sliding_window_interval, args.upper_threshold, args.lower_threshold, args.consecutive_threshold)
-                if not telo_found:
+        
+        for aln in input_fh:
+            # linecount += 1
+            # if linecount % 4 == 0:
+            #     read.append(line.strip())
+            #     #analysis
+            telo_found, telo_start = get_telo_start(aln.query_sequence, args.repeat, args.sliding_window, args.sliding_window_interval, args.upper_threshold, args.lower_threshold, args.consecutive_threshold)
+            if not telo_found:
                     #write to file
-                    no_telo_out.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
-                    read = []
-                    continue
+                no_telo_out.write(aln)
+                continue
                 
-                if not check_valid(read[1][telo_start:], args.repeat, args.telomeric_rep_perc):
-                    #write to file
-                    filtered_fh.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
-                    read = []
-                    continue
+            if not check_valid(aln.query_sequence[telo_start:], args.repeat, args.telomeric_rep_perc):
+                #write to file
+                filtered_fh.write(aln)
+                continue
                 
-                telo_length = get_telo_length(read[1][telo_start:], args.repeat * args.consecutive_repeats)
-                read_qual = get_read_qual(read[3])
-                telo_qual = get_read_qual(read[3][telo_start:])
-                #write to telo out fastq file
-                telo_out.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
+            telo_length = get_telo_length(aln.query_sequence[telo_start:], args.repeat * args.consecutive_repeats)
+            read_qual = get_read_qual(aln.query_qualities)
+            telo_qual = get_read_qual(aln.query_qualities[telo_start:])
+            #write to telo out fastq file
+            telo_out.write(aln)
                 #write to stats file
-                stats_fh.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(read[0].split()[0], read[0].split()[1], len(read[1]), telo_start, len(read[1])-telo_start, telo_length, read_qual, telo_qual))
-                read = []
-            else:
-                read.append(line.strip())
+            stats_fh.write("{}\t{}\t{}\t{}\t{}\t{}\t{}\t{}\n".format(aln.query_name, aln.get_tag("XS"), len(aln.query_sequence), telo_start, len(aln.query_sequence)-telo_start, telo_length, read_qual, telo_qual))
+            
 
 if __name__ == "__main__":
     args = argparser().parse_args()

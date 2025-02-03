@@ -1,20 +1,22 @@
 #!/usr/bin/env python3
 
 import argparse
+import pysam
 
 def main(args):
-    with open(args.input_file, 'r') as input_file_fh, open(args.g_file, 'w') as g_fh, open(args.c_file, 'w') as c_fh:
-        linecount = 0
-        read = []
-        for line in input_file_fh:
-            linecount += 1
-            read.append(line.strip())
-            if linecount % 4 == 0:
-                if read[0].split()[1] == "G":
-                    g_fh.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
-                else:
-                    c_fh.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
-                read = []
+    input_file_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
+    g_fh = pysam.AlignmentFile(args.g_file, "wb", template=input_file_fh)
+    c_fh = pysam.AlignmentFile(args.c_file, "wb", template=input_file_fh)
+
+    for aln in input_file_fh:
+        if aln.get_tag("XS") == "G":
+            g_fh.write(aln)
+        else:
+            c_fh.write(aln)
+    
+    input_file_fh.close()
+    g_fh.close()
+    c_fh.close()
 
 def argparser():
     parser = argparse.ArgumentParser()

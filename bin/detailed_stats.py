@@ -2,13 +2,17 @@
 
 import regex
 import argparse
+import pysam
 
 def get_mean_qual(seq):
     """Returns the mean phred converted quality score for a given seq"""
     return sum([ord(i)-33 for i in seq]) / len(seq)
 
 def main(args):
-    with open(args.fastq_file, "r") as input_fh, open(args.stats_in, "r") as stats_in, open(args.stats_out, "w") as stats_out:
+
+    input_fh = pysam.AlignmentFile(args.fastq_file, "rb", check_sq=False)
+
+    with open(args.stats_in, "r") as stats_in, open(args.stats_out, "w") as stats_out:
         linecount = 0
         stats_dict = {}
         # read in pre-existing telomeric statistics and store in a dictionary where the key is the read id and the value is the entire line
@@ -22,18 +26,14 @@ def main(args):
         # for every telomeric sequence in args.fastq_file add the detailed stats to the stored dictionary and write out to a new file
         linecount = 0
         read = []
-        for line in input_fh:
-            linecount += 1
-            read.append(line.strip())
-            if linecount % 4 == 0:
-                telo_seq = read[1][int(stats_dict[read[0].split()[0]].split()[3]):]
-                perfect_perc = telo_seq.count(args.repeat) * len(args.repeat) / len(telo_seq) * 100
-                one_subs = len(list(regex.finditer(r'(%s){s<=1}' % args.repeat, telo_seq))) * len(args.repeat) / len(telo_seq) * 100
-                stats_out.write('{}\t{}\t{}\n'.format(stats_dict[read[0].split()[0]], one_subs, perfect_perc))
-                read = []
+        for aln in input_fh:
             
-
-
+            telo_seq = aln.query_sequence[int(stats_dict[aln.query_name].split()[3]):]
+            perfect_perc = telo_seq.count(args.repeat) * len(args.repeat) / len(telo_seq) * 100
+            one_subs = len(list(regex.finditer(r'(%s){s<=1}' % args.repeat, telo_seq))) * len(args.repeat) / len(telo_seq) * 100
+            stats_out.write('{}\t{}\t{}\n'.format(stats_dict[aln.query_name], one_subs, perfect_perc))
+            
+    input_fh.close()
 
 def argparser():
     """Argument parser for entrypoint."""

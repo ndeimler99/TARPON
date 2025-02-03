@@ -42,12 +42,12 @@ process SEPERATE_STRANDS {
         tuple val(id), path(reads)
     
     output:
-        tuple val(id), path("${reads.baseName}.g_strand.fastq"), emit: g_strand
-        tuple val(id), path("${reads.baseName}.c_strand.fastq"), emit: c_strand
+        tuple val(id), path("${reads.baseName}.g_strand.bam"), emit: g_strand
+        tuple val(id), path("${reads.baseName}.c_strand.bam"), emit: c_strand
 
     script:
     """
-    separate_strands.py --input_file ${reads} --g_file ${reads.baseName}.g_strand.fastq --c_file ${reads.baseName}.c_strand.fastq
+    separate_strands.py --input_file ${reads} --g_file ${reads.baseName}.g_strand.bam --c_file ${reads.baseName}.c_strand.bam
     """
 
 }
@@ -85,8 +85,8 @@ process REVERSE_COMPLEMENTATION {
         tuple val(run_name), path(reads)
 
     output:
-        tuple val(run_name), path("20_80_removed_reads.fastq"), emit: removed_reads
-        tuple val(run_name), path("putative_reads.filtered.fastq"), emit: retained_reads
+        tuple val(run_name), path("20_80_removed_reads.bam"), emit: removed_reads
+        tuple val(run_name), path("putative_reads.filtered.bam"), emit: retained_reads
     
     script:
     """
@@ -94,8 +94,8 @@ process REVERSE_COMPLEMENTATION {
         --repeat ${params.repeat} \
         --threshold ${params.reverse_complement_threshold} \
         --c_strand_only ${params.c_strand_only} \
-        --out_file putative_reads.filtered.fastq \
-        --removed_reads 20_80_removed_reads.fastq
+        --out_file putative_reads.filtered.bam \
+        --removed_reads 20_80_removed_reads.bam
     """
 }
 
@@ -119,9 +119,9 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
         path(barcodes_file)
 
     output:
-        path("DEMUX/*.fastq"), emit: demuxed_reads
-        tuple val(run_name), path("adaptor.fastq"), emit: retained_reads
-        tuple val(run_name), path("adaptor_filtered.fastq"), emit: filtered_reads
+        path("DEMUX/*.bam"), emit: demuxed_reads
+        tuple val(run_name), path("adaptor.bam"), emit: retained_reads
+        tuple val(run_name), path("adaptor_filtered.bam"), emit: filtered_reads
 
 
     script:
@@ -129,8 +129,8 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
     if (params.adaptor_sequence == "")
         """
         mkdir DEMUX/
-        identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} --out_fh DEMUX/ --no_adaptor adaptor_filtered.fastq
-        cat DEMUX/* > adaptor.fastq
+        identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} --out_fh DEMUX/ --no_adaptor adaptor_filtered.bam
+        cat DEMUX/* > adaptor.bam
         """
     // if both an adaptor sequence and sample file are provided the telomeric end is first identified by the adaptor sequence and then downstream demultiplexed using the sample file
     else
@@ -142,12 +142,12 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
             --adaptor_sequence ${params.adaptor_sequence} \
             --adaptor_errors ${params.adaptor_sequence_errors} \
             --repeat ${params.repeat} \
-            --no_adaptor adaptor_filtered.fastq \
+            --no_adaptor adaptor_filtered.bam \
             --sample_file ${barcodes_file} \
             --barcode_errors ${params.barcode_errors} \
             --out_prefix DEMUX 
 
-        cat DEMUX/* > adaptor.fastq
+        cat DEMUX/* > adaptor.bam
 
         """
 }
@@ -166,9 +166,9 @@ process IDENTIFY_TAGGING_ADAPTOR {
         tuple val(run_name), path(reads)
 
     output:
-        path("${params.sample_name}.fastq"), emit: demuxed_reads
-        tuple val(run_name), path("adaptor.fastq"), emit: retained_reads
-        tuple val(run_name), path("adaptor_filtered.fastq"), emit: filtered_reads
+        path("${params.sample_name}.bam"), emit: demuxed_reads
+        tuple val(run_name), path("adaptor.bam"), emit: retained_reads
+        tuple val(run_name), path("adaptor_filtered.bam"), emit: filtered_reads
 
     script:
     """
@@ -177,10 +177,10 @@ process IDENTIFY_TAGGING_ADAPTOR {
         --adaptor_sequence ${params.adaptor_sequence} \
         --adaptor_errors ${params.adaptor_sequence_errors} \
         --repeat ${params.repeat} \
-        --adaptor_found ${params.sample_name}.fastq \
-        --no_adaptor adaptor_filtered.fastq
+        --adaptor_found ${params.sample_name}.bam \
+        --no_adaptor adaptor_filtered.bam
 
-    cp ${params.sample_name}.fastq adaptor.fastq
+    cp ${params.sample_name}.bam adaptor.bam
     """
 }
 
@@ -198,8 +198,8 @@ process SUBTELO_FILTERING {
         tuple val(sample), path(reads)
     
     output:
-        tuple val(sample), path("*subtelo_fail.fastq"), emit: filtered_reads
-        tuple val(sample), path("*subtelo_pass.fastq"), emit: retained_reads
+        tuple val(sample), path("*subtelo_fail.bam"), emit: filtered_reads
+        tuple val(sample), path("*subtelo_pass.bam"), emit: retained_reads
 
     script:
     """
@@ -207,8 +207,8 @@ process SUBTELO_FILTERING {
         --min_subtelo_length ${params.min_subtelo_length} \
         --min_subtelo_threshold ${params.subtelo_threshold} \
         --repeat ${params.repeat} \
-        --passes_subtelo ${sample}.subtelo_pass.fastq \
-        --fails_subtelo ${sample}.subtelo_fail.fastq
+        --passes_subtelo ${sample}.subtelo_pass.bam \
+        --fails_subtelo ${sample}.subtelo_fail.bam
 
     """
 }
@@ -223,12 +223,11 @@ process BASECALLING {
         path(pod5_file)
 
     output:
-        tuple val(params.run_name), path("sup_basecalled.fastq.gz")
+        tuple val(params.run_name), path("sup_basecalled.bam")
 
     script:
     """
-    dorado basecaller sup --no-trim --emit-fastq --recursive ${pod5_file} > sup_basecalled.fastq
-    gzip sup_basecalled.fastq
+    dorado basecaller sup --no-trim --recursive ${pod5_file} > sup_basecalled.bam
     """
 }
 
@@ -248,13 +247,13 @@ process TELO_START_IDENTIFICATION {
         tuple val(sample), path(reads)
 
     output:
-        tuple val(sample), path("*telomeric.fastq"), path("*telomeric_stats.txt"), emit: final_telomeric
+        tuple val(sample), path("*telomeric.bam"), path("*telomeric_stats.txt"), emit: final_telomeric
         path("*telomeric_stats.txt"), emit: final_telo_stats
-        tuple val(sample), path("*no_telomere_start.fastq"), emit: no_telo_start
-        tuple val(sample), path("*.below_telo_%_threshold.fastq"), emit: below_telo_threshold
-        tuple val(sample), path("*telomeric.fastq"), emit: retained_reads
+        tuple val(sample), path("*no_telomere_start.bam"), emit: no_telo_start
+        tuple val(sample), path("*.below_telo_%_threshold.bam"), emit: below_telo_threshold
+        tuple val(sample), path("*telomeric.bam"), emit: retained_reads
 
-    publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite:true, pattern:"*.telomeric.fastq"
+    publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite:true, pattern:"*.telomeric.bam"
     publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite:true, pattern:"telomeric_stats.txt"
     
     script:
@@ -269,9 +268,9 @@ process TELO_START_IDENTIFICATION {
         --telomeric_rep_perc ${params.telomeric_repeat_percentage} \
         --consecutive_repeats ${params.consecutive_repeats} \
         --consecutive_threshold ${params.consecutive_threshold} \
-        --telomeric_fastq_out ${sample}.telomeric.fastq \
-        --no_telomere_out ${sample}.no_telomere_start.fastq \
-        --filtered_out ${sample}.below_telo_%_threshold.fastq \
+        --telomeric_fastq_out ${sample}.telomeric.bam \
+        --no_telomere_out ${sample}.no_telomere_start.bam \
+        --filtered_out ${sample}.below_telo_%_threshold.bam \
         --stats_fh ${sample}.telomeric_stats.txt
     """
 }
@@ -575,6 +574,7 @@ process getManifest {
     echo '${json_indented}' > "manifest.json"
     """
 }
+
 
 process COMBINE_FASTQ {
     

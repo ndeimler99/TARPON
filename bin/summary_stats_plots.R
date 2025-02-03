@@ -13,9 +13,9 @@ read_stats <- read.table(args[1], header=TRUE, sep="\t")
 quality_stats <- read.table(args[4], header=TRUE, sep="\t")
 
 read_stats$file <- str_split_i(read_stats$file, "/", -1)
-read_stats$file <- str_split_i(read_stats$file, ".fastq*", 1)
+read_stats$file <- str_split_i(read_stats$file, ".bam", 1)
 quality_stats$Sample <- str_split_i(quality_stats$Sample, "/", -1)
-quality_stats$Sample <- str_split_i(quality_stats$Sample, ".fastq*", 1)
+quality_stats$Sample <- str_split_i(quality_stats$Sample, ".bam", 1)
 
 if (args[2]){
   g_strand <- read_stats[grepl(".g_strand", read_stats$file),]
