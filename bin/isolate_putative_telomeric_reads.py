@@ -2,7 +2,7 @@
 
 import gzip
 import argparse
-
+import pysam
 
 def rev_complement(seq):
     rev_dict = {'A':'T', 'T':'A', 'C':'G', 'G':'C'}
@@ -18,20 +18,39 @@ def main(args):
     # for read in gzipped fastq file perform analysis
     # if the argument c strand only is set convert the telomeric repeat is C strand and identify reads
     # otherwise check for both forward and reverse telomeric repeats
-    with gzip.open(args.input_file, 'rt') as input_file_fh, open(args.out_file, 'w') as out_fh, open(args.non_telo, "w") as non_telo_fh:
-        linecount = 0
-        read = []
-        for line in input_file_fh:
-            linecount += 1
-            read.append(line.strip())
-            if linecount % 4 == 0:
-                if args.c_strand_only and read[1].count(rev_complement(args.repeat)) >= args.repeat_count:
-                    out_fh.write('{}\n{}\n{}\n{}\n'.format(read[0], read[1], read[2], read[3])) 
-                elif read[1].count(args.repeat) >= args.repeat_count or read[1].count(rev_complement(args.repeat)) >= args.repeat_count:
-                    out_fh.write('{}\n{}\n{}\n{}\n'.format(read[0], read[1], read[2], read[3]))    
-                else:
-                    non_telo_fh.write('{}\n{}\n{}\n{}\n'.format(read[0], read[1], read[2], read[3]))
-                read = []
+    input_file_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
+    out_fh = pysam.AlignmentFile(args.out_file, "wb", template=input_file_fh)
+    non_telo_fh = pysam.AlignmentFile(args.non_telo, "wb", template=input_file_fh)
+
+    #with gzip.open(args.input_file, 'rt') as input_file_fh, open(args.out_file, 'w') as out_fh, open(args.non_telo, "w") as non_telo_fh:
+    #    linecount = 0
+    #    read = []
+    #    for line in input_file_fh:
+    #        linecount += 1
+    #        read.append(line.strip())
+    #        if linecount % 4 == 0:
+    for aln in input_file_fh:
+        if args.c_strand_only and aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count:
+            # write to out_fh alignment file
+            out_fh.write(aln)
+        elif aln.query_sequence.count(args.repeat) >= args.repeat_count or aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count:
+            # write to out_fh alignment file
+            out_fh.write(aln)
+        else:
+            non_telo_fh.write(aln)
+            # write to non_telo_fh
+
+                # if args.c_strand_only and read[1].count(rev_complement(args.repeat)) >= args.repeat_count:
+                #     out_fh.write('{}\n{}\n{}\n{}\n'.format(read[0], read[1], read[2], read[3])) 
+                # elif read[1].count(args.repeat) >= args.repeat_count or read[1].count(rev_complement(args.repeat)) >= args.repeat_count:
+                #     out_fh.write('{}\n{}\n{}\n{}\n'.format(read[0], read[1], read[2], read[3]))    
+                # else:
+                #     non_telo_fh.write('{}\n{}\n{}\n{}\n'.format(read[0], read[1], read[2], read[3]))
+                # read = []
+
+    input_file_fh.close()
+    out_fh.close()
+    non_telo_fh.close()
 
 def argparser():
     parser = argparse.ArgumentParser()

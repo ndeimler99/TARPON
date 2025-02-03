@@ -13,16 +13,16 @@ process PUTATIVE_ISOLATION {
     label 'tarpon'
 
     input:
-        tuple val(run_name), path(reads_file, stageAs: "input.fastq.gz")
+        tuple val(run_name), path(reads_file, stageAs: "input.bam")
     
     output:
-        tuple val(run_name), path ("putative_reads.fastq"), emit: putative_reads
-        tuple val (run_name), path("non_telomeric.fastq"), emit: non_telomeric
-        tuple val(run_name), path("input.fastq.gz"), emit: input_ch
+        tuple val(run_name), path ("putative_reads.bam"), emit: putative_reads
+        tuple val (run_name), path("non_telomeric.bam"), emit: non_telomeric
+        tuple val(run_name), path("input.bam"), emit: input_ch
 
     script:
     """
-    isolate_putative_telomeric_reads.py --input_file ${reads_file} --repeat ${params.repeat} --repeat_count ${params.repeat_count} --c_strand_only ${params.c_strand_only} --out_file putative_reads.fastq --non_telo non_telomeric.fastq
+    isolate_putative_telomeric_reads.py --input_file ${reads_file} --repeat ${params.repeat} --repeat_count ${params.repeat_count} --c_strand_only ${params.c_strand_only} --out_file putative_reads.bam --non_telo non_telomeric.bam
     """
 }
 
