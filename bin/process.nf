@@ -303,7 +303,7 @@ process INDIVIDUAL_READ_PLOTS {
     """
 }
 
-process GENERATE_RETAINED_FILTERED_GLOBAL_STATS {
+process BASIC_PLOTS {
 
     // process that generates R plots using telomeric reads and telo stats dataframe
 
@@ -321,12 +321,11 @@ process GENERATE_RETAINED_FILTERED_GLOBAL_STATS {
     
     output:
         path("*.pdf")
-        path("C_G_COMPARISON/*.pdf"), optional:true
+        path("STRAND_COMPARISON/*.pdf"), optional:true
     
     publishDir "${params.outdir}/${sample}/FIGURES/", mode:'move', overwrite: true, pattern: "*.pdf"
     publishDir "${params.outdir}/${sample}/FIGURES/", mode:'move', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
 
-    //not modified
     script:
     """
     basic_plots.R ${telo_stats} ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
@@ -346,16 +345,16 @@ process GENERATE_DETAILED_PLOTS {
     output:
         tuple val(sample), path(telomeric_reads), path("*telomeric_stats.txt"), emit: final_telomeric
         path("*telomeric_stats.txt"), emit: final_telo_stats
+        path("*.pdf")
     
-    publishDir "${params.outdir}/${sample}/FIGURES/", mode:'move', overwrite: true, pattern: "DETAILED_STATS/*.pdf"
-    publishDir "${params.outdir}/${sample}/FIGURES", mode:'move', overwrite: true, pattern: "C_G_COMPARISON/*.pdf"
+    publishDir "${params.outdir}/${sample}/FIGURES/DETAILED_STATS/", mode:'move', overwrite: true, pattern: "*.pdf"
     publishDir "${params.outdir}/${sample}/", mode:'copy', overwrite: true, pattern: "telomeric_stats.txt", saveAs: { filename -> "${sample}.stats.txt" }
 
     // not modified R script
     script:
     """
     detailed_stats.py --fastq_file ${telomeric_reads} --repeat ${params.repeat} --stats_in ${telo_stats} --stats_out ${sample}.telomeric_stats.txt
-    #detailed_plots.R telomeric_stats.txt ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
+    detailed_plots.R ${sample}.telomeric_stats.txt ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
     """
 
 }

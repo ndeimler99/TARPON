@@ -10,7 +10,7 @@
     include { IDENTIFY_TAGGING_ADAPTOR } from "../bin/process.nf"
     include { TELO_START_IDENTIFICATION } from "../bin/process.nf"
     include { INDIVIDUAL_READ_PLOTS } from "../bin/process.nf"
-    include { GENERATE_RETAINED_FILTERED_GLOBAL_STATS } from "../bin/process.nf"
+    include { BASIC_PLOTS } from "../bin/process.nf"
     include { GENERATE_DETAILED_PLOTS } from "../bin/process.nf"
     include { SUMMARY_STATS_RUN } from "../bin/process.nf"
     include { SUMMARY_STATS_SAMPLE } from "../bin/process.nf"
@@ -118,7 +118,7 @@ workflow telomere_analysis_pipeline {
         }
 
         // this will generate basic statistical plots for the end user
-        GENERATE_RETAINED_FILTERED_GLOBAL_STATS(telo_stats.final_telomeric)
+        BASIC_PLOTS(telo_stats.final_telomeric)
 
         // if detailed stats is specified analyze telomeric sequences but include things such as percentage telomeric, etc.
         if (params.detailed_stats) {
