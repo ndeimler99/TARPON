@@ -130,7 +130,7 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
         """
         mkdir DEMUX/
         identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} --out_fh DEMUX/ --no_adaptor adaptor_filtered.bam
-        cat DEMUX/* > adaptor.bam
+        samtools merge -o adaptor.bam DEMUX/*.bam
         """
     // if both an adaptor sequence and sample file are provided the telomeric end is first identified by the adaptor sequence and then downstream demultiplexed using the sample file
     else
@@ -147,7 +147,7 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
             --barcode_errors ${params.barcode_errors} \
             --out_prefix DEMUX 
 
-        cat DEMUX/* > adaptor.bam
+        samtools merge -o adaptor.bam DEMUX/*.bam
 
         """
 }

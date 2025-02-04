@@ -10,6 +10,7 @@ def main(args):
         out_fh.write("file\tnum_seqs\tmean_length\tmin_length\tmax_length\tQ1\tQ2\tQ3\tmean_quality\tmin_quality\tmax_quality\tQ1_qual\tQ2_qual\tQ3_qual\n")
 
         for file in args.bam_files:
+            print(file)
             aln_file = pysam.AlignmentFile(file, "rb", check_sq=False)
             
             num_seqs = 0
