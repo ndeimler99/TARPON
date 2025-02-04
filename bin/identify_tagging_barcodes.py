@@ -44,7 +44,7 @@ def main(args):
             read_dict[line[0]] = []
 
     in_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
-    adaptor_fail = pysam.AlignmentFile(args.no_adaptor, "wb", template=fh)
+    adaptor_fail = pysam.AlignmentFile(args.no_adaptor, "wb", template=in_fh)
 
     #with open(args.input_file, 'r') as fh, open(args.no_adaptor, 'w') as adaptor_fail:
      #   read = []
@@ -64,7 +64,7 @@ def main(args):
             aln.set_tag("XB", aln.query_sequence[location:location+100])
             read_dict[barcode].append(aln)
         else:
-            adaptor_fail.write("{}\n{}\n{}\n{}\n".format(read[0], read[1], read[2], read[3]))
+            adaptor_fail.write(aln)
 
     # write out each individual fastq file from demultiplexing
     for sample in read_dict:
@@ -75,6 +75,7 @@ def main(args):
 
     adaptor_fail.close()
     in_fh.close()
+
 def argparser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_file", required=True)
