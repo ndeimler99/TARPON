@@ -215,13 +215,13 @@ def quality_boxplot_from_quantiles(
                 f"all categories ({groups}) not present in order ({order})")
 
     # compute IQR outlier bounds
-    lower_iqr = df.Q2 - df.Q1
-    upper_iqr = df.Q3 - df.Q1
+    lower_iqr = df.Q2_qual - df.Q1_qual
+    upper_iqr = df.Q3_qual - df.Q1_qual
 
     # whiskers
     if isinstance(whis, float):
-        df["upper"] = df.Q3 + whis * upper_iqr
-        df["lower"] = df.Q1 - whis * lower_iqr
+        df["upper"] = df.Q3_qual + whis * upper_iqr
+        df["lower"] = df.Q1_qual - whis * lower_iqr
     else:
         raise NotImplementedError(
             f"'whis' must be float, {type(whis)} is not supported or implemented")
@@ -258,11 +258,11 @@ def quality_boxplot_from_quantiles(
     p.add_layout(whisker)
 
     p.vbar(
-        x, 0.7, "Q2", "Q3", source=source, fill_color=color, line_color=linecolor,
+        x, 0.7, "Q2_qual", "Q3_qual", source=source, fill_color=color, line_color=linecolor,
         line_width=linewidth, fill_alpha=saturation)
 
     p.vbar(
-        x, 0.7, "Q1", "Q2", source=source, fill_color=color, line_color=linecolor,
+        x, 0.7, "Q1_qual", "Q2_qual", source=source, fill_color=color, line_color=linecolor,
         line_width=linewidth, fill_alpha=saturation)
 
     p.xgrid.grid_line_color = None

@@ -378,23 +378,19 @@ process SUMMARY_STATS_RUN {
     output:
         tuple val(id), path("Retained_Reads.stats.txt"), emit: retained_stats
         tuple val(id), path("Filtered_Reads.stats.txt"), emit: filtered_stats
-        tuple val(id), path("retained.quality.txt"), emit: retained_quality_stats
-        tuple val(id), path("filtered.quality.txt"), emit: filtered_quality_stats
         path("*.pdf")
        
     publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*stats.txt"
-    publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*.quality.txt"
     publishDir "${params.outdir}/RUN_STATS/FIGURES/", mode:'copy', overwrite:true, pattern:"*.pdf"
-    publishDir "${params.outdir}/RUN_STATS/FIGURES/STRAND_COMPARISON/", mode:'copy', overwrite:true, pattern: "*strand*.pdf"
+    publishDir "${params.outdir}/RUN_STATS/FIGURES/STRAND_COMPARISON/", mode:'copy', overwrite:true, pattern: "STRAND_COMPARISON/*strand*.pdf"
 
     script:
     """
-    seqkit stats -a -N 50,90 -T ${retained} > Retained_Reads.stats.txt
-    seqkit stats -a -N 50,90 -T ${filtered} > Filtered_Reads.stats.txt
-    getQualityDistro.py --fastq_files ${retained} > retained.quality.txt
-    getQualityDistro.py --fastq_files ${filtered} > filtered.quality.txt
-    summary_stats_plots.R Retained_Reads.stats.txt ${params.strand_comparison} telomeric retained.quality.txt
-    summary_stats_plots.R Filtered_Reads.stats.txt ${params.strand_comparison} filtered filtered.quality.txt
+    bam_stats.py --bam_files ${retained} --out_file Retained_Reads.stats.txt
+    bam_stats.py --bam_files ${filtered} --out_file Filtered_Reads.stats.txt
+
+    summary_stats_plots.R Retained_Reads.stats.txt ${params.strand_comparison} telomeric
+    summary_stats_plots.R Filtered_Reads.stats.txt ${params.strand_comparison} filtered
     """
 }
 
@@ -410,18 +406,15 @@ process SUMMARY_STATS_SAMPLE {
         tuple val(id), path(filtered, stageAs: "FILTERED/*")
     
     output:
-        tuple val(id), path("*retained.stats.txt"), path("*.retained.quality.txt"), emit: retained_stats
-        tuple val(id), path("*.filtered.stats.txt"), path("*.filtered.quality.txt"), emit: filtered_stats
+        tuple val(id), path("*retained.stats.txt"), emit: retained_stats
+        tuple val(id), path("*.filtered.stats.txt"), emit: filtered_stats
     
     publishDir "${params.outdir}/${id}", mode:'copy', overwrite:true, pattern:"*stats.txt"
-    publishDir "${params.outdir}/${id}", mode:'copy', overwrite:true, pattern:"*quality.txt"
     
     script:
     """
-    seqkit stats -a -N 50,90 -T ${retained} > ${id}.retained.stats.txt
-    seqkit stats -a -N 50,90 -T ${filtered} > ${id}.filtered.stats.txt
-    getQualityDistro.py --fastq_files ${retained} > ${id}.retained.quality.txt
-    getQualityDistro.py --fastq_files ${filtered} > ${id}.filtered.quality.txt
+    bam_stats.py --bam_files ${retained} --out_file ${id}.retained.stats.txt
+    bam_stats.py --bam_files ${filtered} --out_file ${id}.filtered.stats.txt
     """
 }
 
@@ -442,14 +435,15 @@ process RESTRICTION_DIGEST_ANALYSIS {
         tuple val(sample), path(telo_sequences), path(telo_stats)
     
     output:
-        path("*digest_stats.txt")
+        path("*digest_stats.txt"), emit: stats
     
     publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite: true, pattern: "*digest_stats.txt"
 
     script:
     """
-    for seq in \$(echo "${params.restriction_digest_analysis}" | tr "," "\n"); do seqkit grep -s -p \$seq ${telo_sequences} > \$seq.fastq; done
-    seqkit stats -a -N 50,90 -T *.fastq > ${sample}.digest_stats.txt
+    for seq in \$(echo "${params.restriction_digest_analysis}" | tr "," "\n"); do samtools view ${telo_sequences} | grep \$seq | samtools view -b > \$seq.bam; done
+    for seq in \$(echo "${params.restriction_digest_analysis}" | tr "," "\n"); do samtools reheader ${telo_sequences} \$seq.bam > \$seq.reheaded.bam; done
+    bam_stats.py --bam_files *.reheaded.bam --out_file ${sample}.digest_stats.txt
     """
 }
 
@@ -464,12 +458,8 @@ process GENERATE_FINAL_REPORT {
         path("manifest.json")
         tuple val(run), path(stats_run_retained)
         tuple val(run1), path(stats_run_filtered)
-        tuple val(run), path(quality_run_retained)
-        tuple val(run), path(quality_run_filtered)
         path(sample_stats_retained)
         path(sample_stats_filtered)
-        path(sample_quality_retained)
-        path(sample_quality_filtered)
         path(telo_stats_per_sample)
         path(telo_descriptive_stats)
         path(vrr_descriptive_stats)
@@ -493,12 +483,8 @@ process GENERATE_FINAL_REPORT {
                             --commandLine "${workflow.commandLine}" \
                             --run_stats_retained ${stats_run_retained} \
                             --run_stats_filtered ${stats_run_filtered} \
-                            --run_quality_retained ${quality_run_retained} \
-                            --run_quality_filtered ${quality_run_filtered} \
                             --sample_stats_retained ${sample_stats_retained} \
                             --sample_stats_filtered ${sample_stats_filtered} \
-                            --sample_quality_retained ${sample_quality_retained} \
-                            --sample_quality_filtered ${sample_quality_filtered} \
                             --sample_telo_stats ${telo_stats_per_sample} \
                             --run_telo_stats ${telo_descriptive_stats} \
                             --run_vrr_stats ${vrr_descriptive_stats} \
@@ -590,6 +576,23 @@ process COMBINE_FASTQ {
     script:
     """
     cat ${input_files} > ${file_type}.fastq
+    """
+}
+
+process COMBINE_FASTQ_GZ {
+    
+    label 'tarpon'
+    tag "$file_type Concatenating FASTQ Files"
+
+    input:
+        tuple val(file_type), path(input_files)
+
+    output:
+        tuple val(params.run_name), path("${file_type}.fastq.gz"), emit:combined
+
+    script:
+    """
+    cat ${input_files} > ${file_type}.fastq.gz
     """
 }
 
@@ -725,4 +728,20 @@ process FINAL_TELO_STATS {
     sampleComparison_BarPlot.R ${params.plot_telo_length} ${params.plot_vrr_length} ${input_files}
     """
 
+}
+
+process FASTQ_TO_BAM {
+    label 'tarpon'
+    tag "$params.run_name Converting FASTQ to BAM"
+
+    input:
+         tuple val(run_name), path(fastq_file)
+
+    output:
+        tuple val(run_name), path("input.bam")
+
+    script:
+    """
+    picard -Xmx100G FastqToSam FASTQ=${fastq_file} OUTPUT=input.bam SAMPLE_NAME=input
+    """
 }

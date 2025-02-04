@@ -10,12 +10,9 @@ COLORS=c('#0173b2', '#de8f05', '#029e73', '#d55e00', '#cc78bc', '#ca9161', '#fba
 args = commandArgs(trailingOnly=TRUE)
 
 read_stats <- read.table(args[1], header=TRUE, sep="\t")
-quality_stats <- read.table(args[4], header=TRUE, sep="\t")
 
 read_stats$file <- str_split_i(read_stats$file, "/", -1)
 read_stats$file <- str_split_i(read_stats$file, ".bam", 1)
-quality_stats$Sample <- str_split_i(quality_stats$Sample, "/", -1)
-quality_stats$Sample <- str_split_i(quality_stats$Sample, ".bam", 1)
 
 if (args[2]){
   g_strand <- read_stats[grepl(".g_strand", read_stats$file),]
@@ -24,13 +21,6 @@ if (args[2]){
   
   g_strand$file <- str_split_i(g_strand$file, "\\.", 1)
   c_strand$file <- str_split_i(c_strand$file, "\\.", 1)
-  
-  g_strand_quality <- quality_stats[grepl(".g_strand", quality_stats$Sample),]
-  c_strand_quality <- quality_stats[grepl(".c_strand", quality_stats$Sample),]
-  quality_stats <- quality_stats[!grepl("strand", quality_stats$Sample),]
-  
-  g_strand_quality$Sample <- str_split_i(g_strand_quality$Sample, "\\.", 1)
-  c_strand_quality$Sample <- str_split_i(c_strand_quality$Sample, "\\.", 1)
 }
 
 if(args[3] == "telomeric"){
@@ -51,14 +41,10 @@ if(args[3] == "filtered"){
 
 
 read_stats$file <- factor(read_stats$file, levels=order)
-quality_stats$Sample <- factor(quality_stats$Sample, levels=order)
 
 if (args[2]){
   g_strand$file <- factor(g_strand$file, levels=strand_order)
   c_strand$file <- factor(c_strand$file, levels=strand_order)
-  
-  g_strand_quality$Sample <- factor(g_strand_quality$Sample, levels=strand_order)
-  c_strand_quality$Sample <- factor(c_strand_quality$Sample, levels=strand_order)
 }
 
 # number of reads
@@ -93,7 +79,7 @@ if (args[2]){
           axis.text.x=element_text(size=15, angle=45, hjust=1, vjust=1)) +
     ylab("Number of Sequences")
   
-  ggsave(paste(args[3], ".g_strand.read_counts.pdf", sep=""), device="pdf", width=12, height=10)
+  ggsave(paste("STRAND_COMPARISON/", args[3], ".g_strand.read_counts.pdf", sep=""), device="pdf", width=12, height=10, create.dir = TRUE)
 
   c_counts <- ggplot(data=c_strand) +
     geom_bar(mapping=aes(x=file, y=num_seqs), stat='identity', fill=COLORS[1:length(c_strand$file)]) +
@@ -104,14 +90,14 @@ if (args[2]){
           axis.text.x=element_text(size=15, angle=45, hjust=1, vjust=1)) +
     ylab("Number of Sequences")
   
-  ggsave(paste(args[3], ".c_strand.read_counts.pdf", sep=""), device="pdf", width=12, height=10)
+  ggsave(paste("STRAND_COMPARISON/", args[3], ".c_strand.read_counts.pdf", sep=""), device="pdf", width=12, height=10, create.dir = TRUE)
 }
 
 
 # read lengths
 
 length_box <- ggplot(data=read_stats) +
-  geom_boxplot(mapping=aes(ymin=min_len,lower=Q1, middle=Q2, upper=Q3, ymax=max_len, x=file), stat='identity', fill=COLORS[1:length(read_stats$file)]) +
+  geom_boxplot(mapping=aes(ymin=min_length,lower=Q1, middle=Q2, upper=Q3, ymax=max_length, x=file), stat='identity', fill=COLORS[1:length(read_stats$file)]) +
   theme_minimal() +
   theme(axis.title.x = element_blank(),
         axis.text = element_text(size=15),
@@ -126,7 +112,7 @@ ggsave(paste(args[3], ".length_boxplot_zoomed.pdf", sep=''), device="pdf", plot=
 
 if (args[2]){
   g_length_box <- ggplot(data=g_strand) +
-    geom_boxplot(mapping=aes(ymin=min_len,lower=Q1, middle=Q2, upper=Q3, ymax=max_len, x=file), stat='identity', fill=COLORS[1:length(g_strand$file)]) +
+    geom_boxplot(mapping=aes(ymin=min_length,lower=Q1, middle=Q2, upper=Q3, ymax=max_length, x=file), stat='identity', fill=COLORS[1:length(g_strand$file)]) +
     theme_minimal() +
     theme(axis.title.x = element_blank(),
           axis.text = element_text(size=15),
@@ -135,7 +121,7 @@ if (args[2]){
     ylab("Read Length") + ylim(0,50000)
   
   c_length_box <- ggplot(data=c_strand) +
-    geom_boxplot(mapping=aes(ymin=min_len,lower=Q1, middle=Q2, upper=Q3, ymax=max_len, x=file), stat='identity', fill=COLORS[1:length(c_strand$file)]) +
+    geom_boxplot(mapping=aes(ymin=min_length,lower=Q1, middle=Q2, upper=Q3, ymax=max_length, x=file), stat='identity', fill=COLORS[1:length(c_strand$file)]) +
     theme_minimal() +
     theme(axis.title.x = element_blank(),
           axis.text = element_text(size=15),
@@ -143,14 +129,14 @@ if (args[2]){
           axis.text.x = element_text(size=15, angle=45, hjust=1, vjust=1)) +
     ylab("Read Length") + ylim(0,50000)
 
-  ggsave(paste(args[3], ".g_strand_length_boxplot.pdf", sep=''), device="pdf", plot=g_length_box, width=12, height=10)
-  ggsave(paste(args[3], ".c_strand_length_boxplot.pdf", sep=''), device="pdf", plot=g_length_box, width=12, height=10)
+  ggsave(paste("STRAND_COMPARISON/", args[3], ".g_strand_length_boxplot.pdf", sep=''), device="pdf", plot=g_length_box, width=12, height=10, create.dir = TRUE)
+  ggsave(paste("STRAND_COMPARISON/", args[3], ".c_strand_length_boxplot.pdf", sep=''), device="pdf", plot=g_length_box, width=12, height=10, create.dir = TRUE)
 }
 
 
 # quality score plot
-qscore <- ggplot(data=quality_stats) +
-  geom_boxplot(mapping=aes(x=Sample, ymin=Min,lower=Q1, middle=Q2, upper=Q3, ymax=Max),stat='identity', fill=COLORS[1:length(quality_stats$Sample)]) +
+qscore <- ggplot(data=read_stats) +
+  geom_boxplot(mapping=aes(x=file, ymin=min_quality,lower=Q1_qual, middle=Q2_qual, upper=Q3_qual, ymax=max_quality),stat='identity', fill=COLORS[1:length(read_stats$file)]) +
   theme_minimal() +
   theme(axis.title.x = element_blank(),
         axis.text = element_text(size=15),
@@ -161,8 +147,8 @@ qscore <- ggplot(data=quality_stats) +
 ggsave(paste(args[3], ".quality_score.pdf", sep=''), device="pdf", plot=qscore, width=12, height=10)
 
 if (args[2]){
-  g_qscore <- ggplot(data=g_strand_quality) +
-    geom_boxplot(mapping=aes(x=Sample, ymin=Min,lower=Q1, middle=Q2, upper=Q3, ymax=Max),stat='identity', fill=COLORS[1:length(g_strand_quality$Sample)]) +
+  g_qscore <- ggplot(data=g_strand) +
+    geom_boxplot(mapping=aes(x=file, ymin=min_quality,lower=Q1_qual, middle=Q2_qual, upper=Q3_qual, ymax=max_quality),stat='identity', fill=COLORS[1:length(g_strand$file)]) +
     theme_minimal() +
     theme(axis.title.x = element_blank(),
           axis.text = element_text(size=15),
@@ -170,8 +156,8 @@ if (args[2]){
           axis.text.x = element_text(size=15, angle=45, hjust=1, vjust=1)) +
     ylab("Quality Score")
   
-  c_qscore <- ggplot(data=c_strand_quality) +
-    geom_boxplot(mapping=aes(x=Sample, ymin=Min,lower=Q1, middle=Q2, upper=Q3, ymax=Max),stat='identity', fill=COLORS[1:length(c_strand_quality$Sample)]) +
+  c_qscore <- ggplot(data=c_strand) +
+    geom_boxplot(mapping=aes(x=file, ymin=min_quality,lower=Q1_qual, middle=Q2_qual, upper=Q3_qual, ymax=max_quality),stat='identity', fill=COLORS[1:length(c_strand$file)]) +
     theme_minimal() +
     theme(axis.title.x = element_blank(),
           axis.text = element_text(size=15),
@@ -179,8 +165,8 @@ if (args[2]){
           axis.text.x = element_text(size=15, angle=45, hjust=1, vjust=1)) +
     ylab("Quality Score")
   
-  ggsave(paste(args[3], ".g_strand_quality_score.pdf", sep=''), device="pdf", plot=g_qscore, width=12, height=10)
-  ggsave(paste(args[3], ".c_strand_quality_score.pdf", sep=''), device="pdf", plot=c_qscore, width=12, height=10)
+  ggsave(paste("STRAND_COMPARISON/", args[3], ".g_strand_quality_score.pdf", sep=''), device="pdf", plot=g_qscore, width=12, height=10, create.dir = TRUE)
+  ggsave(paste("STRAND_COMPARISON/", args[3], ".c_strand_quality_score.pdf", sep=''), device="pdf", plot=c_qscore, width=12, height=10, create.dir = TRUE)
 }
 
 

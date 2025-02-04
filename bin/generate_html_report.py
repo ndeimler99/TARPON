@@ -76,19 +76,11 @@ def main(args):
     for i in args.sample_telo_stats:
         sample_dict[i.split(".")[0]]["telo_stats"] = i
 
-    for i in args.sample_quality_retained:
-        sample_dict[i.split(".")[0]]["retained_quality"] = i
-
-    for i in args.sample_quality_filtered:
-        sample_dict[i.split(".")[0]]["filtered_quality"] = i
-
-
     if args.restriction_digest[0] != "false":
         if i.endswith(".txt"):
             for i in args.restriction_digest:
                 sample_dict[i.split(".")[0]]["digest"] = i
     
-
     if args.plot_telo_length:
         telo_summary_stats = pd.read_table(args.run_telo_stats, sep="\t")
 
@@ -104,7 +96,7 @@ def main(args):
         tabs = Tabs()
         with tabs.add_dropdown_menu("Retained Read Statistics", change_header=False):
             df = pd.read_table(args.run_stats_retained)
-            df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+            df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
             if args.strand_comparison:
                 g_strand = df[df.file.str.contains("g_strand")]
                 c_strand = df[df.file.str.contains("c_strand")]
@@ -112,7 +104,6 @@ def main(args):
                 c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
                 i = df[(df.file.str.contains("strand"))].index
                 df = df.drop(i)
-            df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
             with tabs.add_dropdown_tab('Read Count'):
                 plt = report_utils.barplot(data=df, x="file", y="num_seqs", 
                                            x_title="Pipeline Step", x_rotation=45,
@@ -154,9 +145,9 @@ def main(args):
                                                                plt_title="Read Length of Reads Retained at Each Step")
                 hover = plt._fig.select(dict(type=HoverTool))
                 hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                  ("Avg Length", "@avg_len"),
+                                  ("Avg Length", "@mean_length"),
                                   ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                   ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                   ("Min Length", "@min_length"), ("Max Length", "@max_length")]
                 EZChart(plt, THEME)
 
                 if args.strand_comparison:
@@ -166,69 +157,69 @@ def main(args):
                                                                plt_title="G Strand")
                     hover = g_plt._fig.select(dict(type=HoverTool))
                     hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                  ("Avg Length", "@avg_len"),
+                                  ("Avg Length", "@mean_length"),
                                   ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                   ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                   ("Min Length", "@min_length"), ("Max Length", "@max_length")]
                     c_plt = report_utils.seqkit_stats_boxplot_length(data=c_strand, x="file", 
                                                                y_title="Read Length (BP)", x_title="Pipeline Step", 
                                                                x_rotation=45,
                                                                plt_title="C Strand")
                     hover = c_plt._fig.select(dict(type=HoverTool))
                     hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                  ("Avg Length", "@avg_len"),
+                                  ("Avg Length", "@mean_length"),
                                   ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                   ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                   ("Min Length", "@min_length"), ("Max Length", "@max_length")]
                     with Grid(columns=2):
                         EZChart(g_plt, THEME)
                         EZChart(c_plt, THEME)
 
             with tabs.add_dropdown_tab('Read Quality'):
-                df = pd.read_table(args.run_quality_retained)
-                df["Sample"] = df["Sample"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                df = pd.read_table(args.run_stats_retained)
+                df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
                 if args.strand_comparison:
-                    g_strand = df[df['Sample'].str.contains("g_strand")]
-                    c_strand = df[df['Sample'].str.contains("c_strand")]
-                    g_strand["Sample"] = g_strand["Sample"].apply(lambda x: x.split(".g_strand")[0])
-                    c_strand["Sample"] = c_strand["Sample"].apply(lambda x: x.split(".c_strand")[0])
-                    i = df[(df.Sample.str.contains("strand"))].index
+                    g_strand = df[df['file'].str.contains("g_strand")]
+                    c_strand = df[df['file'].str.contains("c_strand")]
+                    g_strand["file"] = g_strand["file"].apply(lambda x: x.split(".g_strand")[0])
+                    c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
+                    i = df[(df.file.str.contains("strand"))].index
                     df = df.drop(i)
-                plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
+                plt = report_utils.quality_boxplot_from_quantiles(data=df, x="file",
                                            x_title="Pipeline Step", y_title="Quality Score",
                                            plt_title="Quality of Reads Retained at Each Step",
                                            x_rotation=45)
                 hover = plt._fig.select(dict(type=HoverTool))
-                hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                  ("Avg Quality", "@Mean"),
-                                  ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                   ("Min Length", "@Min"), ("Max Length", "@Max")]
+                hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Quality", "@min_quality"), ("Max Quality", "@max_quality")]
                 EZChart(plt,THEME)
 
                 if args.strand_comparison:
-                    g_plt = report_utils.quality_boxplot_from_quantiles(data=g_strand, x="Sample",
+                    g_plt = report_utils.quality_boxplot_from_quantiles(data=g_strand, x="file",
                                             x_title="Pipeline Step", y_title="Quality Score",
                                             plt_title="G Strand",
                                             x_rotation=45)
                     hover = g_plt._fig.select(dict(type=HoverTool))
-                    hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                    ("Avg Quality", "@Mean"),
-                                    ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                    ("Min Length", "@Min"), ("Max Length", "@Max")]
-                    c_plt = report_utils.quality_boxplot_from_quantiles(data=c_strand, x="Sample",
+                    hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Quality", "@min_quality"), ("Max Quality", "@max_quality")]
+                    c_plt = report_utils.quality_boxplot_from_quantiles(data=c_strand, x="file",
                                             x_title="Pipeline Step", y_title="Quality Score",
                                             plt_title="C Strand",
                                             x_rotation=45)
                     hover = c_plt._fig.select(dict(type=HoverTool))
-                    hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                    ("Avg Quality", "@Mean"),
-                                    ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                    ("Min Length", "@Min"), ("Max Length", "@Max")]
+                    hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Quality", "@min_quality"), ("Max Quality", "@max_quality")]
                     with Grid(columns=2):
                         EZChart(g_plt, THEME)
                         EZChart(c_plt, THEME)
 
         with tabs.add_dropdown_menu("Filtered Read Statistics", change_header=False):
             df = pd.read_table(args.run_stats_filtered)
-            df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+            df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
             
             if args.strand_comparison:
                 g_strand = df[df['file'].str.contains("g_strand")]
@@ -237,8 +228,6 @@ def main(args):
                 c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
                 i = df[(df.file.str.contains("strand"))].index
                 df = df.drop(i)
-
-            df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
             with tabs.add_dropdown_tab('Read Count'):
                 plt=report_utils.barplot(data=df, x="file", y="num_seqs",
                                 plt_title="Number of Reads Filtered at Each Step",
@@ -281,9 +270,9 @@ def main(args):
                                                                plt_title="Read Length of Reads Filtered at Each Step")
                 hover = plt._fig.select(dict(type=HoverTool))
                 hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                  ("Avg Length", "@avg_len"),
+                                  ("Avg Length", "@mean_length"),
                                   ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                   ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                   ("Min Length", "@min_length"), ("Max Length", "@max_length")]
                 # what is this function doing?
                 EZChart(plt, THEME)
 
@@ -294,65 +283,65 @@ def main(args):
                                                                plt_title="G Strand")
                     hover = g_plt._fig.select(dict(type=HoverTool))
                     hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                  ("Avg Length", "@avg_len"),
+                                  ("Avg Length", "@mean_length"),
                                   ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                   ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                   ("Min Length", "@min_length"), ("Max Length", "@max_length")]
                     c_plt = report_utils.seqkit_stats_boxplot_length(data=c_strand, x="file", 
                                                                y_title="Read Length (BP)", x_title="Pipeline Step", 
                                                                x_rotation=45,
                                                                plt_title="C Strand")
                     hover = c_plt._fig.select(dict(type=HoverTool))
                     hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                  ("Avg Length", "@avg_len"),
+                                  ("Avg Length", "@mean_length"),
                                   ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                   ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                   ("Min Length", "@min_length"), ("Max Length", "@max_length")]
                     with Grid(columns=2):
                         EZChart(g_plt, THEME)
                         EZChart(c_plt, THEME)
 
 
             with tabs.add_dropdown_tab('Read Quality'):
-                df = pd.read_table(args.run_quality_filtered)
-                df["Sample"] = df["Sample"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                df = pd.read_table(args.run_stats_filtered)
+                df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
 
                 if args.strand_comparison:
-                    g_strand = df[df['Sample'].str.contains("g_strand")]
-                    c_strand = df[df['Sample'].str.contains("c_strand")]
-                    g_strand["Sample"] = g_strand["Sample"].apply(lambda x: x.split(".g_strand")[0])
-                    c_strand["Sample"] = c_strand["Sample"].apply(lambda x: x.split(".c_strand")[0])
-                    i = df[(df.Sample.str.contains("strand"))].index
+                    g_strand = df[df['file'].str.contains("g_strand")]
+                    c_strand = df[df['file'].str.contains("c_strand")]
+                    g_strand["file"] = g_strand["file"].apply(lambda x: x.split(".g_strand")[0])
+                    c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
+                    i = df[(df.file.str.contains("strand"))].index
                     df = df.drop(i)
 
-                plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
+                plt = report_utils.quality_boxplot_from_quantiles(data=df, x="file",
                                            x_title="Pipeline Step", y_title="Quality Score",
                                            plt_title="Quality of Reads Filtered at Each Step",
                                            x_rotation=45)
                 hover = plt._fig.select(dict(type=HoverTool))
-                hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                  ("Avg Quality", "@Mean"),
-                                  ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                   ("Min Length", "@Min"), ("Max Length", "@Max")]
+                hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Length", "@min_quality"), ("Max Length", "@max_quality")]
                 EZChart(plt,THEME)
 
                 if args.strand_comparison:
-                    g_plt = report_utils.quality_boxplot_from_quantiles(data=g_strand, x="Sample",
+                    g_plt = report_utils.quality_boxplot_from_quantiles(data=g_strand, x="file",
                                             x_title="Pipeline Step", y_title="Quality Score",
                                             plt_title="G Strand",
                                             x_rotation=45)
                     hover = g_plt._fig.select(dict(type=HoverTool))
-                    hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                    ("Avg Quality", "@Mean"),
-                                    ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                    ("Min Length", "@Min"), ("Max Length", "@Max")]
-                    c_plt = report_utils.quality_boxplot_from_quantiles(data=c_strand, x="Sample",
+                    hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Length", "@min_quality"), ("Max Length", "@max_quality")]
+                    c_plt = report_utils.quality_boxplot_from_quantiles(data=c_strand, x="file",
                                             x_title="Pipeline Step", y_title="Quality Score",
                                             plt_title="C Strand",
                                             x_rotation=45)
                     hover = c_plt._fig.select(dict(type=HoverTool))
-                    hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                    ("Avg Quality", "@Mean"),
-                                    ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                    ("Min Length", "@Min"), ("Max Length", "@Max")]
+                    hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Length", "@min_quality"), ("Max Length", "@max_quality")]
                     with Grid(columns=2):
                         EZChart(g_plt, THEME)
                         EZChart(c_plt, THEME)
@@ -687,7 +676,7 @@ def main(args):
                 with tabs.add_dropdown_tab("{} Retained Reads".format(sample)):
                     new_tabs = Tabs()
                     df = pd.read_table(sample_dict[sample]["retained_reads"], sep="\t")
-                    df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                    df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
                     if args.strand_comparison:
                         g_strand = df[df.file.str.contains("g_strand")]
                         c_strand = df[df.file.str.contains("c_strand")]
@@ -696,7 +685,6 @@ def main(args):
                         i = df[(df.file.str.contains("strand"))].index
                         df = df.drop(i)
 
-                    df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
                     with new_tabs.add_tab("Read Count"):
                         #bar plot
                         plt = report_utils.barplot(data=df, x="file", y="num_seqs",
@@ -739,9 +727,9 @@ def main(args):
                                                                        y_title="Read Length (BP)")
                         hover = plt._fig.select(dict(type=HoverTool))
                         hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                        ("Avg Length", "@avg_len"),
+                                        ("Avg Length", "@mean_length"),
                                         ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                        ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                        ("Min Length", "@min_length"), ("Max Length", "@max_length")]
                         EZChart(plt, THEME)
 
                         if args.strand_comparison:
@@ -751,63 +739,63 @@ def main(args):
                                                                     plt_title="G Strand")
                             hover = g_plt._fig.select(dict(type=HoverTool))
                             hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                        ("Avg Length", "@avg_len"),
+                                        ("Avg Length", "@mean_length"),
                                         ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                        ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                        ("Min Length", "@min_lengtg"), ("Max Length", "@max_length")]
                             c_plt = report_utils.seqkit_stats_boxplot_length(data=c_strand, x="file", 
                                                                     y_title="Read Length (BP)", x_title="Pipeline Step", 
                                                                     x_rotation=45,
                                                                     plt_title="C Strand")
                             hover = c_plt._fig.select(dict(type=HoverTool))
                             hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                        ("Avg Length", "@avg_len"),
+                                        ("Avg Length", "@mean_length"),
                                         ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                        ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                        ("Min Length", "@min_lengtg"), ("Max Length", "@max_lengtg")]
                             with Grid(columns=2):
                                 EZChart(g_plt, THEME)
                                 EZChart(c_plt, THEME)
 
                     #quality plot
                     with new_tabs.add_tab("Read Quality"):
-                        df = pd.read_table(sample_dict[sample]["retained_quality"])
-                        df["Sample"] = df["Sample"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                        df = pd.read_table(sample_dict[sample]["retained_reads"])
+                        df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
                         if args.strand_comparison:
-                            g_strand = df[df.Sample.str.contains("g_strand")]
-                            c_strand = df[df.Sample.str.contains("c_strand")]
-                            g_strand["Sample"] = g_strand["Sample"].apply(lambda x: x.split(".g_strand")[0])
-                            c_strand["Sample"] = c_strand["Sample"].apply(lambda x: x.split(".c_strand")[0])
+                            g_strand = df[df.file.str.contains("g_strand")]
+                            c_strand = df[df.file.str.contains("c_strand")]
+                            g_strand["file"] = g_strand["file"].apply(lambda x: x.split(".g_strand")[0])
+                            c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
                             df = df.drop(i)
-                        plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
+                        plt = report_utils.quality_boxplot_from_quantiles(data=df, x="file",
                                            x_title="Pipeline Step", y_title="Quality Score",
                                            plt_title="Quality of Reads Retained at Each Step",
                                            x_rotation=45)
                         hover = plt._fig.select(dict(type=HoverTool))
-                        hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                  ("Avg Quality", "@Mean"),
-                                  ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                   ("Min Length", "@Min"), ("Max Length", "@Max")]
+                        hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Quality", "@min_quality"), ("Max Quality", "@max_quality")]
                         EZChart(plt,THEME)
 
                         if args.strand_comparison:
 
-                            g_plt = report_utils.quality_boxplot_from_quantiles(data=g_strand, x="Sample",
+                            g_plt = report_utils.quality_boxplot_from_quantiles(data=g_strand, x="file",
                                                     x_title="Pipeline Step", y_title="Quality Score",
                                                     plt_title="G Strand",
                                                     x_rotation=45)
                             hover = g_plt._fig.select(dict(type=HoverTool))
-                            hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                            ("Avg Quality", "@Mean"),
-                                            ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                            ("Min Length", "@Min"), ("Max Length", "@Max")]
-                            c_plt = report_utils.quality_boxplot_from_quantiles(data=c_strand, x="Sample",
+                            hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Quality", "@min_quality"), ("Max Quality", "@max_quality")]
+                            c_plt = report_utils.quality_boxplot_from_quantiles(data=c_strand, x="file",
                                                     x_title="Pipeline Step", y_title="Quality Score",
                                                     plt_title="C Strand",
                                                     x_rotation=45)
                             hover = c_plt._fig.select(dict(type=HoverTool))
-                            hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                            ("Avg Quality", "@Mean"),
-                                            ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                            ("Min Length", "@Min"), ("Max Length", "@Max")]
+                            hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Quality", "@min_quality"), ("Max Quality", "@max_quality")]
                             with Grid(columns=2):
                                 EZChart(g_plt, THEME)
                                 EZChart(c_plt, THEME)
@@ -815,7 +803,7 @@ def main(args):
                 with tabs.add_dropdown_tab("{} Filtered Reads".format(sample)):
                     new_tabs = Tabs()
                     df = pd.read_table(sample_dict[sample]["filtered_reads"], sep="\t")
-                    df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                    df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
                     if args.strand_comparison:
                         g_strand = df[df.file.str.contains("g_strand")]
                         c_strand = df[df.file.str.contains("c_strand")]
@@ -823,8 +811,6 @@ def main(args):
                         c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
                         i = df[(df.file.str.contains("strand"))].index
                         df = df.drop(i)
-            
-                    df = df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
                     with new_tabs.add_tab("Read Count"):
                         #bar plot
                         plt = report_utils.barplot(data=df, x="file", y="num_seqs", 
@@ -867,9 +853,9 @@ def main(args):
                                                                        x_rotation=45)
                         hover = plt._fig.select(dict(type=HoverTool))
                         hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                        ("Avg Length", "@avg_len"),
+                                        ("Avg Length", "@mean_length"),
                                         ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                        ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                        ("Min Length", "@min_lengtg"), ("Max Length", "@max_length")]
                         EZChart(plt, THEME)
                         if args.strand_comparison:
                             g_plt = report_utils.seqkit_stats_boxplot_length(g_strand, x="file", 
@@ -878,62 +864,62 @@ def main(args):
                                                                     plt_title="G Strand")
                             hover = g_plt._fig.select(dict(type=HoverTool))
                             hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                        ("Avg Length", "@avg_len"),
+                                        ("Avg Length", "@mean_length"),
                                         ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                        ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                        ("Min Length", "@min_length"), ("Max Length", "@max_length")]
                             c_plt = report_utils.seqkit_stats_boxplot_length(data=c_strand, x="file", 
                                                                     y_title="Read Length (BP)", x_title="Pipeline Step", 
                                                                     x_rotation=45,
                                                                     plt_title="C Strand")
                             hover = c_plt._fig.select(dict(type=HoverTool))
                             hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
-                                        ("Avg Length", "@avg_len"),
+                                        ("Avg Length", "@mean_length"),
                                         ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                        ("Min Length", "@min_len"), ("Max Length", "@max_len")]
+                                        ("Min Length", "@min_length"), ("Max Length", "@max_length")]
                             with Grid(columns=2):
                                 EZChart(g_plt, THEME)
                                 EZChart(c_plt, THEME)
                     #quality plot
                     with new_tabs.add_tab("Read Quality"):
-                        df = pd.read_table(sample_dict[sample]["filtered_quality"])
-                        df["Sample"] = df["Sample"].apply(lambda x: x.split("/")[-1].split(".fastq")[0])
+                        df = pd.read_table(sample_dict[sample]["filtered_reads"])
+                        df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
                         if args.strand_comparison:
-                            g_strand = df[df.Sample.str.contains("g_strand")]
-                            c_strand = df[df.Sample.str.contains("c_strand")]
-                            g_strand["Sample"] = g_strand["Sample"].apply(lambda x: x.split(".g_strand")[0])
-                            c_strand["Sample"] = c_strand["Sample"].apply(lambda x: x.split(".c_strand")[0])
-                            i = df[(df.Sample.str.contains("strand"))].index
+                            g_strand = df[df.file.str.contains("g_strand")]
+                            c_strand = df[df.file.str.contains("c_strand")]
+                            g_strand["file"] = g_strand["file"].apply(lambda x: x.split(".g_strand")[0])
+                            c_strand["file"] = c_strand["file"].apply(lambda x: x.split(".c_strand")[0])
+                            i = df[(df.file.str.contains("strand"))].index
                             df = df.drop(i)
-                        plt = report_utils.quality_boxplot_from_quantiles(data=df, x="Sample",
+                        plt = report_utils.quality_boxplot_from_quantiles(data=df, x="file",
                                            x_title="Pipeline Step", y_title="Quality Score",
                                            plt_title="Quality of Reads Retained at Each Step",
                                            x_rotation=45)
                         hover = plt._fig.select(dict(type=HoverTool))
-                        hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                  ("Avg Quality", "@Mean"),
-                                  ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                   ("Min Length", "@Min"), ("Max Length", "@Max")]
+                        hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Length", "@min_quality"), ("Max Length", "@max_quality")]
                         EZChart(plt,THEME)
                         if args.strand_comparison:
             
-                            g_plt = report_utils.quality_boxplot_from_quantiles(data=g_strand, x="Sample",
+                            g_plt = report_utils.quality_boxplot_from_quantiles(data=g_strand, x="file",
                                                     x_title="Pipeline Step", y_title="Quality Score",
                                                     plt_title="G Strand",
                                                     x_rotation=45)
                             hover = g_plt._fig.select(dict(type=HoverTool))
-                            hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                            ("Avg Quality", "@Mean"),
-                                            ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                            ("Min Length", "@Min"), ("Max Length", "@Max")]
-                            c_plt = report_utils.quality_boxplot_from_quantiles(data=c_strand, x="Sample",
+                            hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Length", "@min_quality"), ("Max Length", "@max_quality")]
+                            c_plt = report_utils.quality_boxplot_from_quantiles(data=c_strand, x="file",
                                                     x_title="Pipeline Step", y_title="Quality Score",
                                                     plt_title="C Strand",
                                                     x_rotation=45)
                             hover = c_plt._fig.select(dict(type=HoverTool))
-                            hover.tooltips = [("Sample", "@Sample"), ("Read Count", "@num_seqs"),
-                                            ("Avg Quality", "@Mean"),
-                                            ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                            ("Min Length", "@Min"), ("Max Length", "@Max")]
+                            hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
+                                  ("Avg Quality", "@mean_quality"),
+                                  ("Q1", "@Q1_qual"),("Q2", "@Q2_qual"),("Q3", "@Q3_qual"),
+                                   ("Min Length", "@min_quality"), ("Max Length", "@max_quality")]
                             with Grid(columns=2):
                                 EZChart(g_plt, THEME)
                                 EZChart(c_plt, THEME)
@@ -941,7 +927,7 @@ def main(args):
                 if args.restriction_digest[0] != "false":
                         with tabs.add_dropdown_tab("{} Restriction Digest".format(sample)):
                             stats_df = pd.read_table(sample_dict[sample]["digest"], sep="\t")
-                            stats_df = stats_df.drop(columns=["N50.1", "format", "sum_len", "sum_gap"])
+                            stats_df["file"] = stats_df["file"].apply(lambda x: x.split(".reheaded.bam")[0])
                             DataTable.from_pandas(stats_df, use_index=False)
     
     if args.detailed_stats:
@@ -1120,21 +1106,21 @@ def main(args):
                             with Grid(columns=2):
                                 EZChart(scatter, THEME)
                                 EZChart(boxplot, THEME)
-            
-                        with new_tabs.add_tab("Strand Comparison"):
-                            # perfect repeat percentage by strand
-                            perf_repeat = report_utils.create_boxplot_by_strand(df, "perc_perfect", 
-                                                                                plt_title="Perfect Repeat Composition", x_title="Strand", 
-                                                                                y_title="Percentage Perfect Repeats")
+                        if args.strand_comparison:
+                            with new_tabs.add_tab("Strand Comparison"):
+                                # perfect repeat percentage by strand
+                                perf_repeat = report_utils.create_boxplot_by_strand(df, "perc_perfect", 
+                                                                                    plt_title="Perfect Repeat Composition", x_title="Strand", 
+                                                                                    y_title="Percentage Perfect Repeats")
 
-                            # imperfect repeat percentage by strand
-                            imperf_repeat = report_utils.create_boxplot_by_strand(df, "perc_variant", 
-                                                                                plt_title="Telomere-Like Repeat Composition", x_title="Strand", 
-                                                                                y_title="Percentage Telomere-Like Repeats")
+                                # imperfect repeat percentage by strand
+                                imperf_repeat = report_utils.create_boxplot_by_strand(df, "perc_variant", 
+                                                                                    plt_title="Telomere-Like Repeat Composition", x_title="Strand", 
+                                                                                    y_title="Percentage Telomere-Like Repeats")
 
-                            with Grid(columns=2):
-                                EZChart(perf_repeat, THEME)
-                                EZChart(imperf_repeat, THEME)
+                                with Grid(columns=2):
+                                    EZChart(perf_repeat, THEME)
+                                    EZChart(imperf_repeat, THEME)
     report.write(args.report)
 
 def argparser():
@@ -1150,12 +1136,8 @@ def argparser():
     parser.add_argument("--minimum_read_count", required=True)
     parser.add_argument("--run_stats_retained", required=True) #works but need to figure out how to get combined sample stats here
     parser.add_argument("--run_stats_filtered", required=True) #works but need to figure out how to get combined sample stats here
-    parser.add_argument("--run_quality_retained", required=True)
-    parser.add_argument("--run_quality_filtered", required=True)
     parser.add_argument("--sample_stats_retained", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
     parser.add_argument("--sample_stats_filtered", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
-    parser.add_argument("--sample_quality_retained", nargs="+", required=True)
-    parser.add_argument("--sample_quality_filtered", nargs="+", required=True)
     parser.add_argument("--sample_telo_stats", nargs="+", required=True)
     parser.add_argument("--run_telo_stats", required=True)
     parser.add_argument("--run_vrr_stats", required=True)

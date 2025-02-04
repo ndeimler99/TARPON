@@ -139,17 +139,15 @@ workflow telomere_analysis_pipeline {
         versions = getVersions()
         manifest = getManifest()
 
-        sample_stats.retained_stats.multiMap{ label, stats, quality ->
+        sample_stats.retained_stats.multiMap{ label, stats ->
                 label: label
                 stats: stats
-                quality: quality
             }.set { retained_sample }
  
 
-        sample_stats.filtered_stats.multiMap{ label, stats, quality ->
+        sample_stats.filtered_stats.multiMap{ label, stats ->
                 label: label
                 stats: stats
-                quality: quality
             }.set { filtered_sample }
 
         FINAL_TELO_STATS(telo_stats.final_telo_stats.collect())
@@ -157,9 +155,7 @@ workflow telomere_analysis_pipeline {
         //generate_html_report(file(params.outdir), stats_done[1])
         report = GENERATE_FINAL_REPORT(params.params, versions.versions, manifest.manifest, \
                             run_stats.retained_stats, run_stats.filtered_stats, \
-                            run_stats.retained_quality_stats, run_stats.filtered_quality_stats, \
                             retained_sample.stats.collect(), filtered_sample.stats.collect(), \
-                            retained_sample.quality.collect(), filtered_sample.quality.collect(), \
                             telo_stats.final_telo_stats.collect(), \
                             FINAL_TELO_STATS.out.stats, FINAL_TELO_STATS.out.vrr_stats, \
                             restriction_digest.stats.collect() \
