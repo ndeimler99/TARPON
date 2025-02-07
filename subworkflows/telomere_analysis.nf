@@ -31,6 +31,7 @@
     include { GET_EMPTY_CHANNEL } from "../bin/process.nf"
     include { MUTANT_ANALYSIS } from "../bin/process.nf"
     include { VARIANT_ANALYSIS } from "../bin/process.nf"
+    include { PLOT_TELO_GRAPHS } from "../bin/process.nf"
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -83,7 +84,7 @@ workflow telomere_analysis_pipeline {
             mutant_analysis = VARIANT_ANALYSIS(telo_stats.final_telomeric)
         }
 
-        //PLOT_TELO_GRAPHS(mutant_analysis.sequences)
+        PLOT_TELO_GRAPHS(mutant_analysis.sequences)
         // merge all stats relevant to retained telomeric sequences
         run_retained = COMBINED_RETAINED_BAM(subtelo_filtered_ch.retained_reads.multiMap { label, stats -> stats: stats }.collect(). map { it -> [ "subtelo_pass", it ]}.mix(
                                                     telo_stats.retained_reads.multiMap { label, stats -> stats: stats }.collect().map {it -> [ "telo_retained", it]}))
@@ -177,7 +178,7 @@ workflow telomere_analysis_pipeline {
             }.set { mutant_analysis_processivity }
         
         FINAL_TELO_STATS(mutant_analysis_stats.stats.collect())
-        
+
         //generate_html_report(file(params.outdir), stats_done[1])
         report = GENERATE_FINAL_REPORT(params.params, versions.versions, manifest.manifest, \
                             run_stats.retained_stats, run_stats.filtered_stats, \

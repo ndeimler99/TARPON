@@ -826,10 +826,12 @@ process PLOT_TELO_GRAPHS {
         tuple val(sample), path(telo_reads)
     
     output:
-        path("*.png")
+       path("*.png")
+
+    publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.png"
     
     script:
     """
-    plotTeloGraphs.py --telo_sequences ${telo_reads} --mutant ${params.mutant} --telo_plot ${sample}.telomere_visualization
+    plotTeloGraphs.py --telo_sequences ${telo_reads} --repeat ${params.repeat} --mutant ${params.mutant} --telo_plot ${sample}.telomere_visualization.png
     """
 }
