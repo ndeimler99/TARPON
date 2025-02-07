@@ -40,6 +40,10 @@ workflow validate_parameters {
             println("Error - Input File or Directory Does not Exist")
         }
 
+        if (params.c_strand_only && params.strand_comparison) {
+            parameters_passed = false
+            println("C Strand Only can not be specific with Strand Comparison")
+        }
 
         // either adaptor sequence (simplex) or sample_file (multiplex) must be present otherwise telomere ends are not able to be accurately identified
         if (params.adaptor_sequence == "" && params.sample_file == "") {

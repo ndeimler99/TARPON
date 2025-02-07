@@ -16,8 +16,12 @@ def main(args):
     filtered = pysam.AlignmentFile(args.removed_reads, "wb", template=input_file_fh)
 
     for aln in input_file_fh:
-        c = aln.query_sequence.count(rev_complement(args.repeat))
-        g = aln.query_sequence.count(args.repeat)
+        if args.mutant == "false":
+            c = aln.query_sequence.count(rev_complement(args.repeat))
+            g = aln.query_sequence.count(args.repeat)
+        else:
+            c = aln.query_sequence.count(rev_complement(args.repeat)) + aln.query_sequence.count(rev_complement(args.mutant))
+            g = aln.query_sequence.count(args.repeat) + aln.query_sequence.count(args.mutant)
         if args.c_strand_only:
             if c/(c+g) >= args.threshold:
                 q = aln.query_qualities
@@ -52,6 +56,7 @@ def argparser():
     parser.add_argument("--c_strand_only", required=True)
     parser.add_argument("--out_file", required=True)
     parser.add_argument("--removed_reads", required=True)
+    parser.add_argument("--mutant", required=True)
     return parser
 
 

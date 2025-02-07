@@ -8,14 +8,18 @@ def get_read_qual(seq):
     """Returns the mean phred converted quality score for a given seq"""
     return sum([i for i in seq]) / len(seq)
 
-def get_telo_start(read, repeat, sliding_window, sliding_window_interval, upper_threshold, lower_threshold, consecutive_threshold):
+def get_telo_start(read, repeat, sliding_window, sliding_window_interval, upper_threshold, lower_threshold, consecutive_threshold, mutant=None):
     # identifies start of telomeric read (read).  See manuscript for more details on how this is done and why it is done each way
     telo_found = False
     telo_start = None
     below_threshold = 0
     for i in range(0, len(read)-sliding_window, sliding_window_interval):
         telo_matches = list(regex.finditer(r"(%s){s<=1}" % repeat, read[i:i+sliding_window]))
-        telo_perc = len(telo_matches) * len(repeat) / sliding_window
+        if mutant is None:
+            telo_perc = len(telo_matches) * len(repeat) / sliding_window
+        else:
+            telo_perc = (len(telo_matches) * len(repeat) + read[i:i+sliding_window].count(mutant) * len(mutant) ) / sliding_window
+
         if telo_perc >= upper_threshold:
             below_threshold = 0
             if not telo_found:
@@ -29,10 +33,14 @@ def get_telo_start(read, repeat, sliding_window, sliding_window_interval, upper_
                     telo_start = None
     return telo_found, telo_start
 
-def check_valid(read, repeat, telomeric_rep_perc):
+def check_valid(read, repeat, telomeric_rep_perc, mutant=None):
     # check if telomeric sequence from telo start to telo end is above telomeric_rep_perc
     
-    telo_perc = len(list(regex.finditer(r"(%s){s<=1}" % repeat, read))) * len(repeat) / (len(read))
+    if mutant is None:
+        telo_perc = len(list(regex.finditer(r"(%s){s<=1}" % repeat, read))) * len(repeat) / (len(read))
+    else:
+                telo_perc = (len(list(regex.finditer(r"(%s){s<=1}" % repeat, read))) * len(repeat) + read.count(mutant) * len(mutant)) / (len(read))
+
     if telo_perc >= telomeric_rep_perc:
         return True
     else:
@@ -63,8 +71,8 @@ def argparser():
     parser.add_argument("--no_telomere_out", required=True)
     parser.add_argument("--filtered_out", required=True)
     parser.add_argument("--stats_fh", required=True)
+    parser.add_argument("--mutant", required=True)
 
-    
     return parser
 
 def main(args):
@@ -83,6 +91,14 @@ def main(args):
     no_telo_out = pysam.AlignmentFile(args.no_telomere_out, "wb", template=input_fh)
     filtered_fh = pysam.AlignmentFile(args.filtered_out, "wb", template=input_fh)
 
+    if args.mutant != "false":
+        hamming = 0
+        for i in range(0, len(args.mutant)):
+            if args.mutant[i] != args.repeat[i]:
+                hamming += 1
+        if hamming <= 1:
+            args.mutant = "false"
+    
     # isolate through fastq file to perform telo start analysis on each individual read
     with open(args.stats_fh, "w") as stats_fh:
         stats_fh.write("read_id\tstrand\tread_len\tvrr_start_pos\tvrr_telo_length\ttelo_length\tread_qual\ttelo_qual\n")
@@ -92,18 +108,29 @@ def main(args):
             # if linecount % 4 == 0:
             #     read.append(line.strip())
             #     #analysis
-            telo_found, telo_start = get_telo_start(aln.query_sequence, args.repeat, args.sliding_window, args.sliding_window_interval, args.upper_threshold, args.lower_threshold, args.consecutive_threshold)
+            if args.mutant == "false":
+                telo_found, telo_start = get_telo_start(aln.query_sequence, args.repeat, args.sliding_window, args.sliding_window_interval, args.upper_threshold, args.lower_threshold, args.consecutive_threshold)
+            else:
+                telo_found, telo_start = get_telo_start(aln.query_sequence, args.repeat, args.sliding_window, args.sliding_window_interval, args.upper_threshold, args.lower_threshold, args.consecutive_threshold, args.mutant)
+
             if not telo_found:
                     #write to file
                 no_telo_out.write(aln)
                 continue
-                
-            if not check_valid(aln.query_sequence[telo_start:], args.repeat, args.telomeric_rep_perc):
-                #write to file
-                filtered_fh.write(aln)
-                continue
-                
+            
+            if args.mutant == "false":
+                if not check_valid(aln.query_sequence[telo_start:], args.repeat, args.telomeric_rep_perc):
+                    #write to file
+                    filtered_fh.write(aln)
+                    continue
+            else:
+                if not check_valid(aln.query_sequence[telo_start:], args.repeat, args.telomeric_rep_perc, args.mutant):
+                    #write to file
+                    filtered_fh.write(aln)
+                    continue
+
             telo_length = get_telo_length(aln.query_sequence[telo_start:], args.repeat * args.consecutive_repeats)
+
             read_qual = get_read_qual(aln.query_qualities)
             telo_qual = get_read_qual(aln.query_qualities[telo_start:])
             #write to telo out fastq file

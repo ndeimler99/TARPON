@@ -37,8 +37,7 @@ from typing import Optional
 THEME = 'epi2melabs'
 
 def pass_fail_sample(row):
-    print("IN FUNCTION")
-    print(row)
+
     if row["Number_of_Reads"] >= args.minimum_read_count:
         return "PASS"
     else:
@@ -373,11 +372,7 @@ def main(args):
             with tabs.add_tab("Telo Stats"):
                 df = telo_summary_stats
                 df = df.set_index("Sample_ID").loc[sorted(sample_dict.keys())].reset_index()
-                print("Pre Function")
-                print(df)
                 df = df.apply(pass_fail_sample, axis=1)
-                print("Post Function")
-                print(df)
                 DataTable.from_pandas(df, use_index=False)
             with tabs.add_tab("Telomere Length Barchart"):
                 master_df = pd.DataFrame()
@@ -419,11 +414,7 @@ def main(args):
             with tabs.add_tab("VRR Stats"):
                 df = vrr_summary_stats
                 df = df.set_index("Sample_ID").loc[sorted(sample_dict.keys())].reset_index()
-                print("Pre Function")
-                print(df)
                 df["STATUS"] = df.apply(pass_fail_sample, axis=1)
-                print("Post Function")
-                print(df)
                 DataTable.from_pandas(df, use_index=False)
             with tabs.add_tab("VRR Length Barchart"):
                 master_df = pd.DataFrame()
@@ -923,7 +914,51 @@ def main(args):
                             with Grid(columns=2):
                                 EZChart(g_plt, THEME)
                                 EZChart(c_plt, THEME)
-
+                with tabs.add_dropdown_tab("{} Telomere Composition".format(sample)):
+                    new_tabs = Tabs()
+                    stats_df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
+                    with new_tabs.add_tab("Histogram and Boxplot"):
+                        if args.mutant == "false":
+                            histogram_repeat_freq = report_utils.repeat_freq_histogram(stats_df[["wt_composition","one_nucl_variant_composition"]],
+                                                                                    binwidth=1, binrange=[0,100],
+                                                                                    x_title="% of Telomere", y_title="Number of Telomeric Reads",
+                                                                                    plt_title="Repeat Frequency")
+                            
+                            
+                    
+                            # boxplot of repeat frequencies
+                            repeat_freq_boxplot = report_utils.create_multisample_boxplot(stats_df, ["wt_composition", "one_nucl_variant_composition"], 
+                                                                                        0, 100, plt_title="Repeat Frequency",
+                                                                                        y_title = "Percentage of Telomere")
+                            # telomere length barplot w/ colors
+                            with Grid(columns=2):
+                                EZChart(histogram_repeat_freq, THEME)
+                                EZChart(repeat_freq_boxplot, THEME)
+                        else:
+                            # histogram of repeat frequencies
+                            histogram_repeat_freq = report_utils.repeat_freq_histogram(stats_df[["wt_composition","mutant_composition", "one_nucl_variant_composition"]],
+                                                                                    binwidth=1, binrange=[0,100],
+                                                                                    x_title="% of Telomere", y_title="Number of Telomeric Reads",
+                                                                                    plt_title="Repeat Frequency")
+                            
+                            
+                    
+                            # boxplot of repeat frequencies
+                            repeat_freq_boxplot = report_utils.create_multisample_boxplot(stats_df, ["wt_composition", "mutant_composition", "one_nucl_variant_composition"], 
+                                                                                        0, 100, plt_title="Repeat Frequency",
+                                                                                        y_title = "Percentage of Telomere")
+                            # telomere length barplot w/ colors
+                            with Grid(columns=2):
+                                EZChart(histogram_repeat_freq, THEME)
+                                EZChart(repeat_freq_boxplot, THEME)
+                        # telomere length barplot w/ colors
+                    with new_tabs.add_tab("Telomere Length by Composition Bar Plot"):
+                        stats_df = stats_df.sort_values("vrr_telo_length")
+                        if args.mutant == "false":
+                            plot = report_utils.colored_telo_length_barplot(data=stats_df, x_title="VRR Telomere Length (bp)", y_title="Read ID", repeat=args.repeat)
+                        else:
+                            plot = report_utils.colored_telo_length_barplot(data=stats_df, mutant=args.mutant, x_title="VRR Telomere Length (bp)", y_title="Read ID", repeat=args.repeat)
+                        EZChart(plot, THEME)
                 if args.restriction_digest[0] != "false":
                         with tabs.add_dropdown_tab("{} Restriction Digest".format(sample)):
                             stats_df = pd.read_table(sample_dict[sample]["digest"], sep="\t")
@@ -1022,18 +1057,18 @@ def main(args):
                         new_tabs = Tabs()
                         with new_tabs.add_tab("Perfect Repeats Distribution"):
                                 # telo % GGTTAG hist
-                                perfect_hist = report_utils.telo_length_hist(df["perc_perfect"], binwidth=1, 
+                                perfect_hist = report_utils.telo_length_hist(df["wt_composition"], binwidth=1, 
                                                                     binrange=[0, 100],
                                                                     plt_title="Telomeric Perfect Repeat Composition",
                                                                     x_title="Perentage of Perfect Repeats",
                                                                     y_title="Telomere Count")
                                 # telo % GGTTAG boxplot
-                                perfect_box = report_utils.create_boxplot(df=df,column_name="perc_perfect", sample=sample,
+                                perfect_box = report_utils.create_boxplot(df=df,column_name="wt_composition", sample=sample,
                                                                             x_title = sample, y_title="Percentage of Telomere",
                                                                             plt_title="Telomeric Perfect Repeat Composition")
                 
                                 # % GGTTAG by telomere quality
-                                perc_by_quality = report_utils.scatterplot(data=df, x="telo_qual", y="perc_perfect",
+                                perc_by_quality = report_utils.scatterplot(data=df, x="telo_qual", y="wt_composition",
                                                                             plt_title="Telomere Quality by Composition",
                                                                             x_title="Telomere Quality", 
                                                                             y_title="Percentage of Perfect Repeats",
@@ -1044,11 +1079,11 @@ def main(args):
                                     EZChart(perc_by_quality, THEME)
                         with new_tabs.add_tab("Perfect Repeats by Telomere Length"):
                             # % GGTTAG by telomere length
-                            length_by_perfect = report_utils.scatterplot(data=df, x="telo_length", y="perc_perfect",
+                            length_by_perfect = report_utils.scatterplot(data=df, x="telo_length", y="wt_composition",
                                                                             plt_title="Percentage of Perfect Repeats by Telomere Length",
                                                                             x_title="Telomere Length (BP)", y_title="Percentage of Perfect Repeats",
                                                                             hover_tooltips=[("Telomere Length", "@x"), ("Percentage Perfect Repeats", "@y")])
-                            vrr_length_by_perfect = report_utils.scatterplot(data=df, x="vrr_telo_length", y="perc_perfect",
+                            vrr_length_by_perfect = report_utils.scatterplot(data=df, x="vrr_telo_length", y="wt_composition",
                                                                             plt_title="Percentage of Perfect Repeats by VRR Telomere Length",
                                                                             x_title="VRR Telomere Length (BP)", y_title="Percentage of Perfect Repeats",
                                                                             hover_tooltips=[("VRR Telomere Length", "@x"), ("Percentage Perfect Repeats", "@y")])
@@ -1058,18 +1093,18 @@ def main(args):
 
                         with new_tabs.add_tab("Variant Repeats Distribution"):
                                 # telo % GGTTAG {s<=1} hist
-                                perfect_hist = report_utils.telo_length_hist(df["perc_variant"], binwidth=1, 
+                                perfect_hist = report_utils.telo_length_hist(df["one_nucl_variant_composition"], binwidth=1, 
                                                                     binrange=[0, 100],
                                                                     plt_title="Telomeric Variant Repeat Composition",
                                                                     x_title="Perentage of Variant Repeats",
                                                                     y_title="Telomere Count")
                                 # telo % GGTTAG boxplot
-                                perfect_box = report_utils.create_boxplot(df=df,column_name="perc_variant", sample=sample,
+                                perfect_box = report_utils.create_boxplot(df=df,column_name="one_nucl_variant_composition", sample=sample,
                                                                             x_title = sample, y_title="Percentage of Telomere",
                                                                             plt_title="Telomeric Variant Repeat Composition")
                 
                                 # % GGTTAG by telomere quality
-                                perc_by_quality = report_utils.scatterplot(data=df, x="telo_qual", y="perc_variant",
+                                perc_by_quality = report_utils.scatterplot(data=df, x="telo_qual", y="one_nucl_variant_composition",
                                                                             plt_title="Telomere Quality by Composition",
                                                                             x_title="Telomere Quality", 
                                                                             y_title="Percentage of /Variant Repeats",
@@ -1081,11 +1116,11 @@ def main(args):
                             
                         with new_tabs.add_tab("Variant Repeats by Telomere Length"):
                             # % GGTTAG by telomere length
-                            length_by_perfect = report_utils.scatterplot(data=df, x="telo_length", y="perc_variant",
+                            length_by_perfect = report_utils.scatterplot(data=df, x="telo_length", y="one_nucl_variant_composition",
                                                                             plt_title="Percentage of Variant Repeats by Telomere Length",
                                                                             x_title="Telomere Length (BP)", y_title="Percentage of Variant Repeats",
                                                                             hover_tooltips=[("Telomere Length", "@x"), ("Percentage Variant Repeats", "@y")])
-                            vrr_length_by_perfect = report_utils.scatterplot(data=df, x="vrr_telo_length", y="perc_variant",
+                            vrr_length_by_perfect = report_utils.scatterplot(data=df, x="vrr_telo_length", y="one_nucl_variant_composition",
                                                                             plt_title="Percentage of Variant Repeats by VRR Telomere Length",
                                                                             x_title="VRR Telomere Length (BP)", y_title="Percentage of Variant Repeats",
                                                                             hover_tooltips=[("VRR Telomere Length", "@x"), ("Percentage Variant Repeats", "@y")])
@@ -1093,11 +1128,11 @@ def main(args):
                                 EZChart(length_by_perfect, THEME)
                                 EZChart(vrr_length_by_perfect, THEME)
                         with new_tabs.add_tab("Perfect vs Variant Repeats"):
-                            scatter = report_utils.scatterplot(data=df, x="perc_perfect", y="perc_variant",
+                            scatter = report_utils.scatterplot(data=df, x="wt_composition", y="one_nucl_variant_composition",
                                                                 plt_title="Percentage of Telomere Composition",
                                                                 x_title = "Percentage of Perfect Repeats",
                                                                 y_title="Percentage of Variant Repeats")
-                            boxplot = report_utils.create_multisample_boxplot(df=df, column_names=["perc_perfect", "perc_variant"],
+                            boxplot = report_utils.create_multisample_boxplot(df=df, column_names=["wt_composition", "one_nucl_variant_composition"],
                                                                                 plt_title="Telomeric Composition Boxplot",
                                                                                 y_title="Percentage of VRR Telomere", x_rotation=45,
                                                                                 min_q=0, max_q=100)
@@ -1109,18 +1144,23 @@ def main(args):
                         if args.strand_comparison:
                             with new_tabs.add_tab("Strand Comparison"):
                                 # perfect repeat percentage by strand
-                                perf_repeat = report_utils.create_boxplot_by_strand(df, "perc_perfect", 
+                                perf_repeat = report_utils.create_boxplot_by_strand(df, "wt_composition", 
                                                                                     plt_title="Perfect Repeat Composition", x_title="Strand", 
                                                                                     y_title="Percentage Perfect Repeats")
 
                                 # imperfect repeat percentage by strand
-                                imperf_repeat = report_utils.create_boxplot_by_strand(df, "perc_variant", 
+                                imperf_repeat = report_utils.create_boxplot_by_strand(df, "one_nucl_variant_composition", 
                                                                                     plt_title="Telomere-Like Repeat Composition", x_title="Strand", 
                                                                                     y_title="Percentage Telomere-Like Repeats")
 
                                 with Grid(columns=2):
                                     EZChart(perf_repeat, THEME)
                                     EZChart(imperf_repeat, THEME)
+    
+    if args.mutant != "false":
+        with report.add_section("Mutant Repeat Analysis", "Mutant Repeat Analysis"):
+            pass
+
     report.write(args.report)
 
 def argparser():
@@ -1146,6 +1186,10 @@ def argparser():
     parser.add_argument("--plot_telo_length", required=True)
     parser.add_argument("--strand_comparison", required=True)
     parser.add_argument("--detailed_stats", required=True)
+    parser.add_argument("--mutant", required=True)
+    parser.add_argument("--mutant_analysis_repeat_distribution", nargs="+", required=True)
+    parser.add_argument("--mutant_analysis_processivity", nargs="+", required=True)
+    parser.add_argument("--repeat", required=True)
     
     return parser
 

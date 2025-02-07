@@ -1,3 +1,5 @@
 ../nextflow run main.nf --adaptor_sequence ACTTCGTTCGGT --input_file ./test_data/simplex_test.fastq.gz --c_strand_only --overwrite_outdir
 ../nextflow run main.nf --sample_file ./test_data/demux_test.barcodes.csv --input_file ./test_data/demux_test.fastq.gz --c_strand_only --outdir ./TArPON_outdir --overwrite_outdir
 nextflow run ../../WORKFLOWS/TArPON/main.nf --adaptor_sequence ATGCTACGATCA --input_file ./test_data/duplex_test.fastq.gz --strand_comparison
+
+../../nextflow run main.nf --adaptor_sequence ATGCTACGATCA --input_file ./test_data/131_SUP.100k.bam --strand_comparison --overwrite_outdir

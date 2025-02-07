@@ -130,7 +130,7 @@ if (args[4]){
 
 # distribution of perfect telomeric repeats
 perfect_repeat_hist <- ggplot() +
-  geom_histogram(mapping=aes(telo_stats$perc_perfect), binwidth = 5) + 
+  geom_histogram(mapping=aes(telo_stats$wt_composition), binwidth = 5) + 
   theme_minimal() +
   ylab("Number of Reads") + xlab("% Telomeric (Perfect Repeats)") +
   theme(axis.text = element_text(size=15),
@@ -140,8 +140,8 @@ ggsave("telo_repeat_frequency.pdf", plot=perfect_repeat_hist, device="pdf", widt
 
 # boxplot of perfect telomeric repeats
 percentage_repeat_box <- ggplot() +
-  geom_boxplot(mapping=aes(y="Perfect Repeats", x=telo_stats$perc_perfect)) +
-  geom_boxplot(mapping=aes(y="One Nucleotide\nSubstitutions", x=telo_stats$perc_variant)) +
+  geom_boxplot(mapping=aes(y="Perfect Repeats", x=telo_stats$wt_composition)) +
+  geom_boxplot(mapping=aes(y="One Nucleotide\nSubstitutions", x=telo_stats$one_nucl_variant_composition)) +
   theme_minimal() +
   xlab("Percentage of VRR Region") +
   theme(axis.title.y= element_blank(),
@@ -152,7 +152,7 @@ ggsave("telo_repeat_frequency_boxplot.pdf", width=6, height=10, device="pdf", pl
 
 # scatterplot telomere quality by perfect repeat composition
 telo_quality_vs_perfect <- ggplot() +
-  geom_pointdensity(mapping=aes(x=telo_stats$telo_qual, y=telo_stats$perc_perfect), adjust=4) +
+  geom_pointdensity(mapping=aes(x=telo_stats$telo_qual, y=telo_stats$wt_composition), adjust=4) +
   scale_color_viridis() +
   theme_minimal() +
   xlab("Telomere Quality") + 
@@ -176,7 +176,7 @@ ggsave("telomere_like_repeat_frequency.pdf", width=12, height=10, plot=imperfect
 
 # scatterplot telomere quality by telomer-like composition
 telo_quality_vs_imperfect <- ggplot() +
-  geom_pointdensity(mapping=aes(x=telo_stats$telo_qual, y=telo_stats$perc_variant), adjust=4) +
+  geom_pointdensity(mapping=aes(x=telo_stats$telo_qual, y=telo_stats$one_nucl_variant_composition), adjust=4) +
   scale_color_viridis() +
   theme_minimal() +
   xlab("Telomere Quality") + 
@@ -190,7 +190,7 @@ ggsave("telomere_quality_vs_percentage_telomere_like_repeats.pdf", width=12, hei
 # perfect vs telomer-like repeats scatterpot and boxplot
 
 perfect_by_imperfect_scatter <- ggplot() +
-  geom_pointdensity(mapping=aes(x=telo_stats$perc_perfect, y=telo_stats$perc_variant), adjust=4) +
+  geom_pointdensity(mapping=aes(x=telo_stats$wt_composition, y=telo_stats$one_nucl_variant_composition), adjust=4) +
   scale_color_viridis() +
   theme_minimal() +
   xlab("% VRR Region Perfect Repeats") + 
@@ -220,7 +220,7 @@ if (args[2]){
   
   # scatterplot telo length by percentage
   telo_length_vs_perfect <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$telo_length, y=telo_stats$perc_perfect), adjust=4) +
+    geom_pointdensity(mapping=aes(x=telo_stats$telo_length, y=telo_stats$wt_composition), adjust=4) +
     scale_color_viridis() +
     theme_minimal() +
     xlab("Telomere Length") + 
@@ -232,7 +232,7 @@ if (args[2]){
   
   # scatterplot telo length percentage one subs
   telo_length_vs_imperfect <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$telo_length, y=telo_stats$perc_variant), adjust=4) +
+    geom_pointdensity(mapping=aes(x=telo_stats$telo_length, y=telo_stats$one_nucl_variant_composition), adjust=4) +
     scale_color_viridis() +
     theme_minimal() +
     xlab("Telomere Length") + 
@@ -249,7 +249,7 @@ if (args[3]){
 
   # scatterplot telo length by percentage
   vrr_length_vs_perfect <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$perc_perfect), adjust=4) +
+    geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$wt_composition), adjust=4) +
     scale_color_viridis() +
     theme_minimal() +
     xlab("VRR Telomere Length") + 
@@ -261,7 +261,7 @@ if (args[3]){
   
   # scatterplot telo length percentage one subs
   vrr_length_vs_imperfect <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$perc_variant), adjust=4) +
+    geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$one_nucl_variant_composition), adjust=4) +
     scale_color_viridis() +
     theme_minimal() +
     xlab("VRR Telomere Length") + 
@@ -278,16 +278,16 @@ if (args[4]) {
   
   # % telo histogram
   telomere_perc_boxplot <- ggplot() +
-    geom_boxplot(mapping=aes(y="C", x=telo_stats[telo_stats$strand=="C",]$perc_perfect)) +
-    geom_boxplot(mapping=aes(y="G", x=telo_stats[telo_stats$strand=="G",]$perc_perfect)) +
+    geom_boxplot(mapping=aes(y="C", x=telo_stats[telo_stats$strand=="C",]$wt_composition)) +
+    geom_boxplot(mapping=aes(y="G", x=telo_stats[telo_stats$strand=="G",]$wt_composition)) +
     theme_minimal() + ylab("Strand") + xlab("Percent Perfect Telomeric") +
     theme(axis.text = element_text(size=15),
           axis.title = element_text(size=20))
   ggsave("repeat_composition_by_strand.pdf", device="pdf", plot=telomere_perc_boxplot, width=12, height=6, create.dir = TRUE)
   # % one subs histogram
   telomere_imperfect_perc_boxplot <- ggplot() +
-    geom_boxplot(mapping=aes(y="C", x=telo_stats[telo_stats$strand=="C",]$perc_variant)) +
-    geom_boxplot(mapping=aes(y="G", x=telo_stats[telo_stats$strand=="G",]$perc_variant)) +
+    geom_boxplot(mapping=aes(y="C", x=telo_stats[telo_stats$strand=="C",]$one_nucl_variant_composition)) +
+    geom_boxplot(mapping=aes(y="G", x=telo_stats[telo_stats$strand=="G",]$one_nucl_variant_composition)) +
     theme_minimal() + ylab("Strand") + xlab("Percent One Nucleotide Substitutions Telomeric") +
     theme(axis.text = element_text(size=15),
           axis.title = element_text(size=20))

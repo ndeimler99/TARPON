@@ -23,12 +23,20 @@ def main(args):
     non_telo_fh = pysam.AlignmentFile(args.non_telo, "wb", template=input_file_fh)
 
     for aln in input_file_fh:
-        if args.c_strand_only and aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count:
-            out_fh.write(aln)
-        elif aln.query_sequence.count(args.repeat) >= args.repeat_count or aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count:
-            out_fh.write(aln)
+        if args.mutant == "false":
+            if args.c_strand_only and aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count:
+                out_fh.write(aln)
+            elif aln.query_sequence.count(args.repeat) >= args.repeat_count or aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count:
+                out_fh.write(aln)
+            else:
+                non_telo_fh.write(aln)
         else:
-            non_telo_fh.write(aln)
+            if args.c_strand_only and aln.query_sequence.count(rev_complement(args.repeat)) + aln.query_sequence.count(rev_complement(args.mutant)) >= args.repeat_count:
+                out_fh.write(aln)
+            elif aln.query_sequence.count(args.repeat) + aln.query_sequence.count(args.mutant) >= args.repeat_count or aln.query_sequence.count(rev_complement(args.repeat)) + aln.query_sequence.count(rev_complement(args.mutant)) >= args.repeat_count:
+                out_fh.write(aln)
+            else:
+                non_telo_fh.write(aln)
         
     input_file_fh.close()
     out_fh.close()
@@ -42,6 +50,7 @@ def argparser():
     parser.add_argument("--c_strand_only", required=True)
     parser.add_argument("--out_file", required=True)
     parser.add_argument("--non_telo", required=True)
+    parser.add_argument("--mutant", required=True)
     return parser
 
 if __name__ == "__main__":

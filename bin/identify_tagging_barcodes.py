@@ -4,7 +4,7 @@ import argparse
 import regex
 import pysam 
 
-def identify_first_barcode(read, barcode_dict, barcode_errors, repeat):
+def identify_first_barcode(read, barcode_dict, barcode_errors, repeat, mutant=None):
     """identifies location of the first barcode existing within a given read after ten telomeric repeats are identified:
     returns none if no barcodes are found. returns the first barcode and its location when found"""
     location_dict = {}
@@ -12,7 +12,12 @@ def identify_first_barcode(read, barcode_dict, barcode_errors, repeat):
         matches = list(regex.finditer(r'(?e)(%s){e<=%s}' % (barcode_dict[sample], barcode_errors), read))
         if len(matches) > 0:
             for match in matches:
-                if read[0:match.span()[0]].count(repeat) >= 10:
+                if mutant is None:
+                    repeat_count = read[0:match.span()[0]].count(repeat)
+                else:
+                    repeat_count = read[0:match.span()[0]].count(repeat) + read[0:match.span()[0]].count(mutant)
+
+                if repeat_count >= 20:
                     location_dict[sample] = match.span()[0]
     
     if len(location_dict) == 0:
@@ -55,8 +60,13 @@ def main(args):
         # add barcode sequence to header row for documentation
         #if linecount % 4 == 0:
             #read.append(line.strip())
-            
-        barcode, location = identify_first_barcode(aln.query_sequence, barcode_dict, args.barcode_errors, args.repeat)
+        
+        if args.mutant == "false":
+            barcode, location = identify_first_barcode(aln.query_sequence, barcode_dict, args.barcode_errors, args.repeat)
+        else:
+            print("within else statement, mutant was specified")
+            barcode, location = identify_first_barcode(aln.query_sequence, barcode_dict, args.barcode_errors, args.repeat, args.mutant)
+
         if barcode is not None and location != len(aln.query_sequence):
             q = aln.query_qualities
             aln.query_sequence = aln.query_sequence[0:location]
@@ -84,6 +94,7 @@ def argparser():
     parser.add_argument("--repeat", required=True)
     parser.add_argument("--out_fh", required=True)
     parser.add_argument("--no_adaptor", required=True)
+    parser.add_argument("--mutant", required=True)
     return parser
 
 if __name__ == "__main__":

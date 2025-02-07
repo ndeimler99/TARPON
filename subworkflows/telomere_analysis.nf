@@ -29,6 +29,8 @@
     include { validateParameters; paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
     include { FINAL_TELO_STATS } from "../bin/process.nf"
     include { GET_EMPTY_CHANNEL } from "../bin/process.nf"
+    include { MUTANT_ANALYSIS } from "../bin/process.nf"
+    include { VARIANT_ANALYSIS } from "../bin/process.nf"
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,6 +76,14 @@ workflow telomere_analysis_pipeline {
         // analyze reads and create stats file containing read_id, strand, read_len, VRR_Start, VRR_length, Telo_length, and read quality
         telo_stats = TELO_START_IDENTIFICATION(subtelo_filtered_ch.retained_reads)
 
+        if (params.mutant != false) {
+            mutant_analysis = MUTANT_ANALYSIS(telo_stats.final_telomeric)
+        }
+        else {
+            mutant_analysis = VARIANT_ANALYSIS(telo_stats.final_telomeric)
+        }
+
+        //PLOT_TELO_GRAPHS(mutant_analysis.sequences)
         // merge all stats relevant to retained telomeric sequences
         run_retained = COMBINED_RETAINED_BAM(subtelo_filtered_ch.retained_reads.multiMap { label, stats -> stats: stats }.collect(). map { it -> [ "subtelo_pass", it ]}.mix(
                                                     telo_stats.retained_reads.multiMap { label, stats -> stats: stats }.collect().map {it -> [ "telo_retained", it]}))
@@ -122,7 +132,7 @@ workflow telomere_analysis_pipeline {
 
         // if detailed stats is specified analyze telomeric sequences but include things such as percentage telomeric, etc.
         if (params.detailed_stats) {
-            telo_stats = GENERATE_DETAILED_PLOTS(telo_stats.final_telomeric)
+            telo_stats = GENERATE_DETAILED_PLOTS(mutant_analysis.statistics)
         }
 
         // if a restriction digest sequence is provided run a restrition digest analysis
@@ -150,14 +160,32 @@ workflow telomere_analysis_pipeline {
                 stats: stats
             }.set { filtered_sample }
 
-        FINAL_TELO_STATS(telo_stats.final_telo_stats.collect())
 
+        mutant_analysis.statistics.multiMap{ label, stats ->
+                label: label
+                stats: stats
+            }.set { mutant_analysis_stats }
+
+        mutant_analysis.repeat_distribution.multiMap {label, stats ->
+                label: label
+                stats: stats
+            }.set { mutant_analysis_repeat_distribution }
+
+        mutant_analysis.processivity.multiMap {label, stats ->
+                label: label
+                stats: stats
+            }.set { mutant_analysis_processivity }
+        
+        FINAL_TELO_STATS(mutant_analysis_stats.stats.collect())
+        
         //generate_html_report(file(params.outdir), stats_done[1])
         report = GENERATE_FINAL_REPORT(params.params, versions.versions, manifest.manifest, \
                             run_stats.retained_stats, run_stats.filtered_stats, \
                             retained_sample.stats.collect(), filtered_sample.stats.collect(), \
-                            telo_stats.final_telo_stats.collect(), \
+                            mutant_analysis_stats.stats.collect(), \
                             FINAL_TELO_STATS.out.stats, FINAL_TELO_STATS.out.vrr_stats, \
-                            restriction_digest.stats.collect() \
+                            restriction_digest.stats.collect(), \
+                            mutant_analysis_repeat_distribution.stats.collect(), \
+                            mutant_analysis_processivity.stats.collect()
         )
 }

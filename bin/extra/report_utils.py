@@ -792,6 +792,7 @@ def telo_length_hist(data=None, *, x=None, y=None, hue=None, weights=None,
         discrete=discrete,
         cumulative=cumulative,
     )
+    
     data = pd.DataFrame(data)
 
     estimator = Histogram(**estimate_kws)
@@ -1060,9 +1061,6 @@ def create_boxplot_by_strand(df, column_name, plt_title=None, x_title=None, y_ti
     )
 
     whisker_width = 0.1
-
-    print(g_strand)
-    print(c_strand)
     
     p.rect(["G Strand"], g_strand["lower"], whisker_width, g_strand["hbar_height"], line_color="grey")
     p.rect(["G Strand"], g_strand["upper"], whisker_width, g_strand["hbar_height"], line_color="grey")
@@ -1151,5 +1149,139 @@ def telo_length_hist_by_strand(data_list=None, *, labels = None, x=None, y=None,
         plt._fig.xaxis.axis_label = x_title
     if y_title is not None:
         plt._fig.yaxis.axis_label = y_title
+
+    return plt
+
+
+def repeat_freq_histogram(data=None, *, x=None, y=None, z=None, hue=None, weights=None,
+    stat='count', bins='auto', binwidth=None, binrange=None,
+    discrete=None, cumulative=False, common_bins=True,
+    common_norm=True, multiple='layer', element='bars',
+    fill=True, shrink=1, kde=False, kde_kws=None,
+    line_kws=None, thresh=0, pthresh=None, pmax=None,
+    cbar=False, cbar_ax=None, cbar_kws=None, palette=None,
+    hue_order=None, hue_norm=None, color=None, log_scale=None,
+        legend=True, ax=None, plt_title=None, x_title=None, y_title=None, **quad_kwargs):
+    """Plot univariate or multivariate histograms."""
+    plt = BokehPlot()
+
+    plot = figure()
+    
+    # print(plot)
+    # print(type(plot))
+    # glyph = VSpan(x=np.mean(data))
+    # plot.add_glyph(glyph)
+
+    # print(plt._fig)
+    # print(type(plt._fig))
+
+    estimate_kws = dict(
+        stat=stat,
+        bins=bins,
+        binwidth=binwidth,
+        binrange=binrange,
+        discrete=discrete,
+        cumulative=cumulative,
+    )
+    
+    data = pd.DataFrame(data)
+
+    estimator = Histogram(**estimate_kws)
+
+    if data.ndim > 1 and data.shape[1] > 1:
+        # multivariate data
+        opacity = 0.5
+        if palette is None:
+            palette = util.choose_palette()
+    else:
+        opacity = 1.0
+        if color is None:
+            palette = util.choose_palette()
+        else:
+            palette = [color]
+    if hue:
+        data = data.pivot(columns=hue, values=data.columns[0])
+    # this just looks over values if data is 1D
+    # for var, color in zip(data, cycle(palette)):
+
+    for col, color in zip(data.columns, cycle(palette)):
+        # print(col)
+        # print(color)
+        quad_kwargs = {}
+        if len(data.columns) > 1:
+            quad_kwargs["legend_label"] = col
+        variable_data = data[col].dropna()
+        heights, edges = estimator(variable_data, weights=weights)
+
+        plt._fig.quad(
+            top=heights, bottom=0, left=edges[:-1], right=edges[1:],
+            fill_color=color, fill_alpha=opacity, line_color=color, **quad_kwargs
+        )
+    
+    #plt._fig.vspan(x=[np.mean(data)], line_width=[1], color="red")
+    plt._fig.y_range.start = 0
+    hover = plt._fig.select(dict(type=HoverTool))
+    hover.tooltips = [(stat.capitalize(), "@top")]
+
+    if plt_title is not None:
+        plt._fig.title.text = plt_title
+    if x_title is not None:
+        plt._fig.xaxis.axis_label = x_title
+    if y_title is not None:
+        plt._fig.yaxis.axis_label = y_title
+
+    return plt
+
+
+def colored_telo_length_barplot(data=None, *, x=None, y=None, hue=None, order=None, hue_order=None,
+    estimator='mean', errorbar=('ci', 95), n_boot=1000, units=None, seed=None,
+    orient=None, color=None, palette=None, saturation=1.0, width=0.8,
+    errcolor='.26', errwidth=None, capsize=None, dodge=True, ci='deprecated',
+    ax=None, nested_x=False,  mutant=False, plt_title=None, y_title=None, x_title=None, x_rotation=None,
+    repeat="GGTTAG", **kwargs,
+):
+    if not mutant:
+        read_ids = data["read_id"]
+        fill = ["Non-{} or One Nucl. Substitutions".format(repeat), "One Nucl. Substitition of {}".format(repeat), repeat]
+        colors=["#D81B60", "#1E88E5","#FFC107"]
+        source_data = {"read_ids" : read_ids,
+                    "Non-{} or One Nucl. Substitutions".format(repeat): (100 - (data["one_nucl_variant_composition"] + data["wt_composition"]))/100 *data["vrr_telo_length"],
+                    "One Nucl. Substitition of {}".format(repeat) : data["one_nucl_variant_composition"]/100*data["vrr_telo_length"],
+                    repeat : data["wt_composition"]/100*data["vrr_telo_length"]}
+        
+        plt = BokehPlot(y_range=read_ids)
+        p = plt._fig
+        p.hbar_stack(fill, y="read_ids", height=0.9, color=colors, source=source_data, legend_label=fill)
+
+    else:
+        read_ids = data["read_id"]
+     
+        fill = ["Non-{} or One Nucl. Substitutions".format(repeat), "One Nucl. Substitition of {}".format(repeat), mutant, repeat]
+
+        colors=["#D81B60", "#1E88E5","#FFC107", "#004D40"]
+     
+        source_data = {"read_ids" : read_ids,
+                    "Non-{} or One Nucl. Substitutions".format(repeat): (100 - (data["one_nucl_variant_composition"] + data["wt_composition"]))/100 *data["vrr_telo_length"],
+                    "One Nucl. Substitition of {}".format(repeat) : data["one_nucl_variant_composition"]/100*data["vrr_telo_length"],
+                    repeat : data["wt_composition"]/100*data["vrr_telo_length"],
+                    mutant : data["mutant_composition"]/100*data["vrr_telo_length"]}
+        plt = BokehPlot(y_range=read_ids)
+        p = plt._fig
+        p.hbar_stack(fill, y="read_ids", height=0.9, color=colors, source=source_data, legend_label=fill)
+
+    #p.yaxis.major_grid_line_color = None
+    #p.yaxis.minor_grid_line_color = None
+    p.ygrid.grid_line_color = None
+    #p.yaxis.major_label_overrides([i for i in range(0, len(read_ids))])
+    p.yaxis.visible = False
+    p.legend.location = "bottom_right"
+    if plt_title is not None:
+        p.title.text = plt_title
+    if x_title is not None:
+        p.xaxis.axis_label = x_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+    if x_rotation is not None:
+        p.xaxis.major_label_orientation = x_rotation
 
     return plt

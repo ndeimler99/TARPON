@@ -22,7 +22,7 @@ process PUTATIVE_ISOLATION {
 
     script:
     """
-    isolate_putative_telomeric_reads.py --input_file ${reads_file} --repeat ${params.repeat} --repeat_count ${params.repeat_count} --c_strand_only ${params.c_strand_only} --out_file putative_reads.bam --non_telo non_telomeric.bam
+    isolate_putative_telomeric_reads.py --input_file ${reads_file} --repeat ${params.repeat} --repeat_count ${params.repeat_count} --c_strand_only ${params.c_strand_only} --out_file putative_reads.bam --non_telo non_telomeric.bam --mutant ${params.mutant}
     """
 }
 
@@ -95,7 +95,8 @@ process REVERSE_COMPLEMENTATION {
         --threshold ${params.reverse_complement_threshold} \
         --c_strand_only ${params.c_strand_only} \
         --out_file putative_reads.filtered.bam \
-        --removed_reads 20_80_removed_reads.bam
+        --removed_reads 20_80_removed_reads.bam \
+        --mutant ${params.mutant}
     """
 }
 
@@ -129,7 +130,7 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
     if (params.adaptor_sequence == "")
         """
         mkdir DEMUX/
-        identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} --out_fh DEMUX/ --no_adaptor adaptor_filtered.bam
+        identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} --out_fh DEMUX/ --no_adaptor adaptor_filtered.bam --mutant ${params.mutant}
         samtools merge -o adaptor.bam DEMUX/*.bam
         """
     // if both an adaptor sequence and sample file are provided the telomeric end is first identified by the adaptor sequence and then downstream demultiplexed using the sample file
@@ -145,7 +146,8 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
             --no_adaptor adaptor_filtered.bam \
             --sample_file ${barcodes_file} \
             --barcode_errors ${params.barcode_errors} \
-            --out_prefix DEMUX 
+            --out_prefix DEMUX \
+            --mutant ${params.mutant}
 
         samtools merge -o adaptor.bam DEMUX/*.bam
 
@@ -178,7 +180,8 @@ process IDENTIFY_TAGGING_ADAPTOR {
         --adaptor_errors ${params.adaptor_sequence_errors} \
         --repeat ${params.repeat} \
         --adaptor_found ${params.sample_name}.bam \
-        --no_adaptor adaptor_filtered.bam
+        --no_adaptor adaptor_filtered.bam \
+        --mutant ${params.mutant}
 
     cp ${params.sample_name}.bam adaptor.bam
     """
@@ -208,7 +211,8 @@ process SUBTELO_FILTERING {
         --min_subtelo_threshold ${params.subtelo_threshold} \
         --repeat ${params.repeat} \
         --passes_subtelo ${sample}.subtelo_pass.bam \
-        --fails_subtelo ${sample}.subtelo_fail.bam
+        --fails_subtelo ${sample}.subtelo_fail.bam \
+        --mutant ${params.mutant}
 
     """
 }
@@ -271,7 +275,8 @@ process TELO_START_IDENTIFICATION {
         --telomeric_fastq_out ${sample}.telomeric.bam \
         --no_telomere_out ${sample}.no_telomere_start.bam \
         --filtered_out ${sample}.below_telo_%_threshold.bam \
-        --stats_fh ${sample}.telomeric_stats.txt
+        --stats_fh ${sample}.telomeric_stats.txt \
+        --mutant ${params.mutant}
     """
 }
 
@@ -339,11 +344,9 @@ process GENERATE_DETAILED_PLOTS {
     tag "$sample - Generating Detailed Output Plots"
 
     input:
-        tuple val(sample), path(telomeric_reads), path(telo_stats, stageAs: "old_telo_stats.txt")
+        tuple val(sample), path(telo_stats)
     
     output:
-        tuple val(sample), path(telomeric_reads), path("*telomeric_stats.txt"), emit: final_telomeric
-        path("*telomeric_stats.txt"), emit: final_telo_stats
         path("*.pdf")
     
     publishDir "${params.outdir}/${sample}/FIGURES/DETAILED_STATS/", mode:'move', overwrite: true, pattern: "*.pdf"
@@ -352,8 +355,7 @@ process GENERATE_DETAILED_PLOTS {
     // not modified R script
     script:
     """
-    detailed_stats.py --fastq_file ${telomeric_reads} --repeat ${params.repeat} --stats_in ${telo_stats} --stats_out ${sample}.telomeric_stats.txt
-    detailed_plots.R ${sample}.telomeric_stats.txt ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
+    detailed_plots.R ${telo_stats} ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
     """
 
 }
@@ -464,6 +466,8 @@ process GENERATE_FINAL_REPORT {
         path(telo_descriptive_stats)
         path(vrr_descriptive_stats)
         path(restriction_digest)
+        path(mutant_analysis_repeat_distribution)
+        path(mutant_analysis_processivity)
 
     output:
         path("report.html")
@@ -492,7 +496,11 @@ process GENERATE_FINAL_REPORT {
                             --plot_telo_length ${params.plot_telo_length} \
                             --plot_vrr_length ${params.plot_vrr_length} \
                             --strand_comparison ${params.strand_comparison} \
-                            --detailed_stats ${params.detailed_stats}
+                            --detailed_stats ${params.detailed_stats} \
+                            --mutant ${params.mutant} \
+                            --mutant_analysis_repeat_distribution ${mutant_analysis_repeat_distribution} \
+                            --mutant_analysis_processivity ${mutant_analysis_processivity} \
+                            --repeat ${params.repeat}
     """
 }
 
@@ -743,5 +751,85 @@ process FASTQ_TO_BAM {
     script:
     """
     picard -Xmx100G FastqToSam FASTQ=${fastq_file} OUTPUT=input.bam SAMPLE_NAME=input
+    """
+}
+
+process MUTANT_ANALYSIS {
+
+    label 'tarpon'
+    tag "$sample - Mutant Repeat Analysis"
+
+    input:
+        tuple val(sample), path(reads), path(stats)
+
+    output:
+        tuple val(sample), path("*telo_stats.txt"), emit: statistics
+        tuple val(sample), path("telo_sequences.txt"), emit: sequences
+        tuple val(sample), path("*processivity_stats.txt"), emit: processivity
+        tuple val(sample), path("*repeat_distribution.txt"), emit: repeat_distribution
+        path("*.pdf")
+
+    // publish png images
+    // publish processivty sand repeat distribution stats
+    publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telo_stats.txt"
+
+    script:
+    """
+    mutantRepeatAnalysis.py --input_file ${reads} --stats_file ${stats} \
+                            --wt_processivity ${sample}.wt.processivity_stats.txt \
+                            --mt_processivity ${sample}.mt.processivity_stats.txt \
+                            --stats_out ${sample}.telo_stats.txt \
+                            --repeat_distribution ${sample}.repeat_distribution.txt --repeat ${params.repeat} \
+                            --mutant ${params.mutant}
+    variantRepeatPlots.R ${sample}.telo_stats.txt ${sample}.repeat_distribution.txt ${params.repeat} ${params.mutant}
+    processivityPlots.R ${sample}.wt.processivity_stats.txt ${sample}.mt.processivity_stats.txt ${params.repeat} ${params.mutant}
+    """
+}
+
+process VARIANT_ANALYSIS {
+
+    label 'tarpon'
+    tag "$sample - Mutant Repeat Analysis"
+
+    input:
+        tuple val(sample), path(reads), path(stats)
+
+    output:
+        tuple val(sample), path("*telo_stats.txt"), emit: statistics
+        tuple val(sample), path("telo_sequences.txt"), emit: sequences
+        tuple val(sample), path("*processivity.txt"), emit: processivity
+        tuple val(sample), path("*repeat_distribution.txt"), emit: repeat_distribution
+        //path("*.png")
+        path("*.pdf")
+
+    publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telo_stats.txt"
+
+    script:
+    """
+    variantRepeatAnalysis.py --input_file ${reads} --stats_file ${stats} \
+                                --repeat ${params.repeat} \
+                                --stats_out ${sample}.telo_stats.txt \
+                                --repeat_distribution ${sample}.repeat_distribution.txt
+
+    variantRepeatPlots.R ${sample}.telo_stats.txt ${sample}.repeat_distribution.txt ${params.repeat} ${params.mutant}
+    touch ${sample}.processivity.txt
+    """
+}
+
+
+process PLOT_TELO_GRAPHS {
+    label 'pycairo'
+
+    input:
+        tuple val(sample), path(telo_reads)
+    
+    output:
+        path("*.png")
+    
+    script:
+    """
+    plotTeloGraphs.py --telo_sequences ${telo_reads} --mutant ${params.mutant} --telo_plot ${sample}.telomere_visualization
     """
 }

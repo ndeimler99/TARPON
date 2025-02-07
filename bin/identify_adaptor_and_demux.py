@@ -56,7 +56,11 @@ def main(args):
             for match in matches:
                         # identify the first match that has at least ten telomeric repeats prior to the start of the match
                             # once this has been found chop the read at the start of the adaptor sequence and add the next 100bp to the header line and stop looping (discard portion of read further downstream)
-                if aln.query_sequence[0:match.span()[0]].count(args.repeat) >= 10:
+                if args.mutant == "false":
+                    repeat_count = aln.query_sequence[0:match.span()[0]].count(args.repeat)
+                else:
+                    repeat_count = aln.query_sequence[0:match.span()[0]].count(args.repeat) + aln.query_sequence[0:match.span()[0]].count(args.mutant)
+                if repeat_count >= 20:
                     q = aln.query_qualities
                     barcode_seq = aln.query_sequence[match.span()[0]:match.span()[0] + 100]
                     aln.set_tag("XB", barcode_seq)
@@ -103,6 +107,7 @@ def argparser():
     parser.add_argument("--adaptor_sequence", required=True)
     parser.add_argument("--adaptor_errors", required=True)
     parser.add_argument("--repeat", required=True)
+    paser.add_argument("--mutant", required=True)
     return parser
 
 if __name__ == "__main__":
