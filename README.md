@@ -81,13 +81,13 @@ To include a restriction digest analysis use the paramter --restriction_digest_a
 | pod5_dir | Pod5 Directory | Location of raw pod5 files from sequencing. Must be specified when using --fast_basecalled | Directory | None |
 | sample_name | Sample Name | Either sample file or sample name must be specified. Use sample name when not demultiplexing and all reads in the input file belong to the same sample. See sample_file | String | sample | 
 | sample_file | Sample File | A comma separated values (csv) file containing two columns without headers, "sample_name,barcode_sequence". See test_data/example_sample_file.csv. See sample_name| CSV File | None |
+| outdir| Output Directory | Location of where you would like the Pipeline to output results | Path | ./output|
 | trace_dir | | Location for pipeline execution information including CPU usage and time | Directory | outdir/pipeline_info |
 
 ## [Advanced Input Parameteres](#advanced_input)
 
 | Parameter      | Epi2Me Appearance |Description | Type | Default     |
 | :---        |    :----:   | :----:   | :---: |       ---: |
-| outdir| Output Directory | Location of where you would like the Pipeline to output results | Path | ./output|
 | overwrite_outdir | Overwrite Out Directory | If the output directory you have specified already exists, delete the directory |Boolean | False |
 | c_strand_only | C Strand Only | Boolean value to dictate if the data was collected in a manner at which only C strand telomeric sequences would be expected | Boolean | False |
 | Repeat | Repeat | Telomeric repeat of interest composing Telomeric Sequences | String | GGTTAG|
