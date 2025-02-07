@@ -1,8 +1,8 @@
-# TArPON
-Telomere Analysis Pipeline On Nanopore Sequencing Data
+# TARPON
+Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 
 ## Table of Contents
-1. [What is TArPON and Why Should I Use It?](#what_and_why)
+1. [What is TARPON and Why Should I Use It?](#what_and_why)
 2. [The Pipeline](#pipeline)
 3. [Installation](#installation)
 4. [Running Tarpon Through Epi2Me](#epi2me)
