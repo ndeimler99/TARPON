@@ -43,6 +43,9 @@ def visualize_telo_seq(telo_sequences, repeat, mutant, file_path, image_width=15
     y_offset_top = 50
     y_offset_bottom = 50
 
+    ctx.set_font_size(20)
+    ctx.select_font_face("Courier", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
+
     # create plot lines
     ctx.set_source_rgb(0,0,0)
     ctx.rectangle(x_offset_left - 3, y_offset_top, 3, image_height-y_offset_bottom-y_offset_top + 3)
@@ -52,11 +55,27 @@ def visualize_telo_seq(telo_sequences, repeat, mutant, file_path, image_width=15
     # establish individual read height and nucl width
     sequence_height = (image_height-y_offset_bottom-y_offset_top) / len(telo_sequences)
     nucl_width = (image_width - x_offset_left - x_offset_right) / max_len
-    
 
+
+    ctx.set_source_rgb(0.11764705882352941,0.5333333333333333,0.8980392156862745)
+    ctx.rectangle(x_offset_left + 20, y_offset_top - 30, 15, 15)
+    ctx.move_to(x_offset_left + 40, y_offset_top - 16)
+    ctx.text_path(repeat)
+    ctx.fill()
+
+    ctx.set_source_rgb(1,0.7568627450980392,0.027450980392156862)
+    ctx.rectangle(x_offset_left + 320, y_offset_top - 30, 15, 15)
+    ctx.move_to(x_offset_left+340, y_offset_top - 16)
+    ctx.text_path("One Nucleotide Substitutions of {}".format(repeat))
+    ctx.fill()
+
+    if mutant != "false":
+        ctx.set_source_rgb(0.8470588,0.10588235294117647,0.3764705882352941)
+        ctx.rectangle(x_offset_left + 720, y_offset_top - 30, 15, 15)
+        ctx.move_to(x_offset_left + 740, y_offset_top - 16)
+        ctx.text_path(mutant)
+        ctx.fill()
     # draw tick marks and label sizes
-    ctx.set_font_size(20)
-    ctx.select_font_face("Courier", cairo.FONT_SLANT_NORMAL, cairo.FONT_WEIGHT_NORMAL)
 
     ctx.set_source_rgb(0,0,0)
     for i in range(0, max_len-1000, 1000):
