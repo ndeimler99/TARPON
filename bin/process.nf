@@ -100,7 +100,7 @@ process REVERSE_COMPLEMENTATION {
     """
 }
 
-process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
+process IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX {
 
     // Process that identifies the end of telomeric repeats from the presence of a barcode or an adaptor sequence
     // and further demultiplexes input fastq based on the sample file
@@ -113,7 +113,7 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
     // Nothing is published to output directory
 
     label 'tarpon'
-    tag "$run_name - Identify Adaptor and Demultiplexing"
+    tag "$run_name - Identify Capture Probe and Demultiplexing"
 
     input:
         tuple val(run_name), path(reads)
@@ -127,7 +127,7 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
 
     script:
     // if no adaptor sequence is provided telomeric reads are demultiplexed and the end is identified simultaneously based on the sequences in the sample file
-    if (params.adaptor_sequence == "")
+    if (params.capture_probe_sequence == "")
         """
         mkdir DEMUX/
         identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} --out_fh DEMUX/ --no_adaptor adaptor_filtered.bam --mutant ${params.mutant}
@@ -140,8 +140,8 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
         mkdir DEMUX/
 
         identify_adaptor_and_demux.py --input_file ${reads} \
-            --adaptor_sequence ${params.adaptor_sequence} \
-            --adaptor_errors ${params.adaptor_sequence_errors} \
+            --adaptor_sequence ${params.capture_probe_sequence} \
+            --adaptor_errors ${params.capture_probe_sequence_errors} \
             --repeat ${params.repeat} \
             --no_adaptor adaptor_filtered.bam \
             --sample_file ${barcodes_file} \
@@ -154,7 +154,7 @@ process IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX {
         """
 }
 
-process IDENTIFY_TAGGING_ADAPTOR {
+process IDENTIFY_TAGGING_CAPTURE_PROBE {
     
     // Identical to previous process however with no demultiplexing - this function is run when the adaptor sequence is provided but the sample file is not
 
@@ -162,7 +162,7 @@ process IDENTIFY_TAGGING_ADAPTOR {
 
     // Nothing is published to output directory
     label 'tarpon'
-    tag "$run_name - Identify Adaptor and Demultiplexing"
+    tag "$run_name - Identify Capture Probe and Demultiplexing"
 
     input:
         tuple val(run_name), path(reads)
@@ -176,8 +176,8 @@ process IDENTIFY_TAGGING_ADAPTOR {
     """
     mkdir DEMUX/
     identify_tagging_adaptor.py --input_file ${reads} \
-        --adaptor_sequence ${params.adaptor_sequence} \
-        --adaptor_errors ${params.adaptor_sequence_errors} \
+        --adaptor_sequence ${params.capture_probe_sequence} \
+        --adaptor_errors ${params.capture_probe_sequence_errors} \
         --repeat ${params.repeat} \
         --adaptor_found ${params.sample_name}.bam \
         --no_adaptor adaptor_filtered.bam \

@@ -47,10 +47,10 @@
                     "format": "file-path",
                     "pattern": "\\S+csv$",
                     "title": "Sample File",
-                    "description": "CSV file containing sample names and barcodes to use for demultiplexing. If no adaptor sequence is provided the barcodes will also be used for determing the end of the telomere",
+                    "description": "CSV file containing sample names and barcodes to use for demultiplexing. If no capture probe sequence is provided the barcodes will also be used for determing the end of the telomere",
                     "fa_icon": "fas fa-file-csv"
                 },
-                "adaptor_sequence": {
+                "capture_probe_sequence": {
                     "type":"string",
                     "title":"Telomere Capture Sequence",
                     "description": "Provide the first 12 nucleotides of the capture sequence that would appear on the G strand telomeric sequences"
@@ -111,17 +111,17 @@
                 }
             }
         },
-        "Adaptor_Demux_Filter": {
-            "title": "Adaptor Identification, Demultiplexing, and Subtelomeric Filtering Parameters",
+        "Capture_Probe_Demux_Filter": {
+            "title": "Capture Probe Identification, Demultiplexing, and Subtelomeric Filtering Parameters",
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
-            "description": "Advanced Parameters relating to the identification of adaptor sequences, demultiplexing samples, and filtering telomeric reads by their subtelomere",
+            "description": "Advanced Parameters relating to the identification of capture probe sequences, demultiplexing samples, and filtering telomeric reads by their subtelomere",
             "properties" : {
-                "adaptor_sequence_errors":{
+                "capture_probe_sequence_errors":{
                     "type":"number",
                     "default":2,
-                    "title": "Allowed Errors in Adaptor Sequence",
-                    "description": "Number of allowed errors to be found in the adaptor sequence. The adaptor sequence wil only be found after ten telomeric repeats. It is recomended this value be 2 for a 12 nucleotide adaptor sequence. For each additional 8bp, the number of errors should be increased by 1"
+                    "title": "Allowed Errors in Capture Probe Sequence",
+                    "description": "Number of allowed errors to be found in the capture probe sequence. The capture probe sequence wil only be found after ten telomeric repeats. It is recomended this value be 2 for a 12 nucleotide capture probe sequence. For each additional 8bp, the number of errors should be increased by 1"
                 },
                 "barcode_errors":{
                     "type":"number",
@@ -185,7 +185,7 @@
                     "minimum":0,
                     "exclusiveMaximum": 1,
                     "title": "Mimumum Telomere Percentage",
-                    "description": "Additional filtering step that removes telomeres that consist of less than this percentage one nucleotide variant repeats from the VRR start to the adaptor sequence"
+                    "description": "Additional filtering step that removes telomeres that consist of less than this percentage one nucleotide variant repeats from the VRR start to the capture probe sequence"
                 },
                 "consecutive_threshold":{
                     "type":"number",
@@ -199,7 +199,7 @@
                     "type":"number",
                     "default":3,
                     "title":"Repeat Stretch Length",
-                    "description": "All perfect repeats existing in a strecth of x or more consecutive repeats between the VRR start and the adaptor will be considered in telomere length calculations"
+                    "description": "All perfect repeats existing in a strecth of x or more consecutive repeats between the VRR start and the capture probe will be considered in telomere length calculations"
                 }
             }
         },
@@ -268,7 +268,7 @@
             "$ref": "#/definitions/Basic_Options"
         },
         {
-            "$ref": "#/definitions/Adaptor_Demux_Filter"
+            "$ref": "#/definitions/Capture_Probe_Demux_Filter"
         },
         {
             "$ref": "#/definitions/Telo_Start"

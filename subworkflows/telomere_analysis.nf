@@ -6,8 +6,8 @@
 
    
     include { REVERSE_COMPLEMENTATION } from "../bin/process.nf"
-    include { IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX } from "../bin/process.nf"
-    include { IDENTIFY_TAGGING_ADAPTOR } from "../bin/process.nf"
+    include { IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX } from "../bin/process.nf"
+    include { IDENTIFY_TAGGING_CAPTURE_PROBE } from "../bin/process.nf"
     include { TELO_START_IDENTIFICATION } from "../bin/process.nf"
     include { INDIVIDUAL_READ_PLOTS } from "../bin/process.nf"
     include { BASIC_PLOTS } from "../bin/process.nf"
@@ -52,17 +52,17 @@ workflow telomere_analysis_pipeline {
         reversed_ch = REVERSE_COMPLEMENTATION(putative_reads)
 
         // check to see if adaptor sequence is provided and if reads need to be demultiplexed
-        if (params.adaptor_sequence == ""){
+        if (params.capture_probe_sequence == ""){
             // if no adaptor sequence is provided - reads were multiplexed in the ONT fashion where the barcode sits immediately adjacent to the telomeric sequence
             adaptor_ch = IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX(reversed_ch.retained_reads, file(sample_file))
         }
         else if (params.sample_file == ""){
             // if no sample file was provided reads are not multiplexed and only the adaptor sequence needs to be identified
-            adaptor_ch = IDENTIFY_TAGGING_ADAPTOR(reversed_ch.retained_reads)
+            adaptor_ch = IDENTIFY_TAGGING_CAPTURE_PROBE(reversed_ch.retained_reads)
         }
         else {
             // both an adaptor sequence and sample file were found - telomere end will be determined by adaptor sequence (common among all reads) and then demultiplexed based on downstream sequence
-            adaptor_ch = IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX(reversed_ch.retained_reads, file(sample_file))
+            adaptor_ch = IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX(reversed_ch.retained_reads, file(sample_file))
         }
 
         // map output of adaptor_ch to demuxed_reads
