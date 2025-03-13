@@ -45,7 +45,7 @@ To install TARPON on the command line simply clone this github repository and en
     nextflow run main.nf --help
 <br>
 
-    nextflow run main.nf --input_file test_data/test_1.bam --sample_file test_data/sampleFile.csv --capture_probe_sequence NNNNNNNNNNNN
+    nextflow run main.nf --input test_data/test_1.bam --sample_file test_data/sampleFile.csv --capture_probe_sequence NNNNNNNNNNNN
 
 ## [Running TARPON through Epi2Me](#epi2me)
 
@@ -55,28 +55,28 @@ Epi2Me can be accessed and downloaded at https://epi2me.nanoporetech.com/. TARPO
 
 In the simplest form TARPON can be run using the following command replacing "file" with the path of a bam file or directory and NNNNNNNNNN with the appropriate capture probe sequence. This assumes there is one sample and no demultiplexing will occur.
 
-    nextflow run main.nf --input_file "file" --capture_probe_sequence NNNNNNNNNN
+    nextflow run main.nf --input "file" --capture_probe_sequence NNNNNNNNNN
 
 To enable demultiplexing an additional sample file will have to be provided.  This execution implies that all telomeres terminate in a common capture probe sequence and then will be demultiplexed using the barcodes found in sampleFile.csv. This is the recommended method for demultiplexing based on speed.
 
-    nextflow run main.nf --input_file file.bam --capture_probe_sequence NNNNNNNNNN --sample_file sampleFile.csv
+    nextflow run main.nf --input file.bam --capture_probe_sequence NNNNNNNNNN --sample_file sampleFile.csv
 
 To demultiplex without a common barcode sequence simply omit the capture probe sequence flag.
 
-    nextflow run main.nf --input_file file.bam --capture_probe_sequence NNNNNNNNNN --sample_file sampleFile.csv
+    nextflow run main.nf --input file.bam --capture_probe_sequence NNNNNNNNNN --sample_file sampleFile.csv
 
 
 To override any default paramters the parameter must be specified with --parameter_name parameter_value. For example to override the run_name.
 
-    nextflow run main.nf --input_file file.bam --capture_probe_sequence NNNNNNNNNN --run_name TEST_RUN
+    nextflow run main.nf --input file.bam --capture_probe_sequence NNNNNNNNNN --run_name TEST_RUN
 
 To activate a boolean parameter such as strand comparison or c_strand_only no value needs to be provided after the parameter name
 
-    nextflow run main.nf --input_file file.bam --sample_file sampleFile.csv --c_strand_only --run_name TEST_C_STRAND_ONLY
+    nextflow run main.nf --input file.bam --sample_file sampleFile.csv --c_strand_only --run_name TEST_C_STRAND_ONLY
   
 To include a restriction digest analysis use the paramter --restriction_digest_analysis with a comma separated list of cut sites. For example searching for EcoRV and EcoRI cut sites.
 
-    nextflow run main.nf --input_file file.bam --sample_file sampleFile.csv --restriction_digest_analysis GATATC,GAATTC
+    nextflow run main.nf --input file.bam --sample_file sampleFile.csv --restriction_digest_analysis GATATC,GAATTC
 
 ## [Additional Help and Information](#help)
 
@@ -86,7 +86,7 @@ For additional help please contact Nathaniel Deimler by opening an issue on this
 | Parameter      | Epi2Me Appearance |Description | Type | Default     |
 | :---        |    :----:   | :----:   | :---: |       ---: |
 | run_name      | Run Name |  Name of Sequencing Run for Overall Statistics and printed on html report  | String | String| Run | 
-| input_file   | Input File |  Bam File, FastQ File, compressed fastq file, or Directory from Nanopore Sequencing for Analysis. If a directory, all bam files will be merged together. If fastq files are provided or a directory containing fastq files is provided, the fastq files will first be merged together and converted to a bam file prior to analysis  | File or Directory| ./test_data/test.bam |
+| input   | Input |  Bam File, FastQ File, compressed fastq file, or Directory from Nanopore Sequencing for Analysis. If a directory, all bam files will be merged together. If fastq files are provided or a directory containing fastq files is provided, the fastq files will first be merged together and converted to a bam file prior to analysis  | File or Directory| ./test_data/test.bam |
 | fast_basecalled | Fast Basecalled | TARPON allows for data basecalled using the fast models to be analysed.  If this parameter is specified telomere reads will be isolated from the sequencing dataset and rebasecalled using the specified pod5_directory using a SUP model. This is designed to reduce turn around time. As opposed to SUP basecalling the entire dataset, only relevant reads are SUP basecalled. | Boolean | False |
 | pod5_dir | Pod5 Directory | Location of raw pod5 files from sequencing. Must be specified when using --fast_basecalled | Directory | None |
 | sample_name | Sample Name | Either sample file or sample name must be specified. Use sample name when not demultiplexing and all reads in the input file belong to the same sample. See sample_file | String | sample | 
