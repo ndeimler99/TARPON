@@ -48,7 +48,7 @@ workflow {
     }
     else {
         // preprocess data pipeline takes the input files or directory and returns SUP basecalled telomeric sequences
-        preprocess_data_pipeline(params.run_name, params.input_file)
+        preprocess_data_pipeline(params.run_name, params.input)
 
         // takes putative telomeric sequences returned by preprocess data pipeline and runs all relevant processes to generate descriptive stats and report.html
         telomere_analysis_pipeline(preprocess_data_pipeline.out, params.sample_file)

@@ -33,7 +33,7 @@ workflow validate_parameters {
 
         // checking to see if input files/directory exist
         try {
-            file(params.input_file, checkIfExists:true)
+            file(params.input, checkIfExists:true)
         }
         catch (Exception e) {
             parameters_passed = false

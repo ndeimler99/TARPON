@@ -25,48 +25,48 @@ include { FASTQ_TO_BAM } from "../bin/process.nf"
 workflow preprocess_data_pipeline {
     take:
         run
-        input_file
+        input
 
     main:
-        // check inf input_file parameters is a directory or a file
+        // check inf input parameters is a directory or a file
             // if it is a directory look for fastq.gz, fastq, and then bam files and concatenate fastq.gz, concatenate and gzip fastq, or merge bams and convert to fastq.gz
             // if input file is a single file - check the file extension.  If it is a bam file - convert to fastq.gz, if it is fastq - gzip. Do nothing if it is a fastq.gz
-        if (file(input_file).isDirectory()) {
-            if (file("${input_file}/*.bam", checkIfExists: true) == []){
-                if (file("${input_file}/*.fastq", checkIfExists: true) == []){
-                    if (file("${input_file}/*.fastq.gz", checkIfExists: true) == []){
+        if (file(input).isDirectory()) {
+            if (file("${input}/*.bam", checkIfExists: true) == []){
+                if (file("${input}/*.fastq", checkIfExists: true) == []){
+                    if (file("${input}/*.fastq.gz", checkIfExists: true) == []){
                         exit 1, "No Valid File Types Identified in Input Directory"
                     }
                     else {
-                        fastq_combined = COMBINE_FASTQ_GZ(Channel.fromPath ( "${input_file}/*fastq.gz" ).collect().map{ it -> ["input", it]})
+                        fastq_combined = COMBINE_FASTQ_GZ(Channel.fromPath ( "${input}/*fastq.gz" ).collect().map{ it -> ["input", it]})
                         input_ch = FASTQ_TO_BAM(fastq_combined)
                     }
                 }
                 else{
-                    fastq_combined = COMBINE_FASTQ(Channel.fromPath ( "${input_file}/*fastq" ).collect().map{ it -> ["input", it]})
+                    fastq_combined = COMBINE_FASTQ(Channel.fromPath ( "${input}/*fastq" ).collect().map{ it -> ["input", it]})
                     //convert to bam
                     input_ch = FASTQ_TO_BAM(fastq_combined)
                 }
             }
             else {
-                input_ch = COMBINE_BAM(Channel.fromPath ( "${input_file}/*bam" ).collect().map{ it -> ["input", it]})
+                input_ch = COMBINE_BAM(Channel.fromPath ( "${input}/*bam" ).collect().map{ it -> ["input", it]})
             }
         }
 
         else{
-            if (file(params.input_file).extension == "bam") {
-                Channel.fromPath( params.input_file, checkIfExists:true)
+            if (file(params.input).extension == "bam") {
+                Channel.fromPath( params.input, checkIfExists:true)
                     .map{ it -> [ run , it] }
                     .set{ input_ch }
             }
-            else if (file(params.input_file).extension == "fastq") {
-                //fastqgz = FASTQ_2_FASTQGZ(Channel.fromPath("${params.input_file}", checkIfExists:true).collect().map{it -> ["input", it]})
+            else if (file(params.input).extension == "fastq") {
+                //fastqgz = FASTQ_2_FASTQGZ(Channel.fromPath("${params.input}", checkIfExists:true).collect().map{it -> ["input", it]})
                 //convert to bam
-                input_ch = FASTQ_TO_BAM(Channel.fromPath("${params.input_file}", checkIfExists:true).collect().map{it -> ["input", it]})
+                input_ch = FASTQ_TO_BAM(Channel.fromPath("${params.input}", checkIfExists:true).collect().map{it -> ["input", it]})
             }
             else {
                 //convert to bam
-                input_ch = FASTQ_TO_BAM(Channel.fromPath("${params.input_file}", checkIfExists:true).collect().map{it -> ["input", it]})
+                input_ch = FASTQ_TO_BAM(Channel.fromPath("${params.input}", checkIfExists:true).collect().map{it -> ["input", it]})
             }
         }    
 

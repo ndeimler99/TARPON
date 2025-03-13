@@ -10,13 +10,13 @@
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
             "description": "Mandatory Parameters to set up the Analysis",
-            "required": ["input_file", "outdir", "run_name"],
+            "required": ["input", "outdir", "run_name"],
             "properties": {
-                "input_file": {
+                "input": {
                     "type": "string",
                     "format": "path",
                     "exists": true,
-                    "title": "Input File",
+                    "title": "Input",
                     "description": "Sequencing Files - Either a file directory or a single file - BAM, fastq, or fastq.gz accepted"
                 },
                 "fast_basecalled": {
