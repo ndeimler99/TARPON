@@ -7,25 +7,26 @@ Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 3. [Installation](#installation)
 4. [Running Tarpon Through Epi2Me](#epi2me)
 5. [Running Tarpon Through the Command Line](#commandline)
-6. [Input Paramaters](#input)
-7. [Advanced Input Parameteres](#advanced_input)
-8. [Output Files](#output)
+6. [Additional Help and Information](#help)
+7. [Input Paramaters](#input)
+8. [Advanced Input Parameteres](#advanced_input)
+9. [Output Files](#output)
 
 
 ## [What is TARPON and Why Should I Use It?](#what_and_why)
 
-TARPON is a pipeline developed in the lab of Dr. Peter Baumann by PhD candidate Nathaniel Deimler. At the time of the pipeline's creation there were multiple publications (cite publications) that have developed protocols for the enrichment of telomeric sequences to succesfully sequence human telomeres by Nanopore sequencing while remaining cost productive. However, all of these papers focused on the biological aspects of telomeres and the mechanical or chemical enrichment of telomeres for sequencing, not on the computational analysis of individual telomere reads - something never before capable. Unfortunately, all of these papers use different methods to calculate and identify telomeric reads and provide little to no justificiation on why those parameters and techniques were chosen. TArPON aims to provide a one stop shop pipeline for clinicians as well as researchers interested in telomere dynamics using a set of best practices that have been justified in Deimler et al. TArPON is capable of being run in a command line environment or through the ONT GUI Epi2Me and is compatible with all pre-existing methods of telomere sequencing and enrichment including the ONT telo-seq methodology.
+TARPON is a pipeline developed in the lab of Dr. Peter Baumann by PhD candidate Nathaniel Deimler. At the time of the pipeline's creation there were multiple publications (cite publications) that have developed protocols for the enrichment of telomeric sequences to succesfully sequence human telomeres by Nanopore sequencing while remaining cost productive. However, all of these papers focused on the biological aspects of telomeres and the mechanical or chemical enrichment of telomeres for sequencing, not on the computational analysis of individual telomere reads - something never before capable. Unfortunately, all of these papers use different methods to calculate and identify telomeric reads and provide little to no justificiation on why those parameters and techniques were chosen. TArPON aims to provide a one stop shop pipeline for clinicians as well as researchers interested in telomere dynamics using a set of best practices that have been justified in Deimler et al. TArPON is capable of being run in a command line environment or through the ONT Epi2Me GUI and is compatible with all pre-existing methods of telomere sequencing and enrichment including the ONT telo-seq methodology.
 
 ## [The Pipeline](#pipeline)
 
 <img src="./src/TArPON_Pipeline.png" alt="pipeline_schematic" width=200>
 
 
-TARPON begins by identifying a set of putative telomeric sequences to reduce computational time and resources at later steps in the pipeline. By default, this is done by isolating reads that contain at least ten perfect telomeric repeats (see parameters: repeat, repeat_count ). These repeats do not have to be consecutive.  The ratio of G telomeric repeats to C telomeric repeats is calculated for all putative telomeric reads. If the ratio falls between 20 and 80% ( see parameter reverse_complement_threshold ) the reads are discarded as they are most likely chimeric sequences.  All reads that are less than 20% G telomeric repeats (these would be C strand reads) are reverse complemented so all telomeric reads are in the same orientation for further analysis. Strandedness information is retaiend throughout the pipeline and strands can be compared using the parameter --strand_comparison.  Telomeric reads are then demultiplexed and the end of the read is identified using either a provided capture probe sequence (--capture_probe_sequence) or by the barcodes found in --sample_file. If no sample_file is provided all reads are considered to end in the capture probe sequence and belong to the same sample: in this case --sample_name should also be provided.  In the case that all telomeric capture probes/sequences are unique and do not contain a shared sequence, --capture_probe_sequence should be left blank and the end of the telomeric read will be determined by the barcodes present in sample_file. If both capture probe sequence and sample_file are provided, the end of the telomere will be determined by the presence of the capture_probe_sequence and demultiplexed by the barcodes found in sample_file. In all cases of sequence searches, fuzzy searching is conducted based on --capture_probe_sequence_errors and --barcode_errrors. It is recomended a minimum sequence length of 12 nucleotides be used with two errors, increasing by one error for every additional 8 base pairs, assuming the sequence difference between all barcodes is greater than three. The pipeline will return an error if the hamming distance of barcodes is less than the number of allowable errors.
+TARPON begins by identifying a set of putative telomeric sequences to reduce computational time and resources at later steps in the pipeline. By default, this is done by isolating reads that contain at least ten perfect telomeric repeats (see parameters: repeat, repeat_count ). These repeats do not have to be consecutive.  The ratio of G telomeric repeats to C telomeric repeats is calculated for all putative telomeric reads. If the ratio falls between 20 and 80% ( see parameter reverse_complement_threshold ) the reads are discarded as they are most likely chimeric sequences.  All reads that are less than 20% G telomeric repeats (these would be C strand reads) are reverse complemented so all telomeric reads are in the same orientation for further analysis. Original strand information is retaiend throughout the pipeline and strands can be compared using the parameter --strand_comparison.  Telomeric reads are then demultiplexed and the end of the read is identified using either a provided capture probe sequence (--capture_probe_sequence) or by the barcodes found in --sample_file. If no sample_file is provided all reads are considered to end in the capture probe sequence and belong to the same sample: in this case --sample_name should also be provided.  In the case that all telomeric capture probes/sequences are unique and do not contain a shared sequence, --capture_probe_sequence should be left blank and the end of the telomeric read will be determined by the barcodes present in sample_file. If both capture probe sequence and sample_file are provided, the end of the telomere will be determined by the presence of the capture_probe_sequence and demultiplexed by the barcodes found in sample_file. In all cases of sequence searches, fuzzy searching is conducted based on --capture_probe_sequence_errors and --barcode_errrors. It is recomended a minimum sequence length of 12 nucleotides be used with two errors, increasing by one error for every additional 8 base pairs, assuming the sequence difference between all barcodes is greater than three. The pipeline will return an error if the hamming distance of barcodes is less than the number of allowable errors.
 
 <img src="./src/demux_figure.png" alt="demux_schematic" width=800>
 
-After demultiplexing telomeric reads are filtered to ensure the telomere was completely sequenced by removing reads containing more than 30% (--subtelo_threshold) one nucleotide telomeric repeat variants in the first  300 base pairs (--min_subtelo_length). Telomere length determination is divided into two steps. The first is the identification of the Variable Repeat Rich (VRR) Region Start, followed by telomere length calculation.  During development of the pipeline it was clearly seen in both HG002 data and data collected from clinical samples, that while there was rarely a sharp and sudden increase from 0 to 100% of perfect telomeric repeats, there was a region immediately adjacent to the telomere composed of nearly 100% one nucleotide telomere repeat variants (see Deimler et al. for more information). The beginnig of this VRR region was often a very clear and suddent increase from 0% to 100%. Computationally, this region is identified by a sliding window 100bp in size (--sliding_window_size) jumping 15bp (--sliding_window_interval) at a time. Once this window reaches a threshold of being composed of 60% (--upper_threshold) one nucleotide telomere repeat variants the VRR region starts at the first one nucleotide variant repeat sequence within the sliding window, assuming it does not drop below 5% (--lower_threshold) for 15 consecutive windows (--consecutive_threshold). These thresholds were determined by computationally comparing to a manually annotated truth set. The lower threshold is required to ensure that one nucleotide variation islands that exist within the subtelomere (as seen on chromosome arm WHICH CHROMOSOME ARM) do not drastically skew any length estimations. However, the functionality of this VRR region is unknown and an additional paramter (--plot_telo_length) calculates the summation of all perfect telomere repeats that exist between the VRR start and the end of the read when they occur at least 3 repeats in a row (--consecutive_repeats). By default the pipeline using VRR Telomere Length for all statistics and plots unles --plot_telo_length is specified. In addition, a easily readable HTML file is generated containing all relevant statistics and plots. See the output section of this documentation for a more detailed description of the output produced by this pipeline.
+After demultiplexing telomeric reads are filtered to ensure the telomere was completely sequenced by removing reads containing more than 30% (--subtelo_threshold) one nucleotide telomeric repeat variants in the first  300 base pairs (--min_subtelo_length). Telomere length determination is divided into two steps. The first is the identification of the Variable Repeat Rich (VRR) Region Start, followed by telomere length calculation.  During development of the pipeline it was clearly seen in both HG002 data and data collected from clinical samples, that while there was rarely a sharp and sudden increase from 0 to 100% of perfect telomeric repeats, there was a region immediately adjacent to the telomere composed of nearly 100% one nucleotide telomere repeat variants (see Deimler et al. for more information). The beginnig of this VRR region was often a very clear and suddent increase from 0% to 100%. Computationally, this region is identified by a sliding window 100bp in size (--sliding_window_size) jumping 15bp (--sliding_window_interval) at a time. Once this window reaches a threshold of being composed of 60% (--upper_threshold) one nucleotide telomere repeat variants the VRR region starts at the first one nucleotide variant repeat sequence within the sliding window, assuming it does not drop below 5% (--lower_threshold) for 15 consecutive windows (--consecutive_threshold). These thresholds were determined by computationally comparing to a manually annotated truth set. The lower threshold is required to ensure that one nucleotide variation islands that exist within the subtelomere do not drastically skew any length estimations. However, the functionality of this VRR region is unknown and an additional paramter (--plot_telo_length) calculates the summation of all perfect telomere repeats that exist between the VRR start and the end of the read when they occur at least 3 repeats in a row (--consecutive_repeats). By default the pipeline using VRR Telomere Length for all statistics and plots unles --plot_telo_length is specified. In addition, a easily readable HTML file is generated containing all relevant statistics and plots. See the output section of this documentation for a more detailed description of the output produced by this pipeline.
 
 ## [Installation](#installation)
 
@@ -36,7 +37,7 @@ To install TARPON on the command line simply clone this github repository and en
     git clone git@github.com:ndeimler99/TARPON.git
     chmod +x TARPON/bin/*
  
- Installation can be tested by running the following commands
+ Installation can be tested by running the following commands within the TARPON directory
 
     nextflow run main.nf --version
 <br>
@@ -44,33 +45,42 @@ To install TARPON on the command line simply clone this github repository and en
     nextflow run main.nf --help
 <br>
 
-    nextflow run main.nf --input_file test_data/test_1.fastq.gz --sample_file test_data/sampleFile.csv --capture_probe_sequence NNNNNNNNNNNN
+    nextflow run main.nf --input_file test_data/test_1.bam --sample_file test_data/sampleFile.csv --capture_probe_sequence NNNNNNNNNNNN
 
 ## [Running TARPON through Epi2Me](#epi2me)
 
-Epi2Me can be access and downloaded at https://epi2me.nanoporetech.com/. TARPON can be directly imported into the Epi2Me application by clicking View Workflows > Import Workflows (top right corner) and adding the following url into the dialogue window: https://github.com/ndeimler99/TARPON. 
+Epi2Me can be accessed and downloaded at https://epi2me.nanoporetech.com/. TARPON can be directly imported into the Epi2Me application by clicking View Workflows > Import Workflows (top right corner) and adding the following url into the dialogue window: https://github.com/ndeimler99/TARPON. 
 
 ## [Running TARPON from the Command Line](#commandline)
 
-In the simplest form TARPON can be run using the following command replacing "file" with the path of a bam file or directory and NNNNNNNNNN with the appropriate capture probe sequence.
+In the simplest form TARPON can be run using the following command replacing "file" with the path of a bam file or directory and NNNNNNNNNN with the appropriate capture probe sequence. This assumes there is one sample and no demultiplexing will occur.
 
     nextflow run main.nf --input_file "file" --capture_probe_sequence NNNNNNNNNN
 
-To enable demultiplexing an additional sample file will have to be provided
+To enable demultiplexing an additional sample file will have to be provided.  This execution implies that all telomeres terminate in a common capture probe sequence and then will be demultiplexed using the barcodes found in sampleFile.csv. This is the recommended method for demultiplexing based on speed.
 
-    nextflow run main.nf --input_file "file.bam" --capture_probe_sequence NNNNNNNNNN --sample_file "sampleFile.csv"
+    nextflow run main.nf --input_file file.bam --capture_probe_sequence NNNNNNNNNN --sample_file sampleFile.csv
+
+To demultiplex without a common barcode sequence simply omit the capture probe sequence flag.
+
+    nextflow run main.nf --input_file file.bam --capture_probe_sequence NNNNNNNNNN --sample_file sampleFile.csv
+
 
 To override any default paramters the parameter must be specified with --parameter_name parameter_value. For example to override the run_name.
 
-    nextflow run main.nf --input_file "file" --capture_probe_sequence NNNNNNNNNN --run_name TEST_RUN
+    nextflow run main.nf --input_file file.bam --capture_probe_sequence NNNNNNNNNN --run_name TEST_RUN
 
 To activate a boolean parameter such as strand comparison or c_strand_only no value needs to be provided after the parameter name
 
-    nextflow run main.nf --input_file "file.fastq.gz" --sample_file "sampleFile.csv" --c_strand_only --run_name TEST_C_STRAND_ONLY
+    nextflow run main.nf --input_file file.bam --sample_file sampleFile.csv --c_strand_only --run_name TEST_C_STRAND_ONLY
   
 To include a restriction digest analysis use the paramter --restriction_digest_analysis with a comma separated list of cut sites. For example searching for EcoRV and EcoRI cut sites.
 
-    nextflow run main.nf --input_file "file.fastq.gz" --sample_file "sampleFile.csv" --restriction_digest_analysis GATATC,GAATTC
+    nextflow run main.nf --input_file file.bam --sample_file sampleFile.csv --restriction_digest_analysis GATATC,GAATTC
+
+## [Additional Help and Information](#help)
+
+For additional help please contact Nathaniel Deimler by opening an issue on this repository or by email at ndeimler@uni-mainz.de or visit Deimler et al., 2025 for more information. 
 
 ## [Basic Input Parameters](#input)
 | Parameter      | Epi2Me Appearance |Description | Type | Default     |
