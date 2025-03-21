@@ -37,6 +37,8 @@ def generate_one_nucleotide_dict(repeat):
 def hamming_distance(seq, repeat):
     hamming = 0
     for i in range(0, len(seq)):
+        if i > len(repeat):
+            return hamming
         if seq[i] != repeat[i]:
             hamming += 1
     return hamming
