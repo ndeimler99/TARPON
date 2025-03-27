@@ -255,7 +255,7 @@
                     "type":"string",
                     "title":"Mutant Repeat of Interest",
                     "description":"Telomeric Mutation of Interest - See Manual for more details",
-                    "default": ""
+                    "default": "false"
                 }
             } 
         }

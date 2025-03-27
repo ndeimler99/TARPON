@@ -77,7 +77,7 @@ workflow telomere_analysis_pipeline {
         // analyze reads and create stats file containing read_id, strand, read_len, VRR_Start, VRR_length, Telo_length, and read quality
         telo_stats = TELO_START_IDENTIFICATION(subtelo_filtered_ch.retained_reads)
 
-        if (params.mutant != false) {
+        if (params.mutant != "false") {
             mutant_analysis = MUTANT_ANALYSIS(telo_stats.final_telomeric)
         }
         else {
