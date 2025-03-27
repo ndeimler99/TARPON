@@ -64,6 +64,7 @@ def main(args):
         # create new stats file with percentage of WT repeat, % of mutant repeat, % of other one nucleotide variations within each read - I can than histogram this in R and html report - as well as create bar plot and sort bar plot by vrr length
         stats_out_fh.write("read_id\tstrand\tread_len\tvrr_start_pos\tvrr_telo_length\ttelo_length\tread_qual\ttelo_qual\twt_composition\tone_nucl_variant_composition\n")
         for aln in aln_file:
+            print(aln.query_name)
             telo_seq = aln.query_sequence[int(telo_dict[aln.query_name][3]):]
             
             wt_nucl = telo_seq.count(args.repeat) * len(args.repeat)
@@ -80,7 +81,9 @@ def main(args):
             for rep in one_nucl_dict:
                 one_nucl_dict[rep] += telo_seq.count(rep)
                 telo_seq = telo_seq.replace(rep, "N"*len(rep))
-            
+            print(wt_count)
+    
+    print(one_nucl_dict)
     for rep in one_nucl_dict:
         one_nucl_dict[rep] = one_nucl_dict[rep]/(sum(one_nucl_dict.values()) + wt_count) * 100
     

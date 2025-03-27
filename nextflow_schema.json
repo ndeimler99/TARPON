@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
             "description": "Mandatory Parameters to set up the Analysis",
-            "required": ["input", "outdir", "run_name"],
+            "required": ["input", "outdir", "run_name", "capture_probe_sequence"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -238,12 +238,6 @@
                     "type":"boolean",
                     "default":true,
                     "description": "If set to true additional plots will be created mirroring those for telomere length analysis, but using the VRR length instead of calculated telomere length"
-                },
-                "plot_telo_length":{
-                    "title":"Plot Telomere Length",
-                    "type":"boolean",
-                    "default":false,
-                    "description": "Calculate and plot telomere length based on the number of repeats that exist in consecutives of 3 or greater"
                 },
                 "restriction_digest_analysis": {
                     "type":"string",

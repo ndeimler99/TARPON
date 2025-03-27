@@ -473,6 +473,7 @@ process GENERATE_FINAL_REPORT {
         path("report.html")
     
     publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "report.html"
+    publishDir "${params.out_dir}/", mode: 'copy', overwrite: true, pattern: "report.html"
 
     script:
     """
