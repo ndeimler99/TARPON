@@ -200,6 +200,12 @@
                     "default":3,
                     "title":"Repeat Stretch Length",
                     "description": "All perfect repeats existing in a strecth of x or more consecutive repeats between the VRR start and the capture probe will be considered in telomere length calculations"
+                },
+                "pretelomeric_repeat_percentage": {
+                    "type":"number",
+                    "default":0.1,
+                    "title": "Pretelomeric Repeat Percentage",
+                    "description": "The 2kb immediately prior to the start of the telomere must not be greater than this percentage telomeric otherwise the read will be filtered from analysis"
                 }
             }
         },
