@@ -62,7 +62,7 @@
                     "format": "path",
                     "title": "Output Directory",
                     "default": "output",
-                    "description": "This should be a path to a directory to store the output data. The parent directory should exist. If the main directory does not exist it will be created",
+                    "description": "This should be a path to a directory to store the output data. The parent directory should exist. If the main directory does not exist it will be created"
                 },
                 "overwrite_outdir": {
                     "type": "boolean",
