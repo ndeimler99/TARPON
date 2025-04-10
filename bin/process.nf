@@ -130,7 +130,11 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX {
     if (params.capture_probe_sequence == "")
         """
         mkdir DEMUX/
-        identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} --out_fh DEMUX/ --no_adaptor adaptor_filtered.bam --mutant ${params.mutant}
+        identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} \
+             --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} \
+              --out_fh DEMUX/ --no_adaptor adaptor_filtered.bam \
+              --mutant ${params.mutant} \
+              --overhang_length ${params.capture_probe_overhang_length}
         samtools merge -o adaptor.bam DEMUX/*.bam
         """
     // if both an adaptor sequence and sample file are provided the telomeric end is first identified by the adaptor sequence and then downstream demultiplexed using the sample file
@@ -147,7 +151,8 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX {
             --sample_file ${barcodes_file} \
             --barcode_errors ${params.barcode_errors} \
             --out_prefix DEMUX \
-            --mutant ${params.mutant}
+            --mutant ${params.mutant} \
+            --overhang_length ${params.capture_probe_overhang_length}
 
         samtools merge -o adaptor.bam DEMUX/*.bam
 
@@ -181,7 +186,8 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE {
         --repeat ${params.repeat} \
         --adaptor_found ${params.sample_name}.bam \
         --no_adaptor adaptor_filtered.bam \
-        --mutant ${params.mutant}
+        --mutant ${params.mutant} \
+        --overhang_length ${params.capture_probe_overhang_length}
 
     cp ${params.sample_name}.bam adaptor.bam
     """

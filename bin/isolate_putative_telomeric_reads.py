@@ -23,6 +23,7 @@ def main(args):
     non_telo_fh = pysam.AlignmentFile(args.non_telo, "wb", template=input_file_fh)
 
     for aln in input_file_fh:
+        aln.query_name = aln.query_name.split()[0]
         if args.mutant == "false":
             if args.c_strand_only and aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count:
                 out_fh.write(aln)

@@ -36,6 +36,10 @@ def get_telo_start(read, repeat, sliding_window, sliding_window_interval, upper_
 def check_valid(read, repeat, telomeric_rep_perc, mutant=None):
     # check if telomeric sequence from telo start to telo end is above telomeric_rep_perc
     
+    if len(read) != 0 and read is not None:
+        pass
+    else:
+        return False
     if mutant is None:
         telo_perc = len(list(regex.finditer(r"(%s){s<=1}" % repeat, read))) * len(repeat) / (len(read))
     else:

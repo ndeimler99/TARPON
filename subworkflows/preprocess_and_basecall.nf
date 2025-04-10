@@ -38,18 +38,18 @@ workflow preprocess_data_pipeline {
                         exit 1, "No Valid File Types Identified in Input Directory"
                     }
                     else {
-                        fastq_combined = COMBINE_FASTQ_GZ(Channel.fromPath ( "${input}/*fastq.gz" ).collect().map{ it -> ["input", it]})
+                        fastq_combined = COMBINE_FASTQ_GZ(Channel.fromPath ( "${input}/*fastq.gz" ).collect().map{ it -> [run, it]})
                         input_ch = FASTQ_TO_BAM(fastq_combined)
                     }
                 }
                 else{
-                    fastq_combined = COMBINE_FASTQ(Channel.fromPath ( "${input}/*fastq" ).collect().map{ it -> ["input", it]})
+                    fastq_combined = COMBINE_FASTQ(Channel.fromPath ( "${input}/*fastq" ).collect().map{ it -> [run, it]})
                     //convert to bam
                     input_ch = FASTQ_TO_BAM(fastq_combined)
                 }
             }
             else {
-                input_ch = COMBINE_BAM(Channel.fromPath ( "${input}/*bam" ).collect().map{ it -> ["input", it]})
+                input_ch = COMBINE_BAM(Channel.fromPath ( "${input}/*bam" ).collect().map{ it -> [run, it]})
             }
         }
 
@@ -62,11 +62,11 @@ workflow preprocess_data_pipeline {
             else if (file(params.input).extension == "fastq") {
                 //fastqgz = FASTQ_2_FASTQGZ(Channel.fromPath("${params.input}", checkIfExists:true).collect().map{it -> ["input", it]})
                 //convert to bam
-                input_ch = FASTQ_TO_BAM(Channel.fromPath("${params.input}", checkIfExists:true).collect().map{it -> ["input", it]})
+                input_ch = FASTQ_TO_BAM(Channel.fromPath("${params.input}", checkIfExists:true).collect().map{it -> [run, it]})
             }
             else {
                 //convert to bam
-                input_ch = FASTQ_TO_BAM(Channel.fromPath("${params.input}", checkIfExists:true).collect().map{it -> ["input", it]})
+                input_ch = FASTQ_TO_BAM(Channel.fromPath("${params.input}", checkIfExists:true).collect().map{it -> [run, it]})
             }
         }    
 

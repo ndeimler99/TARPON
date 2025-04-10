@@ -34,6 +34,7 @@ def identify_first_barcode(read, barcode_dict, barcode_errors, repeat, mutant=No
 def main(args):
 
     args.barcode_errors = int(args.barcode_errors)
+    args.overhang_length = int(args.overhang_length)
 
     barcode_dict = {}
     read_dict = {}
@@ -69,9 +70,14 @@ def main(args):
 
         if barcode is not None and location != len(aln.query_sequence):
             q = aln.query_qualities
-            aln.query_sequence = aln.query_sequence[0:location]
-            aln.query_qualities = q[0:location]
-            aln.set_tag("XB", aln.query_sequence[location:location+100])
+            if aln.get_tag("XS") == "C":
+                aln.query_sequence = aln.query_sequence[0:location-args.overhang_length]
+                aln.query_qualities = q[0:location-args.overhang_length]
+                aln.set_tag("XB", aln.query_sequence[location-args.overhang_length:location+100])
+            else:
+                aln.query_sequence = aln.query_sequence[0:location]
+                aln.query_qualities = q[0:location]
+                aln.set_tag("XB", aln.query_sequence[location:location+100])
             read_dict[barcode].append(aln)
         else:
             adaptor_fail.write(aln)
@@ -95,6 +101,7 @@ def argparser():
     parser.add_argument("--out_fh", required=True)
     parser.add_argument("--no_adaptor", required=True)
     parser.add_argument("--mutant", required=True)
+    parser.add_argument("--overhang_length", required=True)
     return parser
 
 if __name__ == "__main__":

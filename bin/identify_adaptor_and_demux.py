@@ -29,6 +29,7 @@ def main(args):
 
     args.barcode_errors = int(args.barcode_errors)
     args.adaptor_errors = int(args.adaptor_errors)
+    args.overhang_length = int(args.overhang_length)
 
     barcode_dict = {}
     read_dict = {}
@@ -62,10 +63,17 @@ def main(args):
                     repeat_count = aln.query_sequence[0:match.span()[0]].count(args.repeat) + aln.query_sequence[0:match.span()[0]].count(args.mutant)
                 if repeat_count >= 20:
                     q = aln.query_qualities
-                    barcode_seq = aln.query_sequence[match.span()[0]:match.span()[0] + 100]
-                    aln.set_tag("XB", barcode_seq)
-                    aln.query_sequence = aln.query_sequence[0:match.span()[0]]
-                    aln.query_qualities = q[0:match.span()[0]]
+
+                    if aln.get_tag("XS") == "C":
+                        barcode_seq = aln.query_sequence[match.span()[0]-args.overhang_length:match.span()[0] + 100]
+                        aln.set_tag("XB", barcode_seq)
+                        aln.query_sequence = aln.query_sequence[0:match.span()[0]-args.overhang_length]
+                        aln.query_qualities = q[0:match.span()[0]-args.overhang_length]
+                    else:
+                        barcode_seq = aln.query_sequence[match.span()[0]:match.span()[0] + 100]
+                        aln.set_tag("XB", barcode_seq)
+                        aln.query_sequence = aln.query_sequence[0:match.span()[0]]
+                        aln.query_qualities = q[0:match.span()[0]]
 
                     
                     barcode, location = identify_first_barcode(barcode_seq, barcode_dict, args.barcode_errors, args.repeat)
@@ -107,7 +115,8 @@ def argparser():
     parser.add_argument("--adaptor_sequence", required=True)
     parser.add_argument("--adaptor_errors", required=True)
     parser.add_argument("--repeat", required=True)
-    paser.add_argument("--mutant", required=True)
+    parser.add_argument("--mutant", required=True)
+    parser.add_argument("--overhang_length"), required=True
     return parser
 
 if __name__ == "__main__":

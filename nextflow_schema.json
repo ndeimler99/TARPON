@@ -129,6 +129,12 @@
                     "title":"Allowed Errors in Barcode Sequences",
                     "description": "Number of allowed errors in the barcode sequence. It is recomended this value by 1/8 the length of the barcode assuming the hamming distance between barcodes is greater than 1/8 the barcode length"
                 },
+                "capture_probe_overhang_length":{
+                    "type":"number",
+                    "default": 18,
+                    "title": "Capture Probe Overhang Length",
+                    "description": "Number of telomeric nucleotides in duplex overhang. If the teloemre originates from the C strand these repeats will be removed from the end of the telomere as they would have originated from the capture probe, not the biological telomere"
+                },
                 "min_subtelo_length": {
                     "type":"number",
                     "title":"Minimum Subtelomere Length",
