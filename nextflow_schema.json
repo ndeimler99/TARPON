@@ -10,7 +10,7 @@
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
             "description": "Mandatory Parameters to set up the Analysis",
-            "required": ["input", "outdir", "run_name", "capture_probe_sequence"],
+            "required": ["input", "outdir", "run_name"],
             "properties": {
                 "input": {
                     "type": "string",

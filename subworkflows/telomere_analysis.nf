@@ -54,7 +54,7 @@ workflow telomere_analysis_pipeline {
         // check to see if adaptor sequence is provided and if reads need to be demultiplexed
         if (params.capture_probe_sequence == ""){
             // if no adaptor sequence is provided - reads were multiplexed in the ONT fashion where the barcode sits immediately adjacent to the telomeric sequence
-            adaptor_ch = IDENTIFY_TAGGING_ADAPTOR_AND_DEMUX(reversed_ch.retained_reads, file(sample_file))
+            adaptor_ch = IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX(reversed_ch.retained_reads, file(sample_file))
         }
         else if (params.sample_file == ""){
             // if no sample file was provided reads are not multiplexed and only the adaptor sequence needs to be identified
@@ -108,8 +108,6 @@ workflow telomere_analysis_pipeline {
             run_stats = SUMMARY_STATS_RUN(input_ch.mix(putative_reads, reversed_ch.retained_reads, run_retained.combined, separate_run_retained.g_strand, separate_run_retained.c_strand, adaptor_ch.retained_reads).groupTuple(), \
                                             input_ch.mix(non_telomeric, reversed_ch.removed_reads, run_filtered.combined, adaptor_ch.filtered_reads, separate_run_filtered.c_strand, separate_run_filtered.g_strand).groupTuple())
 
-            input_ch.mix(putative_reads, reversed_ch.retained_reads, run_retained.combined, separate_run_retained.g_strand, separate_run_retained.c_strand, adaptor_ch.retained_reads).groupTuple().view()
-            input_ch.mix(non_telomeric, reversed_ch.removed_reads, run_filtered.combined, adaptor_ch.filtered_reads, separate_run_filtered.c_strand, separate_run_filtered.g_strand).groupTuple().view()
 
             // get sample retained stats on number of reads with adaptor, adaptor strand specific, subtelo pass, subtelo strand specific, telomeric, telomeric strand specfic
             sample_stats = SUMMARY_STATS_SAMPLE(demuxed_reads.mix(subtelo_filtered_ch.retained_reads, telo_stats.retained_reads, retained_sample.c_strand, retained_sample.g_strand).groupTuple(), \

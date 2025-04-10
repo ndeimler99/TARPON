@@ -1,5 +1,3 @@
-../nextflow run main.nf --adaptor_sequence ACTTCGTTCGGT --input ./test_data/simplex_test.fastq.gz --c_strand_only --overwrite_outdir
-../nextflow run main.nf --sample_file ./test_data/demux_test.barcodes.csv --input ./test_data/demux_test.fastq.gz --c_strand_only --outdir ./TArPON_outdir --overwrite_outdir
-nextflow run ../../WORKFLOWS/TArPON/main.nf --adaptor_sequence ATGCTACGATCA --input ./test_data/duplex_test.fastq.gz --strand_comparison
-
-../../nextflow run main.nf --adaptor_sequence ATGCTACGATCA --input ./test_data/131_SUP.100k.bam --strand_comparison --overwrite_outdir
+nextflow run main.nf --input ./test_data/simplex_test.duplex.bam --capture_probe_sequence ATGCTACGATCA --outdir ./simplex_test
+nextflow run main.nf --input ./test_data/demux_test.bam --c_strand_only --sample_file ./test_data/demux_test.barcodes.csv --outdir ./demux_test_c_strand_only
+nextflow run main.nf --input ./simplex_test.c_strand_only.bam --capture_probe_sequence ACTTCGTTCGGT --c_strand_only --outdir ./simplex_test_c_strand_only
