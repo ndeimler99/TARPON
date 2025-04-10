@@ -35,12 +35,14 @@
                 "run_name":{
                     "type": "string",
                     "title": "Run Name",
-                    "description": "Title of Sequencing Run for Generation of Output Files"
+                    "description": "Title of Sequencing Run for Generation of Output Files",
+                    "default": "Run"
                 },
                 "sample_name":{
                     "type": "string",
                     "title": "Sample Name",
-                    "description": "Name of sample when sequencing contains only one sample"
+                    "description": "Name of sample when sequencing contains only one sample",
+                    "default": "sample"
                 },
                 "sample_file":{
                     "type": "string",
@@ -60,7 +62,7 @@
                     "format": "path",
                     "title": "Output Directory",
                     "default": "output",
-                    "description": "This should be a path to a directory to store the output data. The parent directory should exist. If the main directory does not exist it will be created"
+                    "description": "This should be a path to a directory to store the output data. The parent directory should exist. If the main directory does not exist it will be created",
                 },
                 "overwrite_outdir": {
                     "type": "boolean",
@@ -185,6 +187,13 @@
                     "title": "Lower Telomeric Threshold",
                     "description": "Sliding window one nucleotide variation percentage must not drop below this value after upper threshold has been surpassed."
                 },
+                "consecutive_threshold":{
+                    "type":"number",
+                    "default":15,
+                    "minimum":0,
+                    "title":"Consecutive Sliding Windows",
+                    "description":"Number of consecutive sliding windows below the lower threshold for telomere start site to be unidentified"
+                },
                 "telomeric_repeat_percentage":{
                     "type":"number",
                     "default":0.7,
@@ -193,25 +202,19 @@
                     "title": "Mimumum Telomere Percentage",
                     "description": "Additional filtering step that removes telomeres that consist of less than this percentage one nucleotide variant repeats from the VRR start to the capture probe sequence"
                 },
-                "consecutive_threshold":{
-                    "type":"number",
-                    "default":15,
-                    "minimum":0,
-                    "title":"Consecutive Sliding Windows",
-                    "description":"Number of consecutive sliding windows below the lower threshold for telomere start site to be unidentified"
-                    
-                },
-                "consecutive_repeats": {
-                    "type":"number",
-                    "default":3,
-                    "title":"Repeat Stretch Length",
-                    "description": "All perfect repeats existing in a strecth of x or more consecutive repeats between the VRR start and the capture probe will be considered in telomere length calculations"
-                },
-                "pretelomeric_repeat_percentage": {
+                "pretelomeric_repeat_percentage":{
                     "type":"number",
                     "default":0.1,
-                    "title": "Pretelomeric Repeat Percentage",
-                    "description": "The 2kb immediately prior to the start of the telomere must not be greater than this percentage telomeric otherwise the read will be filtered from analysis"
+                    "minimum":0,
+                    "exclusiveMaximum": 1,
+                    "title": "Pre-telomeric Repeat Percentage",
+                    "description": "Maximum Percentage of telomere+1N repeats in pretelo_start nucleotides prior to VRR-start site"
+                },
+                "pretelo_start": {
+                    "type":"number",
+                    "default":2000,
+                    "title": "Pretelomeric Start Distance",
+                    "description": "Distance before VRR-region start site to search for telomere+1N repeats relating to Pre-Telomeric Repeat Percentage"
                 }
             }
         },
@@ -244,12 +247,6 @@
                     "type":"boolean",
                     "default":false,
                     "description": "Generate Plots showing individual reads and telomeric start identification"
-                },
-                "plot_vrr_length":{
-                    "title":"Plot VRR Length",
-                    "type":"boolean",
-                    "default":true,
-                    "description": "If set to true additional plots will be created mirroring those for telomere length analysis, but using the VRR length instead of calculated telomere length"
                 },
                 "restriction_digest_analysis": {
                     "type":"string",

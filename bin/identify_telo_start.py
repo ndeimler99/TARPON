@@ -77,6 +77,7 @@ def argparser():
     parser.add_argument("--stats_fh", required=True)
     parser.add_argument("--mutant", required=True)
     parser.add_argument("--pre_telomeric_repeat_percentage", required=True)
+    parser.add_argument("--pre_telo_distance", required=True)
 
     return parser
 
@@ -91,6 +92,7 @@ def main(args):
     args.consecutive_repeats = int(args.consecutive_repeats)
     args.telomeric_rep_perc = float(args.telomeric_rep_perc)
     args.pre_telomeric_repeat_percentage = float(args.pre_telomeric_repeat_percentage)
+    args.pre_telo_distance = int(args.pre_telo_distance)
 
     input_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
     telo_out = pysam.AlignmentFile(args.telomeric_fastq_out, "wb", template=input_fh)
@@ -141,8 +143,8 @@ def main(args):
                     #write to file
                     filtered_fh.write(aln)
                     continue
-                if telo_start - 2000 >= 0:
-                    start_val = telo_start-2000
+                if telo_start - args.pre_telo_distance >= 0:
+                    start_val = telo_start-args.pre_telo_distance
                 else:
                     start_val = 0
                 if check_valid(aln.query_sequence[start_val:telo_start], args.repeat, args.pre_telomeric_repeat_percentage, args.mutant):

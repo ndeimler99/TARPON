@@ -283,7 +283,8 @@ process TELO_START_IDENTIFICATION {
         --filtered_out ${sample}.below_telo_%_threshold.bam \
         --stats_fh ${sample}.telomeric_stats.txt \
         --mutant ${params.mutant} \
-        --pre_telomeric_repeat_percentage ${params.pretelomeric_repeat_percentage}
+        --pre_telomeric_repeat_percentage ${params.pretelomeric_repeat_percentage} \
+        --pre_telo_distance ${params.pretelo_start}
     """
 }
 
