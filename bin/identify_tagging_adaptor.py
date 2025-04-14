@@ -33,7 +33,9 @@ def main(args):
                         aln.set_tag("XB", aln.query_sequence[match.span()[0]:match.span()[0] + 100])
                     q = aln.query_qualities
                     if aln.get_tag("XS") == "C":
+                        #print(aln.query_sequence[match.span()[0]-50:match.span()[0]+50])
                         aln.query_sequence = aln.query_sequence[0:match.span()[0]-args.overhang_length]
+                        print(aln.query_sequence[match.span()[0]-200:match.span()[0]+50])
                         aln.query_qualities = q[0:match.span()[0]-args.overhang_length]
                         adaptor_out.write(aln)
                     else:

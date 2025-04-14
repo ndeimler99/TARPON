@@ -78,6 +78,7 @@ def argparser():
     parser.add_argument("--mutant", required=True)
     parser.add_argument("--pre_telomeric_repeat_percentage", required=True)
     parser.add_argument("--pre_telo_distance", required=True)
+    parser.add_argument("--minimum_telomere_length", required=True)
 
     return parser
 
@@ -93,6 +94,7 @@ def main(args):
     args.telomeric_rep_perc = float(args.telomeric_rep_perc)
     args.pre_telomeric_repeat_percentage = float(args.pre_telomeric_repeat_percentage)
     args.pre_telo_distance = int(args.pre_telo_distance)
+    args.minimum_telomere_length = int(args.minimum_telomere_length)
 
     input_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
     telo_out = pysam.AlignmentFile(args.telomeric_fastq_out, "wb", template=input_fh)
@@ -152,6 +154,9 @@ def main(args):
                         continue
 
             telo_length = get_telo_length(aln.query_sequence[telo_start:], args.repeat * args.consecutive_repeats)
+            if len(aln.query_sequence) - telo_start < args.minimum_telomere_length:
+                filtered_fh.write(aln)
+                continue
 
             read_qual = get_read_qual(aln.query_qualities)
             telo_qual = get_read_qual(aln.query_qualities[telo_start:])
