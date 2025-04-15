@@ -186,7 +186,7 @@ workflow telomere_analysis_pipeline {
                             run_stats.retained_stats, run_stats.removed_stats, \
                             retained_sample.stats.collect(), removed_sample.stats.collect(), \
                             mutant_analysis_stats.stats.collect(), \
-                            FINAL_TELO_STATS.out.stats, FINAL_TELO_STATS.out.vrr_stats, \
+                            FINAL_TELO_STATS.out.vrr_stats, \
                             restriction_digest.stats.collect(), \
                             mutant_analysis_repeat_distribution.stats.collect(), \
                             mutant_analysis_processivity.stats.collect()

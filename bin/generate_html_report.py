@@ -52,8 +52,6 @@ def get_nextflow_attributes(attribute_file):
 
 def main(args):
 
-    args.plot_telo_length = args.plot_telo_length == "true"
-    args.plot_vrr_length = args.plot_vrr_length == "true"
     args.strand_comparison = args.strand_comparison == "true"
     args.detailed_stats = args.detailed_stats == "true"
     args.minimum_read_count = int(args.minimum_read_count)
@@ -79,12 +77,8 @@ def main(args):
         if i.endswith(".txt"):
             for i in args.restriction_digest:
                 sample_dict[i.split(".")[0]]["digest"] = i
-    
-    if args.plot_telo_length:
-        telo_summary_stats = pd.read_table(args.run_telo_stats, sep="\t")
 
-    if args.plot_vrr_length:
-        vrr_summary_stats = pd.read_table(args.run_vrr_stats, sep="\t")
+    vrr_summary_stats = pd.read_table(args.run_vrr_stats, sep="\t")
 
     report = LabsReport(
         f"Report for: {params['run_name']}", args.workflow_name,
@@ -350,10 +344,8 @@ def main(args):
         tabs = Tabs()
         with tabs.add_tab("Number of Telomeric Reads"):
             #barplot using numseqs
-            if args.plot_telo_length:
-                df = telo_summary_stats
-            else:
-                df = vrr_summary_stats
+       
+            df = vrr_summary_stats
 
             df = df.set_index("Sample_ID").loc[sorted(sample_dict.keys())].reset_index()
             plt=report_utils.barplot(data=df, x="Sample_ID", y="Number_of_Reads",
@@ -361,96 +353,52 @@ def main(args):
                                      x_title="Sample", x_rotation=45,
                                      y_title="Number of Telomeres")
             hover = plt._fig.select(dict(type=HoverTool))
-            if args.plot_telo_length:
-                hover.tooltips = [("Sample", "@Sample_ID"), ("Number of Reads", "@Number_of_Reads"),("Mean_Telomere_Length", "@Mean_Telomere_Length")]
-            else:
-                hover.tooltips = [("Sample", "@Sample_ID"), ("Number of Reads", "@Number_of_Reads"),("Mean_Telomere_Length", "@Mean_VRR_Telomere_Length")]
+
+            hover.tooltips = [("Sample", "@Sample_ID"), ("Number of Reads", "@Number_of_Reads"),("Mean_Telomere_Length", "@Mean_VRR_Telomere_Length")]
 
             EZChart(plt, THEME)
             ####
-        if args.plot_telo_length:
-            with tabs.add_tab("Telo Stats"):
-                df = telo_summary_stats
-                df = df.set_index("Sample_ID").loc[sorted(sample_dict.keys())].reset_index()
-                df = df.apply(pass_fail_sample, axis=1)
-                DataTable.from_pandas(df, use_index=False)
-            with tabs.add_tab("Telomere Length Barchart"):
-                master_df = pd.DataFrame()
-                for sample in sample_dict.keys():
-                    df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
-                    bins = [i*1000 for i in range(0,11)]
-                    bins.append(100000)
-                    telo_bar_df = np.histogram(df["telo_length"], bins=bins)
-                    telo_bar_df = pd.DataFrame(list(zip(telo_bar_df[1], telo_bar_df[0])), columns=["bin_start", "bin_size"])
-                    telo_bar_df["bin_start"] = telo_bar_df["bin_start"].astype("string")
-                    telo_bar_df["sample"] = sample
-                    telo_bar_df["bin_size"] = telo_bar_df["bin_size"] / sum(telo_bar_df["bin_size"]) * 100
-                    master_df = pd.concat([master_df, telo_bar_df], ignore_index=True, sort=False)
-                
 
-                telo_bar_plot = report_utils.telo_barplot(data=master_df, 
-                                                    x="sample", x_rotation=45, x_title="Sample",
-                                                    y="bin_size", y_title="Percentage of Reads",
-                                                    hue="bin_start", dodge=False,
-                                                    order=sorted(list(sample_dict.keys())), 
-                                                    palette=bokeh.palettes.Category20[11],
-                                                    plt_title="Telomere Length by Sample Binned Bar Plot")
-                EZChart(telo_bar_plot, THEME)
-            with tabs.add_tab("Telomere Length Boxplot"):
-                df = telo_summary_stats
-                plt = report_utils.seqkit_stats_boxplot_length(df, x="Sample_ID",
-                                                            plt_title="Telomere Length Boxplots",
-                                                            x_title="Sample", x_rotation=45,
-                                                            y_title="Telomere Length (BP)",
-                                                            order=sorted(list(sample_dict.keys())))
-                hover = plt._fig.select(dict(type=HoverTool))
-                hover.tooltips = [("Sample", "@Sample_ID"),("Number of Reads", "@Number_of_Reads"),
-                                ("Avg Length", "@Mean_Telomere_Length"),
-                                    ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
-                                    ("Min Length", "@Min_Telo_Length"), ("Max Length", "@Max_Telo_Length")]
-                EZChart(plt,THEME)
-        
-        if args.plot_vrr_length:
-            with tabs.add_tab("VRR Stats"):
-                df = vrr_summary_stats
-                df = df.set_index("Sample_ID").loc[sorted(sample_dict.keys())].reset_index()
-                df["STATUS"] = df.apply(pass_fail_sample, axis=1)
-                DataTable.from_pandas(df, use_index=False)
-            with tabs.add_tab("VRR Length Barchart"):
-                master_df = pd.DataFrame()
-                for sample in sample_dict.keys():
-                    df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
-                    bins = [i*1000 for i in range(0,11)]
-                    bins.append(100000)
-                    telo_bar_df = np.histogram(df["vrr_telo_length"], bins=bins)
-                    telo_bar_df = pd.DataFrame(list(zip(telo_bar_df[1], telo_bar_df[0])), columns=["bin_start", "bin_size"])
-                    telo_bar_df["bin_start"] = telo_bar_df["bin_start"].astype("string")
-                    telo_bar_df["sample"] = sample
-                    telo_bar_df["bin_size"] = telo_bar_df["bin_size"] / sum(telo_bar_df["bin_size"]) * 100
-                    master_df = pd.concat([master_df, telo_bar_df], ignore_index=True, sort=False)
-                
+        with tabs.add_tab("VRR Stats"):
+            df = vrr_summary_stats
+            df = df.set_index("Sample_ID").loc[sorted(sample_dict.keys())].reset_index()
+            df["STATUS"] = df.apply(pass_fail_sample, axis=1)
+            DataTable.from_pandas(df, use_index=False)
+        with tabs.add_tab("VRR Length Barchart"):
+            master_df = pd.DataFrame()
+            for sample in sample_dict.keys():
+                df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
+                bins = [i*1000 for i in range(0,11)]
+                bins.append(100000)
+                telo_bar_df = np.histogram(df["vrr_telo_length"], bins=bins)
+                telo_bar_df = pd.DataFrame(list(zip(telo_bar_df[1], telo_bar_df[0])), columns=["bin_start", "bin_size"])
+                telo_bar_df["bin_start"] = telo_bar_df["bin_start"].astype("string")
+                telo_bar_df["sample"] = sample
+                telo_bar_df["bin_size"] = telo_bar_df["bin_size"] / sum(telo_bar_df["bin_size"]) * 100
+                master_df = pd.concat([master_df, telo_bar_df], ignore_index=True, sort=False)
+            
 
-                telo_bar_plot = report_utils.telo_barplot(data=master_df, 
+            telo_bar_plot = report_utils.telo_barplot(data=master_df, 
                                                     x="sample", x_rotation=45, x_title="Sample",
                                                     y="bin_size", y_title="Percentage of Reads",
                                                     hue="bin_start", dodge=False,
                                                     order=sorted(list(sample_dict.keys())), 
                                                     palette=bokeh.palettes.Category20[11],
                                                     plt_title="VRR Telomere Length by Sample Binned Bar Plot")
-                EZChart(telo_bar_plot, THEME)
-            with tabs.add_tab("VRR Length Boxplot"):
-                df = vrr_summary_stats
-                plt = report_utils.seqkit_stats_boxplot_length(df, x="Sample_ID",
+            EZChart(telo_bar_plot, THEME)
+        with tabs.add_tab("VRR Length Boxplot"):
+            df = vrr_summary_stats
+            plt = report_utils.seqkit_stats_boxplot_length(df, x="Sample_ID",
                                                             plt_title="VRR Telomere Length Boxplots",
                                                             x_title="Sample", x_rotation=45,
                                                             y_title="VRR Telomere Length (BP)",
                                                             order=sorted(list(sample_dict.keys())))
-                hover = plt._fig.select(dict(type=HoverTool))
-                hover.tooltips = [("Sample", "@Sample_ID"),("Number of Reads", "@Number_of_Reads"),
+            hover = plt._fig.select(dict(type=HoverTool))
+            hover.tooltips = [("Sample", "@Sample_ID"),("Number of Reads", "@Number_of_Reads"),
                                 ("Avg Length", "@Mean_VRR_Telomere_Length"),
                                     ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
                                     ("Min Length", "@Min_VRR_Telo_Length"), ("Max Length", "@Max_VRR_Telo_Length")]
-                EZChart(plt,THEME)
+            EZChart(plt,THEME)
 
     with report.add_section("Individual Sample Analysis", "Individual Sample Analysis"):
         # p("Individual Sample Statistics and Plots")
@@ -462,183 +410,90 @@ def main(args):
                     df["telo_length"] = df["telo_length"].astype("float")
                     #telo length histogram next to barplot
                     new_tabs = Tabs()
-                    if args.plot_telo_length:
-                        with new_tabs.add_tab("Telo Length Analysis (n={})".format(len(df['telo_length']))):
+
+                    with new_tabs.add_tab("VRR Length Analysis (n={})".format(len(df['telo_length']))):
                             # Telomere Length Histogram
-                            telo_length_hist = report_utils.telo_length_hist(df["telo_length"], binwidth=200, binrange=[0,max(df["telo_length"])+200],
-                                                            plt_title="Telomere Length Histogram",
-                                                            x_title = "Telomere Length (BP)", y_title="Read Count")
-                        
-                            # Telomere Length Boxplot
-                            telo_length_boxplot = report_utils.create_boxplot(df=df,column_name="telo_length", sample=sample,
-                                                                            x_title = sample, y_title="Telomere Length",
-                                                                            plt_title="Telomere Length Boxplot")
-                
-                            # Telomere Length Barplot
-                            bins = [i*1000 for i in range(0,11)]
-                            bins.append(100000)
-                            telo_bar_df = np.histogram(df["telo_length"], bins=bins)
-                            telo_bar_df = pd.DataFrame(list(zip(telo_bar_df[1], telo_bar_df[0])), columns=["bin_start", "bin_size"])
-                            telo_bar_df["bin_start"] = telo_bar_df["bin_start"].astype("string")
-                            telo_bar_df["sample"] = sample
-                            telo_bar_df["bin_size"] = telo_bar_df["bin_size"] / sum(telo_bar_df["bin_size"]) * 100
-                            #telo_bar_df["bin_label"] = "{} - {} bp".format(telo_bar_df["bin_start"] + 1, telo_bar_df["bin_start"]+1000)
-                            telo_bar_plot = report_utils.telo_barplot(data=telo_bar_df, x="sample", 
-                                                                    y="bin_size", hue="bin_start", dodge=False, 
-                                                                    palette=bokeh.palettes.Category20[11],
-                                                                    plt_title="Telomere Length Binned",
-                                                                    x_title=sample, y_title="Percentage of Telomeres", 
-                                                                    legend_loc="right", legend_orientation="vertical",
-                                                                    hide_x_tick_labels=True)
-                            with Grid(columns=3):
-                                EZChart(telo_length_hist, THEME)
-                                EZChart(telo_length_boxplot, THEME)
-                                EZChart(telo_bar_plot, THEME)
-
-                        with new_tabs.add_tab("Telo Length vs Read Length"):
-                            telo_length_hist = report_utils.telo_length_hist(df["telo_length"], binwidth=200, binrange=[0,max(df["telo_length"])+200],
-                                                                            plt_title="Telomere Length Histogram",
-                                                                            x_title="Telomere Length (BP)", y_title="Read Count")
-        
-                            read_length_hist = report_utils.telo_length_hist(df["read_len"], binwidth=500, binrange=[0, max(df["read_len"])+500],
-                                                                            plt_title="Read Length Histogram", x_title="Read Length (BP)",
-                                                                            y_title="Read Count")
-    
-                            byscatter = report_utils.scatterplot(data=df, x="read_len", y="telo_length", 
-                                                                hover_tooltips=[("Telomere Length", "@y"), ("Read Length", "@x")],
-                                                                plt_title="Telomere Length by Read Length",
-                                                                x_title="Read Length (BP)", y_title="Telomere Length (BP)")
-                            # byscatter.xAxis.name = "Read Length"
-                            # byscatter.yAxis.name = "Telomere Length"
-                            with Grid(columns=3):
-                                #telo length hist, read length_hist, scatter plot
-                                EZChart(telo_length_hist, THEME)
-                                EZChart(read_length_hist, THEME)
-                                EZChart(byscatter, THEME)
-                        
-                        if args.strand_comparison:
-                            with new_tabs.add_tab("Telo Length Strand Comparison"):
-                                with Grid(columns=3):
-                                    with Grid(columns=1):
-                                        plt = report_utils.telo_length_hist_by_strand([df[df["strand"] == "G"]["telo_length"], df[df["strand"] == "C"]["telo_length"]], labels=["G strand", "C strand"],
-                                                                                binwidth=200, binrange=[0,max(df["telo_length"])+200],
-                                                                                plt_title="Telomere Length G-Strand",
-                                                                                x_title="Telomere Length (BP)", y_title="Percentage of Sequences")
-                                        EZChart(plt, THEME)
-
-                                    telo_box = report_utils.create_boxplot_by_strand(df, "telo_length", plt_title="Telo Length by Strand", x_title="Strand", y_title="Telomere Length (bp)")
-                                    EZChart(telo_box, THEME)
-                                    
-
-                                    bins = [i*1000 for i in range(0,11)]
-                                    bins.append(100000)
-                                    telo_bar_df_g = np.histogram(df[df["strand"]=="G"]["telo_length"], bins=bins)
-                                    telo_bar_df_g = pd.DataFrame(list(zip(telo_bar_df_g[1], telo_bar_df_g[0])), columns=["bin_start", "bin_size"])
-                                    telo_bar_df_g["bin_start"] = telo_bar_df_g["bin_start"].astype("string")
-                                    telo_bar_df_g["sample"] = "G"
-                                    telo_bar_df_g["bin_size"] = telo_bar_df_g["bin_size"] / sum(telo_bar_df_g["bin_size"]) * 100
-
-                                    telo_bar_df_c = np.histogram(df[df["strand"]=="C"]["telo_length"], bins=bins)
-                                    telo_bar_df_c = pd.DataFrame(list(zip(telo_bar_df_c[1], telo_bar_df_c[0])), columns=["bin_start", "bin_size"])
-                                    telo_bar_df_c["bin_start"] = telo_bar_df_c["bin_start"].astype("string")
-                                    telo_bar_df_c["sample"] = "C"
-                                    telo_bar_df_c["bin_size"] = telo_bar_df_c["bin_size"] / sum(telo_bar_df_c["bin_size"]) * 100
-
-
-                                    telo_bar_plot = report_utils.telo_barplot(data=pd.concat([telo_bar_df_g, telo_bar_df_c]), 
-                                                        x="sample", x_rotation=45, x_title="Strand",
-                                                        y="bin_size", y_title="Percentage of Reads",
-                                                        hue="bin_start", dodge=False,
-                                                        order=["G", "C"], 
-                                                        palette=bokeh.palettes.Category20[11],
-                                                        legend_loc="right", legend_orientation="vertical",
-                                                        plt_title="Telomere Length by Strand Binned Bar Plot")
-                                    EZChart(telo_bar_plot, THEME)
-
-                    if args.plot_vrr_length:
-                        with new_tabs.add_tab("VRR Length Analysis (n={})".format(len(df['telo_length']))):
-                            # Telomere Length Histogram
-                            telo_length_hist = report_utils.telo_length_hist(df["vrr_telo_length"], binwidth=200, binrange=[0,max(df["vrr_telo_length"])+200],
+                        telo_length_hist = report_utils.telo_length_hist(df["vrr_telo_length"], binwidth=200, binrange=[0,max(df["vrr_telo_length"])+200],
                                                             plt_title="VRR Telomere Length Histogram",
                                                             x_title = "VRR Telomere Length (BP)", y_title="Read Count")
                         
                             # Telomere Length Boxplot
-                            telo_length_boxplot = report_utils.create_boxplot(df=df,column_name="vrr_telo_length", sample=sample,
+                        telo_length_boxplot = report_utils.create_boxplot(df=df,column_name="vrr_telo_length", sample=sample,
                                                                             x_title = sample, y_title="VRR Telomere Length",
                                                                             plt_title="VRR Telomere Length Boxplot")
                 
                             # Telomere Length Barplot
-                            bins = [i*1000 for i in range(0,11)]
-                            bins.append(100000)
-                            telo_bar_df = np.histogram(df["vrr_telo_length"], bins=bins)
-                            telo_bar_df = pd.DataFrame(list(zip(telo_bar_df[1], telo_bar_df[0])), columns=["bin_start", "bin_size"])
-                            telo_bar_df["bin_start"] = telo_bar_df["bin_start"].astype("string")
-                            telo_bar_df["sample"] = sample
-                            telo_bar_df["bin_size"] = telo_bar_df["bin_size"] / sum(telo_bar_df["bin_size"]) * 100
-                            #telo_bar_df["bin_label"] = "{} - {} bp".format(telo_bar_df["bin_start"] + 1, telo_bar_df["bin_start"]+1000)
-                            telo_bar_plot = report_utils.telo_barplot(data=telo_bar_df, x="sample", 
+                        bins = [i*1000 for i in range(0,11)]
+                        bins.append(100000)
+                        telo_bar_df = np.histogram(df["vrr_telo_length"], bins=bins)
+                        telo_bar_df = pd.DataFrame(list(zip(telo_bar_df[1], telo_bar_df[0])), columns=["bin_start", "bin_size"])
+                        telo_bar_df["bin_start"] = telo_bar_df["bin_start"].astype("string")
+                        telo_bar_df["sample"] = sample
+                        telo_bar_df["bin_size"] = telo_bar_df["bin_size"] / sum(telo_bar_df["bin_size"]) * 100
+                        #telo_bar_df["bin_label"] = "{} - {} bp".format(telo_bar_df["bin_start"] + 1, telo_bar_df["bin_start"]+1000)
+                        telo_bar_plot = report_utils.telo_barplot(data=telo_bar_df, x="sample", 
                                                                     y="bin_size", hue="bin_start", dodge=False, 
                                                                     palette=bokeh.palettes.Category20[11],
                                                                     plt_title="VRR Telomere Length Binned",
                                                                     x_title=sample, y_title="Percentage of Telomeres", 
                                                                     legend_loc="right", legend_orientation="vertical",
                                                                     hide_x_tick_labels=True)
-                            with Grid(columns=3):
-                                EZChart(telo_length_hist, THEME)
-                                EZChart(telo_length_boxplot, THEME)
-                                EZChart(telo_bar_plot, THEME)
+                        with Grid(columns=3):
+                            EZChart(telo_length_hist, THEME)
+                            EZChart(telo_length_boxplot, THEME)
+                            EZChart(telo_bar_plot, THEME)
 
-                        with new_tabs.add_tab("VRR Length vs Read Length"):
-                            telo_length_hist = report_utils.telo_length_hist(df["vrr_telo_length"], binwidth=200, binrange=[0,max(df["vrr_telo_length"])+200],
+                    with new_tabs.add_tab("VRR Length vs Read Length"):
+                        telo_length_hist = report_utils.telo_length_hist(df["vrr_telo_length"], binwidth=200, binrange=[0,max(df["vrr_telo_length"])+200],
                                                                             plt_title="VRR Telomere Length Histogram",
                                                                             x_title="VRR Telomere Length (BP)", y_title="Read Count")
         
-                            read_length_hist = report_utils.telo_length_hist(df["read_len"], binwidth=500, binrange=[0, max(df["read_len"])+500],
+                        read_length_hist = report_utils.telo_length_hist(df["read_len"], binwidth=500, binrange=[0, max(df["read_len"])+500],
                                                                             plt_title="Read Length Histogram", x_title="Read Length (BP)",
                                                                             y_title="Read Count")
     
-                            byscatter = report_utils.scatterplot(data=df, x="read_len", y="vrr_telo_length", 
+                        byscatter = report_utils.scatterplot(data=df, x="read_len", y="vrr_telo_length", 
                                                                 hover_tooltips=[("VRR Telomere Length", "@y"), ("Read Length", "@x")],
                                                                 plt_title="VRR Telomere Length by Read Length",
                                                                 x_title="Read Length (BP)", y_title="VRR Telomere Length (BP)")
                             # byscatter.xAxis.name = "Read Length"
                             # byscatter.yAxis.name = "Telomere Length"
-                            with Grid(columns=3):
+                        with Grid(columns=3):
                                 #telo length hist, read length_hist, scatter plot
-                                EZChart(telo_length_hist, THEME)
-                                EZChart(read_length_hist, THEME)
-                                EZChart(byscatter, THEME)
+                            EZChart(telo_length_hist, THEME)
+                            EZChart(read_length_hist, THEME)
+                            EZChart(byscatter, THEME)
                                 
-                        if args.strand_comparison:
-                            with new_tabs.add_tab("VRR Telo Length Strand Comparison"):
-                                with Grid(columns=3):
-                                    with Grid(columns=1):
-                                        plt = report_utils.telo_length_hist_by_strand([df[df["strand"] == "G"]["vrr_telo_length"], df[df["strand"] == "C"]["vrr_telo_length"]], labels=["G strand", "C strand"],
+                    if args.strand_comparison:
+                        with new_tabs.add_tab("VRR Telo Length Strand Comparison"):
+                            with Grid(columns=3):
+                                with Grid(columns=1):
+                                    plt = report_utils.telo_length_hist_by_strand([df[df["strand"] == "G"]["vrr_telo_length"], df[df["strand"] == "C"]["vrr_telo_length"]], labels=["G strand", "C strand"],
                                                                                 binwidth=200, binrange=[0,max(df["vrr_telo_length"])+200],
                                                                                 plt_title="Telomere Length G-Strand",
                                                                                 x_title="Telomere Length (BP)", y_title="Percentage of Sequences")
-                                        EZChart(plt, THEME)
+                                    EZChart(plt, THEME)
 
-                                    telo_hist = report_utils.create_boxplot_by_strand(df, "vrr_telo_length", plt_title="Telo Length by Strand", x_title="Strand", y_title="Telomere Length (bp)")
-                                    EZChart(telo_hist, THEME)
+                                telo_hist = report_utils.create_boxplot_by_strand(df, "vrr_telo_length", plt_title="Telo Length by Strand", x_title="Strand", y_title="Telomere Length (bp)")
+                                EZChart(telo_hist, THEME)
                                     
 
-                                    bins = [i*1000 for i in range(0,11)]
-                                    bins.append(100000)
-                                    telo_bar_df_g = np.histogram(df[df["strand"]=="G"]["vrr_telo_length"], bins=bins)
-                                    telo_bar_df_g = pd.DataFrame(list(zip(telo_bar_df_g[1], telo_bar_df_g[0])), columns=["bin_start", "bin_size"])
-                                    telo_bar_df_g["bin_start"] = telo_bar_df_g["bin_start"].astype("string")
-                                    telo_bar_df_g["sample"] = "G"
-                                    telo_bar_df_g["bin_size"] = telo_bar_df_g["bin_size"] / sum(telo_bar_df_g["bin_size"]) * 100
+                                bins = [i*1000 for i in range(0,11)]
+                                bins.append(100000)
+                                telo_bar_df_g = np.histogram(df[df["strand"]=="G"]["vrr_telo_length"], bins=bins)
+                                telo_bar_df_g = pd.DataFrame(list(zip(telo_bar_df_g[1], telo_bar_df_g[0])), columns=["bin_start", "bin_size"])
+                                telo_bar_df_g["bin_start"] = telo_bar_df_g["bin_start"].astype("string")
+                                telo_bar_df_g["sample"] = "G"
+                                telo_bar_df_g["bin_size"] = telo_bar_df_g["bin_size"] / sum(telo_bar_df_g["bin_size"]) * 100
 
-                                    telo_bar_df_c = np.histogram(df[df["strand"]=="C"]["vrr_telo_length"], bins=bins)
-                                    telo_bar_df_c = pd.DataFrame(list(zip(telo_bar_df_c[1], telo_bar_df_c[0])), columns=["bin_start", "bin_size"])
-                                    telo_bar_df_c["bin_start"] = telo_bar_df_c["bin_start"].astype("string")
-                                    telo_bar_df_c["sample"] = "C"
-                                    telo_bar_df_c["bin_size"] = telo_bar_df_c["bin_size"] / sum(telo_bar_df_c["bin_size"]) * 100
+                                telo_bar_df_c = np.histogram(df[df["strand"]=="C"]["vrr_telo_length"], bins=bins)
+                                telo_bar_df_c = pd.DataFrame(list(zip(telo_bar_df_c[1], telo_bar_df_c[0])), columns=["bin_start", "bin_size"])
+                                telo_bar_df_c["bin_start"] = telo_bar_df_c["bin_start"].astype("string")
+                                telo_bar_df_c["sample"] = "C"
+                                telo_bar_df_c["bin_size"] = telo_bar_df_c["bin_size"] / sum(telo_bar_df_c["bin_size"]) * 100
 
 
-                                    telo_bar_plot = report_utils.telo_barplot(data=pd.concat([telo_bar_df_g, telo_bar_df_c]), 
+                                telo_bar_plot = report_utils.telo_barplot(data=pd.concat([telo_bar_df_g, telo_bar_df_c]), 
                                                         x="sample", x_rotation=45, x_title="Strand",
                                                         y="bin_size", y_title="Percentage of Reads",
                                                         hue="bin_start", dodge=False,
@@ -646,24 +501,9 @@ def main(args):
                                                         palette=bokeh.palettes.Category20[11],
                                                         legend_loc="right", legend_orientation="vertical",
                                                         plt_title="Telomere Length by Strand Binned Bar Plot")
-                                    EZChart(telo_bar_plot, THEME)
+                                EZChart(telo_bar_plot, THEME)
 
-                    if args.plot_vrr_length and args.plot_telo_length:
-                        with new_tabs.add_tab("VRR Length vs Telo Length"):
-                            vrr_hist = report_utils.telo_length_hist(df["vrr_telo_length"], binwidth=200, binrange=[0, max(df["vrr_telo_length"])+200],
-                                                                    plt_title="VRR Telomere Length",
-                                                                    x_title="VRR Telomere Length (BP)", y_title="Read Count")
-                            telo_hist = report_utils.telo_length_hist(df["telo_length"], binwidth=200, binrange=[0, max(df["telo_length"])+200],
-                                                                    plt_title="Telomere LEngth", x_title = "Telomere Length (BP)",
-                                                                    y_title="Read Count")
-                            telo_scatter = report_utils.scatterplot(data=df, x="vrr_telo_length", y="telo_length",
-                                                                    plt_title = "VRR Telomere Length By Telomere Length",
-                                                                    x_title="VRR Telomere Length (BP)", y_title="Telomere Length (BP)",
-                                                                    hover_tooltips=[("VRR Telomere Length", "@x"), ("Telomere Length", "@y")])
-                            with Grid(columns=3):
-                                EZChart(vrr_hist, THEME)
-                                EZChart(telo_hist, THEME)
-                                EZChart(telo_scatter, THEME)                                    
+                                
                 with tabs.add_dropdown_tab("{} Retained Reads".format(sample)):
                     new_tabs = Tabs()
                     df = pd.read_table(sample_dict[sample]["retained_reads"], sep="\t")
@@ -1005,39 +845,21 @@ def main(args):
                                 EZChart(boxplot, THEME)
                                 EZChart(read_telo_scatter, THEME)
                                 
-                        if args.plot_telo_length:
-                            with new_tabs.add_tab("Quality vs Telomere Length"):
-                                read_by_telo = report_utils.scatterplot(data=df, x="read_qual", y="telo_length",
-                                                                        plt_title="Read Quality by Telo Length",
-                                                                        x_title="Read Quality", y_title="Telomere Length (BP)",
-                                                                        hover_tooltips=[("Read Quality", "@x"), ("Telomere Length", "@y")])
-                                # read quality by telo length
-                                # telo quality by telo length
-                                telo_by_telo = report_utils.scatterplot(data=df, x="telo_qual", y="telo_length",
-                                                                        plt_title="Telomere Quality by Telo Length",
-                                                                        x_title="Telomere Quality", y_title="Telomere Length (BP)",
-                                                                        hover_tooltips=[("Telomere Quality", "@x"), ("Telomere Length", "@y")])
-                                
-                                with Grid(columns=2):
-                                    EZChart(read_by_telo, THEME)
-                                    EZChart(telo_by_telo, THEME)
-                        
-                        if args.plot_vrr_length:
-                            with new_tabs.add_tab("Quality vs VRR Length"):
+                        with new_tabs.add_tab("Quality vs VRR Length"):
                                 # read quality by vrr length
-                                read_by_telo = report_utils.scatterplot(data=df, x="read_qual", y="vrr_telo_length",
+                            read_by_telo = report_utils.scatterplot(data=df, x="read_qual", y="vrr_telo_length",
                                                                         plt_title="Read Quality by VRR Telo Length",
                                                                         x_title="Read Quality", y_title="VRR Telomere Length (BP)",
                                                                         hover_tooltips=[("Read Quality", "@x"), ("VRR Telomere Length", "@y")])
                                 # telo quality by telo length
-                                telo_by_telo = report_utils.scatterplot(data=df, x="telo_qual", y="vrr_telo_length",
+                            telo_by_telo = report_utils.scatterplot(data=df, x="telo_qual", y="vrr_telo_length",
                                                                         plt_title="Telomere Quality by VRR Telo Length",
                                                                         x_title="Telomere Quality", y_title="VRR Telomere Length (BP)",
                                                                         hover_tooltips=[("Telomere Quality", "@x"), ("VRR Telomere Length", "@y")])
                                 
-                                with Grid(columns=2):
-                                    EZChart(read_by_telo, THEME)
-                                    EZChart(telo_by_telo, THEME)
+                            with Grid(columns=2):
+                                EZChart(read_by_telo, THEME)
+                                EZChart(telo_by_telo, THEME)
                         if args.strand_comparison:
                             with new_tabs.add_tab("Strand Comparison"):
                                 
@@ -1179,11 +1001,8 @@ def argparser():
     parser.add_argument("--sample_stats_retained", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
     parser.add_argument("--sample_stats_removed", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
     parser.add_argument("--sample_telo_stats", nargs="+", required=True)
-    parser.add_argument("--run_telo_stats", required=True)
     parser.add_argument("--run_vrr_stats", required=True)
     parser.add_argument("--restriction_digest", required=True, nargs="+")
-    parser.add_argument("--plot_vrr_length", required=True)
-    parser.add_argument("--plot_telo_length", required=True)
     parser.add_argument("--strand_comparison", required=True)
     parser.add_argument("--detailed_stats", required=True)
     parser.add_argument("--mutant", required=True)

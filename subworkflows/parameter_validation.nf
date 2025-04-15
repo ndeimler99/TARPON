@@ -51,12 +51,6 @@ workflow validate_parameters {
             println ("Adaptor Sequence and Sample File cannot both be empty")
         }
 
-        // Telomere length must either be specified to use the length of the VRR or the calculated telomere length (see publication for more details)
-        if (!params.plot_telo_length && !params.plot_vrr_length) {
-            parameters_passed = false
-            println ("Either VRR or Telomere Length Must be Set")
-        }
-
         // If a sample file is specified, it must be a valid file
         try {
             if (params.sample_file != ""){

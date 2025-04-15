@@ -341,7 +341,7 @@ process BASIC_PLOTS {
 
     script:
     """
-    basic_plots.R ${telo_stats} ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
+    basic_plots.R ${telo_stats} ${params.strand_comparison}
     """
 }
 
@@ -472,7 +472,6 @@ process GENERATE_FINAL_REPORT {
         path(sample_stats_retained)
         path(sample_stats_removed)
         path(telo_stats_per_sample)
-        path(telo_descriptive_stats)
         path(vrr_descriptive_stats)
         path(restriction_digest)
         path(mutant_analysis_repeat_distribution)
@@ -500,11 +499,8 @@ process GENERATE_FINAL_REPORT {
                             --sample_stats_retained ${sample_stats_retained} \
                             --sample_stats_removed ${sample_stats_removed} \
                             --sample_telo_stats ${telo_stats_per_sample} \
-                            --run_telo_stats ${telo_descriptive_stats} \
                             --run_vrr_stats ${vrr_descriptive_stats} \
                             --restriction_digest ${restriction_digest} \
-                            --plot_telo_length ${params.plot_telo_length} \
-                            --plot_vrr_length ${params.plot_vrr_length} \
                             --strand_comparison ${params.strand_comparison} \
                             --detailed_stats ${params.detailed_stats} \
                             --mutant ${params.mutant} \
@@ -729,7 +725,6 @@ process FINAL_TELO_STATS {
         path(input_files)
 
     output:
-        path("combined_stats.txt"), emit: stats
         path("combined_stats.VRR.txt"), emit: vrr_stats
         path("*.pdf")
 
@@ -741,9 +736,9 @@ process FINAL_TELO_STATS {
 
     script:
     """
-    processTelomereStats.py --stat_files ${input_files} --vrr_length ${params.plot_vrr_length} --telo_length ${params.plot_telo_length}
-    sampleComparison_Plots.R ${params.plot_vrr_length} ${params.plot_telo_length}
-    sampleComparison_BarPlot.R ${params.plot_telo_length} ${params.plot_vrr_length} ${input_files}
+    processTelomereStats.py --stat_files ${input_files}
+    sampleComparison_Plots.R
+    sampleComparison_BarPlot.R ${input_files}
     """
 
 }
