@@ -31,7 +31,7 @@ if(args[3] == "telomeric"){
   order <- c('input', 'putative_reads', 'putative_reads.filtered', 'adaptor', 'subtelo_pass', 'telo_retained')
 } 
 
-if(args[3] == "filtered"){
+if(args[3] == "removed"){
   if (args[2]){
     strand_order <- c('adaptor_filtered', "subtelo_fail", "below_telo_threshold", "no_telo_start")
   }

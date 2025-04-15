@@ -69,8 +69,8 @@ def main(args):
         sample_dict[i.split(".")[0]] = {}
         sample_dict[i.split(".")[0]]["retained_reads"] = i
 
-    for i in args.sample_stats_filtered:
-        sample_dict[i.split(".")[0]]["filtered_reads"] = i
+    for i in args.sample_stats_removed:
+        sample_dict[i.split(".")[0]]["removed_reads"] = i
 
     for i in args.sample_telo_stats:
         sample_dict[i.split(".")[0]]["telo_stats"] = i
@@ -216,8 +216,8 @@ def main(args):
                         EZChart(g_plt, THEME)
                         EZChart(c_plt, THEME)
 
-        with tabs.add_dropdown_menu("Filtered Read Statistics", change_header=False):
-            df = pd.read_table(args.run_stats_filtered)
+        with tabs.add_dropdown_menu("Removed Read Statistics", change_header=False):
+            df = pd.read_table(args.run_stats_removed)
             df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
             
             if args.strand_comparison:
@@ -229,28 +229,28 @@ def main(args):
                 df = df.drop(i)
             with tabs.add_dropdown_tab('Read Count'):
                 plt=report_utils.barplot(data=df, x="file", y="num_seqs",
-                                plt_title="Number of Reads Filtered at Each Step",
+                                plt_title="Number of Reads Removed at Each Step",
                                 x_title="Pipeline Step", x_rotation=45,
-                                y_title="Number of Filtered Reads")
+                                y_title="Number of Removed Reads")
                 hover = plt._fig.select(dict(type=HoverTool))
-                hover.tooltips = [("Number of Reads Filtered", "@num_seqs")]
+                hover.tooltips = [("Number of Reads Removed", "@num_seqs")]
                 # what is this function doing
                 EZChart(plt,THEME)
 
                 if args.strand_comparison:
                     g_plt = report_utils.barplot(data=g_strand, x="file", y="num_seqs", 
                                            x_title="Pipeline Step", x_rotation=45,
-                                           y_title="Number of Filtered Reads",
+                                           y_title="Number of Removed Reads",
                                            plt_title="G Strand")
                     hover = g_plt._fig.select(dict(type=HoverTool))
-                    hover.tooltips = [("Number of Reads Retained", "@num_seqs")]
+                    hover.tooltips = [("Number of Reads Removed", "@num_seqs")]
 
                     c_plt = report_utils.barplot(data=c_strand, x="file", y="num_seqs", 
                                            x_title="Pipeline Step", x_rotation=45,
-                                           y_title="Number of Filtered Reads",
+                                           y_title="Number of Removed Reads",
                                            plt_title="C Strand")
                     hover = c_plt._fig.select(dict(type=HoverTool))
-                    hover.tooltips = [("Number of Reads Retained", "@num_seqs")]
+                    hover.tooltips = [("Number of Reads Removed", "@num_seqs")]
                     with Grid(columns=2):
                         EZChart(g_plt, THEME)
                         EZChart(c_plt, THEME)
@@ -266,7 +266,7 @@ def main(args):
                 plt = report_utils.seqkit_stats_boxplot_length(df, x="file",
                                                                y_title="Read Length (BP)", 
                                                                x_title="Pipeline Step", x_rotation=45,
-                                                               plt_title="Read Length of Reads Filtered at Each Step")
+                                                               plt_title="Read Length of Reads Removed at Each Step")
                 hover = plt._fig.select(dict(type=HoverTool))
                 hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
                                   ("Avg Length", "@mean_length"),
@@ -300,7 +300,7 @@ def main(args):
 
 
             with tabs.add_dropdown_tab('Read Quality'):
-                df = pd.read_table(args.run_stats_filtered)
+                df = pd.read_table(args.run_stats_removed)
                 df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
 
                 if args.strand_comparison:
@@ -313,7 +313,7 @@ def main(args):
 
                 plt = report_utils.quality_boxplot_from_quantiles(data=df, x="file",
                                            x_title="Pipeline Step", y_title="Quality Score",
-                                           plt_title="Quality of Reads Filtered at Each Step",
+                                           plt_title="Quality of Reads Removed at Each Step",
                                            x_rotation=45)
                 hover = plt._fig.select(dict(type=HoverTool))
                 hover.tooltips = [("Sample", "@file"), ("Read Count", "@num_seqs"),
@@ -791,9 +791,9 @@ def main(args):
                                 EZChart(g_plt, THEME)
                                 EZChart(c_plt, THEME)
 
-                with tabs.add_dropdown_tab("{} Filtered Reads".format(sample)):
+                with tabs.add_dropdown_tab("{} Removed Reads".format(sample)):
                     new_tabs = Tabs()
-                    df = pd.read_table(sample_dict[sample]["filtered_reads"], sep="\t")
+                    df = pd.read_table(sample_dict[sample]["removed_reads"], sep="\t")
                     df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
                     if args.strand_comparison:
                         g_strand = df[df.file.str.contains("g_strand")]
@@ -805,26 +805,26 @@ def main(args):
                     with new_tabs.add_tab("Read Count"):
                         #bar plot
                         plt = report_utils.barplot(data=df, x="file", y="num_seqs", 
-                                                   plt_title="Number of Reads Filtered at Each Step",
+                                                   plt_title="Number of Reads Removed at Each Step",
                                                    x_title="Pipeline Step", x_rotation=45,
                                                    y_title="Number of Retained Reads")
                         hover = plt._fig.select(dict(type=HoverTool))
-                        hover.tooltips = [("Number of Reads Filtered", "@num_seqs")]
+                        hover.tooltips = [("Number of Reads Removed", "@num_seqs")]
                         EZChart(plt,THEME)
                         if args.strand_comparison:
                             g_plt = report_utils.barplot(data=g_strand, x="file", y="num_seqs", 
                                                 x_title="Pipeline Step", x_rotation=45,
-                                                y_title="Number of Filtered Reads",
+                                                y_title="Number of Removed Reads",
                                                 plt_title="G Strand")
                             hover = g_plt._fig.select(dict(type=HoverTool))
-                            hover.tooltips = [("Number of Reads Retained", "@num_seqs")]
+                            hover.tooltips = [("Number of Reads Removed", "@num_seqs")]
 
                             c_plt = report_utils.barplot(data=c_strand, x="file", y="num_seqs", 
                                                 x_title="Pipeline Step", x_rotation=45,
-                                                y_title="Number of Filtered Reads",
+                                                y_title="Number of Removed Reads",
                                                 plt_title="C Strand")
                             hover = c_plt._fig.select(dict(type=HoverTool))
-                            hover.tooltips = [("Number of Reads Retained", "@num_seqs")]
+                            hover.tooltips = [("Number of Reads Removed", "@num_seqs")]
                             with Grid(columns=2):
                                 EZChart(g_plt, THEME)
                                 EZChart(c_plt, THEME)
@@ -872,7 +872,7 @@ def main(args):
                                 EZChart(c_plt, THEME)
                     #quality plot
                     with new_tabs.add_tab("Read Quality"):
-                        df = pd.read_table(sample_dict[sample]["filtered_reads"])
+                        df = pd.read_table(sample_dict[sample]["removed_reads"])
                         df["file"] = df["file"].apply(lambda x: x.split("/")[-1].split(".bam")[0])
                         if args.strand_comparison:
                             g_strand = df[df.file.str.contains("g_strand")]
@@ -1175,9 +1175,9 @@ def argparser():
     parser.add_argument("--commandLine", required=True)
     parser.add_argument("--minimum_read_count", required=True)
     parser.add_argument("--run_stats_retained", required=True) #works but need to figure out how to get combined sample stats here
-    parser.add_argument("--run_stats_filtered", required=True) #works but need to figure out how to get combined sample stats here
+    parser.add_argument("--run_stats_removed", required=True) #works but need to figure out how to get combined sample stats here
     parser.add_argument("--sample_stats_retained", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
-    parser.add_argument("--sample_stats_filtered", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
+    parser.add_argument("--sample_stats_removed", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
     parser.add_argument("--sample_telo_stats", nargs="+", required=True)
     parser.add_argument("--run_telo_stats", required=True)
     parser.add_argument("--run_vrr_stats", required=True)

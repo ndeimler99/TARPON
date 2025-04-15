@@ -71,11 +71,11 @@ workflow telomere_analysis_pipeline {
             .set { demuxed_reads }
 
         // filter demuxed reads by subtelo length 
-        subtelo_filtered_ch = SUBTELO_FILTERING(demuxed_reads)
+        subtelo_ch = SUBTELO_FILTERING(demuxed_reads)
 
         //telo start and length determination
         // analyze reads and create stats file containing read_id, strand, read_len, VRR_Start, VRR_length, Telo_length, and read quality
-        telo_stats = TELO_START_IDENTIFICATION(subtelo_filtered_ch.retained_reads)
+        telo_stats = TELO_START_IDENTIFICATION(subtelo_ch.retained_reads)
 
         if (params.mutant != "false") {
             mutant_analysis = MUTANT_ANALYSIS(telo_stats.final_telomeric)
@@ -86,42 +86,42 @@ workflow telomere_analysis_pipeline {
 
         PLOT_TELO_GRAPHS(mutant_analysis.sequences)
         // merge all stats relevant to retained telomeric sequences
-        run_retained = COMBINED_RETAINED_BAM(subtelo_filtered_ch.retained_reads.multiMap { label, stats -> stats: stats }.collect(). map { it -> [ "subtelo_pass", it ]}.mix(
+        run_retained = COMBINED_RETAINED_BAM(subtelo_ch.retained_reads.multiMap { label, stats -> stats: stats }.collect(). map { it -> [ "subtelo_pass", it ]}.mix(
                                                     telo_stats.retained_reads.multiMap { label, stats -> stats: stats }.collect().map {it -> [ "telo_retained", it]}))
 
         // merge all stats relevant to filtered telomeric sequences
-        run_filtered = COMBINED_FILTERED_BAM(subtelo_filtered_ch.filtered_reads.multiMap {label, stats -> stats:stats}.collect().map {it -> ["subtelo_fail", it]}.mix(
+        run_removed = COMBINED_FILTERED_BAM(subtelo_ch.removed_reads.multiMap {label, stats -> stats:stats}.collect().map {it -> ["subtelo_fail", it]}.mix(
                                                     telo_stats.no_telo_start.multiMap { label, stats -> stats: stats}.collect().map{it -> ["no_telo_start", it]},
                                                     telo_stats.below_telo_threshold.multiMap { label, stats -> stats: stats }.collect().map{it -> ["below_telo_threshold", it]}))
 
         // separate reads into G and C strand and recalculate all statistics
         if (params.strand_comparison){
-            separate_run_filtered = SEPERATE_STRAND_RUN_FILTERING(adaptor_ch.filtered_reads.mix(run_filtered.combined))
+            separate_run_removed = SEPERATE_STRAND_RUN_FILTERING(adaptor_ch.removed_reads.mix(run_removed.combined))
             separate_run_retained = SEPERATE_STRAND_RUN_RETAINED(reversed_ch.retained_reads.mix(adaptor_ch.retained_reads, run_retained.combined))
 
 
-            filtered_sample = SEPERATE_STRAND_SAMPLE_FILTERING(subtelo_filtered_ch.filtered_reads.mix(telo_stats.no_telo_start, telo_stats.below_telo_threshold))
-            retained_sample = SEPERATE_STRAND_SAMPLE_RETAINED(demuxed_reads.mix(subtelo_filtered_ch.retained_reads, telo_stats.retained_reads))
+            removed_sample = SEPERATE_STRAND_SAMPLE_FILTERING(subtelo_ch.removed_reads.mix(telo_stats.no_telo_start, telo_stats.below_telo_threshold))
+            retained_sample = SEPERATE_STRAND_SAMPLE_RETAINED(demuxed_reads.mix(subtelo_ch.retained_reads, telo_stats.retained_reads))
 
             
             //get run retained stats on all reads input, putative reads, putative strand specific, adaptor found, adaptor strand specific.
             run_stats = SUMMARY_STATS_RUN(input_ch.mix(putative_reads, reversed_ch.retained_reads, run_retained.combined, separate_run_retained.g_strand, separate_run_retained.c_strand, adaptor_ch.retained_reads).groupTuple(), \
-                                            input_ch.mix(non_telomeric, reversed_ch.removed_reads, run_filtered.combined, adaptor_ch.filtered_reads, separate_run_filtered.c_strand, separate_run_filtered.g_strand).groupTuple())
+                                            input_ch.mix(non_telomeric, reversed_ch.removed_reads, run_removed.combined, adaptor_ch.removed_reads, separate_run_removed.c_strand, separate_run_removed.g_strand).groupTuple())
 
 
             // get sample retained stats on number of reads with adaptor, adaptor strand specific, subtelo pass, subtelo strand specific, telomeric, telomeric strand specfic
-            sample_stats = SUMMARY_STATS_SAMPLE(demuxed_reads.mix(subtelo_filtered_ch.retained_reads, telo_stats.retained_reads, retained_sample.c_strand, retained_sample.g_strand).groupTuple(), \
-                                            demuxed_reads.mix(subtelo_filtered_ch.filtered_reads, telo_stats.no_telo_start, telo_stats.below_telo_threshold, filtered_sample.c_strand, filtered_sample.g_strand).groupTuple())
+            sample_stats = SUMMARY_STATS_SAMPLE(demuxed_reads.mix(subtelo_ch.retained_reads, telo_stats.retained_reads, retained_sample.c_strand, retained_sample.g_strand).groupTuple(), \
+                                            demuxed_reads.mix(subtelo_ch.removed_reads, telo_stats.no_telo_start, telo_stats.below_telo_threshold, removed_sample.c_strand, removed_sample.g_strand).groupTuple())
 
         }
         else {
             //get run retained stats on all reads input, putative reads, adaptor found
             run_stats = SUMMARY_STATS_RUN(input_ch.mix(putative_reads, reversed_ch.retained_reads, adaptor_ch.retained_reads, run_retained.combined).groupTuple(), \
-                                        input_ch.mix(non_telomeric, reversed_ch.removed_reads, adaptor_ch.filtered_reads, run_filtered.combined).groupTuple())
+                                        input_ch.mix(non_telomeric, reversed_ch.removed_reads, adaptor_ch.removed_reads, run_removed.combined).groupTuple())
                 
             // get sample retained stats on number of reads with adaptor, subtelo pass, telomeric
-            sample_stats = SUMMARY_STATS_SAMPLE(demuxed_reads.mix(subtelo_filtered_ch.retained_reads, telo_stats.retained_reads).groupTuple(), \
-                                            demuxed_reads.mix(subtelo_filtered_ch.filtered_reads, telo_stats.no_telo_start, telo_stats.below_telo_threshold).groupTuple())
+            sample_stats = SUMMARY_STATS_SAMPLE(demuxed_reads.mix(subtelo_ch.retained_reads, telo_stats.retained_reads).groupTuple(), \
+                                            demuxed_reads.mix(subtelo_ch.removed_reads, telo_stats.no_telo_start, telo_stats.below_telo_threshold).groupTuple())
         
         }
 
@@ -158,10 +158,10 @@ workflow telomere_analysis_pipeline {
             }.set { retained_sample }
  
 
-        sample_stats.filtered_stats.multiMap{ label, stats ->
+        sample_stats.removed_stats.multiMap{ label, stats ->
                 label: label
                 stats: stats
-            }.set { filtered_sample }
+            }.set { removed_sample }
 
 
         mutant_analysis.statistics.multiMap{ label, stats ->
@@ -183,8 +183,8 @@ workflow telomere_analysis_pipeline {
 
         //generate_html_report(file(params.outdir), stats_done[1])
         report = GENERATE_FINAL_REPORT(params.params, versions.versions, manifest.manifest, \
-                            run_stats.retained_stats, run_stats.filtered_stats, \
-                            retained_sample.stats.collect(), filtered_sample.stats.collect(), \
+                            run_stats.retained_stats, run_stats.removed_stats, \
+                            retained_sample.stats.collect(), removed_sample.stats.collect(), \
                             mutant_analysis_stats.stats.collect(), \
                             FINAL_TELO_STATS.out.stats, FINAL_TELO_STATS.out.vrr_stats, \
                             restriction_digest.stats.collect(), \

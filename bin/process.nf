@@ -122,7 +122,7 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX {
     output:
         path("DEMUX/*.bam"), emit: demuxed_reads
         tuple val(run_name), path("adaptor.bam"), emit: retained_reads
-        tuple val(run_name), path("adaptor_filtered.bam"), emit: filtered_reads
+        tuple val(run_name), path("adaptor_removed.bam"), emit: removed_reads
 
 
     script:
@@ -132,7 +132,7 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX {
         mkdir DEMUX/
         identify_tagging_barcodes.py --input_file ${reads} --sample_file ${barcodes_file} \
              --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} \
-              --out_fh DEMUX/ --no_adaptor adaptor_filtered.bam \
+              --out_fh DEMUX/ --no_adaptor adaptor_removed.bam \
               --mutant ${params.mutant} \
               --overhang_length ${params.capture_probe_overhang_length}
         samtools merge -o adaptor.bam DEMUX/*.bam
@@ -147,7 +147,7 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX {
             --adaptor_sequence ${params.capture_probe_sequence} \
             --adaptor_errors ${params.capture_probe_sequence_errors} \
             --repeat ${params.repeat} \
-            --no_adaptor adaptor_filtered.bam \
+            --no_adaptor adaptor_removed.bam \
             --sample_file ${barcodes_file} \
             --barcode_errors ${params.barcode_errors} \
             --out_prefix DEMUX \
@@ -175,7 +175,7 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE {
     output:
         path("${params.sample_name}.bam"), emit: demuxed_reads
         tuple val(run_name), path("adaptor.bam"), emit: retained_reads
-        tuple val(run_name), path("adaptor_filtered.bam"), emit: filtered_reads
+        tuple val(run_name), path("adaptor_removed.bam"), emit: removed_reads
 
     script:
     """
@@ -185,7 +185,7 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE {
         --adaptor_errors ${params.capture_probe_sequence_errors} \
         --repeat ${params.repeat} \
         --adaptor_found ${params.sample_name}.bam \
-        --no_adaptor adaptor_filtered.bam \
+        --no_adaptor adaptor_removed.bam \
         --mutant ${params.mutant} \
         --overhang_length ${params.capture_probe_overhang_length}
 
@@ -207,7 +207,7 @@ process SUBTELO_FILTERING {
         tuple val(sample), path(reads)
     
     output:
-        tuple val(sample), path("*subtelo_fail.bam"), emit: filtered_reads
+        tuple val(sample), path("*subtelo_fail.bam"), emit: removed_reads
         tuple val(sample), path("*subtelo_pass.bam"), emit: retained_reads
 
     script:
@@ -270,7 +270,7 @@ process TELO_START_IDENTIFICATION {
     """
     #python script that identified telomere start. Writes out fastq file, stats file, fastq for reads removed because no telo start was found, fastq for reads removed because didnt reach minimum threshold
     mkdir TELOMERIC
-    mkdir FILTERED_READS
+    mkdir REMOVED_READS
     identify_telo_start.py --input_file ${reads} --repeat ${params.repeat} --sliding_window ${params.sliding_window_size} \
         --sliding_window_interval ${params.sliding_window_interval} \
         --upper_threshold ${params.upper_threshold} \
@@ -384,11 +384,11 @@ process SUMMARY_STATS_RUN {
 
     input:
         tuple val(id), path(retained, stageAs: "RETAINED/*")
-        tuple val(id), path(filtered, stageAs: "FILTERED/*")
+        tuple val(id), path(removed, stageAs: "REMOVED/*")
     
     output:
         tuple val(id), path("Retained_Reads.stats.txt"), emit: retained_stats
-        tuple val(id), path("Filtered_Reads.stats.txt"), emit: filtered_stats
+        tuple val(id), path("Removed_Reads.stats.txt"), emit: removed_stats
         path("*.pdf")
        
     publishDir "${params.outdir}/RUN_STATS/", mode:'copy', overwrite:true, pattern:"*stats.txt"
@@ -398,10 +398,10 @@ process SUMMARY_STATS_RUN {
     script:
     """
     bam_stats.py --bam_files ${retained} --out_file Retained_Reads.stats.txt
-    bam_stats.py --bam_files ${filtered} --out_file Filtered_Reads.stats.txt
+    bam_stats.py --bam_files ${removed} --out_file Removed_Reads.stats.txt
 
     summary_stats_plots.R Retained_Reads.stats.txt ${params.strand_comparison} telomeric
-    summary_stats_plots.R Filtered_Reads.stats.txt ${params.strand_comparison} filtered
+    summary_stats_plots.R Removed_Reads.stats.txt ${params.strand_comparison} removed
     """
 }
 
@@ -414,18 +414,18 @@ process SUMMARY_STATS_SAMPLE {
 
     input:
         tuple val(id), path(retained, stageAs: "RETAINED/*")
-        tuple val(id), path(filtered, stageAs: "FILTERED/*")
+        tuple val(id), path(removed, stageAs: "REMOVED/*")
     
     output:
         tuple val(id), path("*retained.stats.txt"), emit: retained_stats
-        tuple val(id), path("*.filtered.stats.txt"), emit: filtered_stats
+        tuple val(id), path("*.removed.stats.txt"), emit: removed_stats
     
     publishDir "${params.outdir}/${id}", mode:'copy', overwrite:true, pattern:"*stats.txt"
     
     script:
     """
     bam_stats.py --bam_files ${retained} --out_file ${id}.retained.stats.txt
-    bam_stats.py --bam_files ${filtered} --out_file ${id}.filtered.stats.txt
+    bam_stats.py --bam_files ${removed} --out_file ${id}.removed.stats.txt
     """
 }
 
@@ -468,9 +468,9 @@ process GENERATE_FINAL_REPORT {
         path("versions.txt")
         path("manifest.json")
         tuple val(run), path(stats_run_retained)
-        tuple val(run1), path(stats_run_filtered)
+        tuple val(run1), path(stats_run_removed)
         path(sample_stats_retained)
-        path(sample_stats_filtered)
+        path(sample_stats_removed)
         path(telo_stats_per_sample)
         path(telo_descriptive_stats)
         path(vrr_descriptive_stats)
@@ -496,9 +496,9 @@ process GENERATE_FINAL_REPORT {
                             --minimum_read_count ${params.minimum_telo_reads_per_sample} \
                             --commandLine "${workflow.commandLine}" \
                             --run_stats_retained ${stats_run_retained} \
-                            --run_stats_filtered ${stats_run_filtered} \
+                            --run_stats_removed ${stats_run_removed} \
                             --sample_stats_retained ${sample_stats_retained} \
-                            --sample_stats_filtered ${sample_stats_filtered} \
+                            --sample_stats_removed ${sample_stats_removed} \
                             --sample_telo_stats ${telo_stats_per_sample} \
                             --run_telo_stats ${telo_descriptive_stats} \
                             --run_vrr_stats ${vrr_descriptive_stats} \
