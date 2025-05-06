@@ -32,6 +32,7 @@
     include { MUTANT_ANALYSIS } from "../bin/process.nf"
     include { VARIANT_ANALYSIS } from "../bin/process.nf"
     include { PLOT_TELO_GRAPHS } from "../bin/process.nf"
+    include { NO_CAPTURE_PROBE } from "../bin/process.nf"
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -52,7 +53,10 @@ workflow telomere_analysis_pipeline {
         reversed_ch = REVERSE_COMPLEMENTATION(putative_reads)
 
         // check to see if adaptor sequence is provided and if reads need to be demultiplexed
-        if (params.capture_probe_sequence == ""){
+        if (params.no_capture_probe){
+            adaptor_ch = NO_CAPTURE_PROBE(reversed_ch.retained_reads)
+        }
+        else if (params.capture_probe_sequence == ""){
             // if no adaptor sequence is provided - reads were multiplexed in the ONT fashion where the barcode sits immediately adjacent to the telomeric sequence
             adaptor_ch = IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX(reversed_ch.retained_reads, file(sample_file))
         }
