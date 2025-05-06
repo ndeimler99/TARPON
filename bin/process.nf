@@ -193,6 +193,36 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE {
     """
 }
 
+process NO_CAPTURE_PROBE {
+    
+    // Identical to previous process however with no demultiplexing - this function is run when the adaptor sequence is provided but the sample file is not
+
+    // input and output are identical to previous process
+
+    // Nothing is published to output directory
+    label 'tarpon'
+    tag "$run_name - Identifying Telomere End"
+
+    input:
+        tuple val(run_name), path(reads)
+
+    output:
+        path("${params.sample_name}.bam"), emit: demuxed_reads
+        tuple val(run_name), path("adaptor.bam"), emit: retained_reads
+        tuple val(run_name), path("adaptor_removed.bam"), emit: removed_reads
+
+    script:
+    """
+    mkdir DEMUX/
+    identify_telo_end_no_adaptor.py --input_file ${reads} \
+        --repeat ${params.repeat} \
+        --adaptor_found ${params.sample_name}.bam \
+        --no_adaptor adaptor_removed.bam \
+
+    cp ${params.sample_name}.bam adaptor.bam
+    """
+}
+
 process SUBTELO_FILTERING {
 
     // Process that looks at start of reasd and removes any read that contains greater than params.subtelo_threshold percentage of telomeric repeats in the first params.min_subtelo_length

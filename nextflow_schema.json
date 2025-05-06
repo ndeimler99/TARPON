@@ -231,6 +231,12 @@
             "fa_icon": "fas fa-arrow-right",
             "description": "Advanced Options regarding Mutant and Other Analyses",
             "properties": {
+                "no_capture_probe":{
+                    "title": "No Capture Probe Used",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "It is NOT recomended to run TARPON using this parameter. If true, no capture probe identification will occur and the telomere end will be identified by the terminal two conseuctive telomeric repeats. It is not recommended to run TARPON in this manner. Note it is not possible to demultiplex data via TARPON with no capture probe and that multiplexed data should be demultiplexed by dorado demux prior to TARPON execution"
+                },
                 "remove_wd":{
                     "title":"Remove Work Directory",
                     "type":"boolean",
