@@ -62,21 +62,20 @@ def main(args):
     versions = pd.read_table(args.versions, sep=",", header=None)
     versions.set_axis(["Software", "Version"], axis=1)
 
+
     sample_dict = {}
-    for i in args.sample_stats_retained:
-        sample_dict[i.split(".")[0]] = {}
-        sample_dict[i.split(".")[0]]["retained_reads"] = i
+    for file in args.sample_specific_files:
+        sample = file.split(".")[0]
+        descriptor = file.split(".")[1]
+        if sample not in sample_dict:
+            sample_dict[sample] = {}
+        sample_dict[sample][descriptor] = file
 
-    for i in args.sample_stats_removed:
-        sample_dict[i.split(".")[0]]["removed_reads"] = i
+    if "digest_stats" in sample_dict[list(sample_dict.keys())[0]]:
+        restriction_digest = True
+    else:
+        restriction_digest = False
 
-    for i in args.sample_telo_stats:
-        sample_dict[i.split(".")[0]]["telo_stats"] = i
-
-    if args.restriction_digest[0] != "false":
-        if i.endswith(".txt"):
-            for i in args.restriction_digest:
-                sample_dict[i.split(".")[0]]["digest"] = i
 
     vrr_summary_stats = pd.read_table(args.run_vrr_stats, sep="\t")
 
@@ -799,9 +798,9 @@ def main(args):
                         else:
                             plot = report_utils.colored_telo_length_barplot(data=stats_df, mutant=args.mutant, x_title="VRR Telomere Length (bp)", y_title="Read ID", repeat=args.repeat)
                         EZChart(plot, THEME)
-                if args.restriction_digest[0] != "false":
+                if restriction_digest:
                         with tabs.add_dropdown_tab("{} Restriction Digest".format(sample)):
-                            stats_df = pd.read_table(sample_dict[sample]["digest"], sep="\t")
+                            stats_df = pd.read_table(sample_dict[sample]["digest_stats"], sep="\t")
                             stats_df["file"] = stats_df["file"].apply(lambda x: x.split(".reheaded.bam")[0])
                             DataTable.from_pandas(stats_df, use_index=False)
     
@@ -988,6 +987,8 @@ def main(args):
 def argparser():
     """Argument parser for entrypoint."""
     parser = argparse.ArgumentParser()
+
+    ## Global Parameters
     parser.add_argument("--report", required=True)
     parser.add_argument("--template_file", required=True)
     parser.add_argument("--workflow_name", required=True, help="The name of the workflow.") # works
@@ -998,18 +999,16 @@ def argparser():
     parser.add_argument("--minimum_read_count", required=True)
     parser.add_argument("--run_stats_retained", required=True) #works but need to figure out how to get combined sample stats here
     parser.add_argument("--run_stats_removed", required=True) #works but need to figure out how to get combined sample stats here
-    parser.add_argument("--sample_stats_retained", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
-    parser.add_argument("--sample_stats_removed", nargs='+', required=True) #works but only for simplex, not multiplex tested yet
-    parser.add_argument("--sample_telo_stats", nargs="+", required=True)
     parser.add_argument("--run_vrr_stats", required=True)
-    parser.add_argument("--restriction_digest", required=True, nargs="+")
-    parser.add_argument("--strand_comparison", required=True)
-    parser.add_argument("--detailed_stats", required=True)
-    parser.add_argument("--mutant", required=True)
-    parser.add_argument("--mutant_analysis_repeat_distribution", nargs="+", required=True)
-    parser.add_argument("--mutant_analysis_processivity", nargs="+", required=True)
+    # behavior of restriction_digest parameter will change
     parser.add_argument("--repeat", required=True)
-    
+    parser.add_argument("--mutant", required=True)
+    parser.add_argument("--detailed_stats", required=True)
+    parser.add_argument("--strand_comparison", required=True)
+
+    ## Sample Specific Parameters
+    parser.add_argument("--sample_specific_files", required=True, nargs="+")
+
     return parser
 
 

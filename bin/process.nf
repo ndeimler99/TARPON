@@ -394,7 +394,7 @@ process GENERATE_DETAILED_PLOTS {
     // not modified R script
     script:
     """
-    detailed_plots.R ${telo_stats} ${params.plot_telo_length} ${params.plot_vrr_length} ${params.strand_comparison}
+    detailed_plots.R ${telo_stats} ${params.strand_comparison}
     """
 
 }
@@ -447,15 +447,15 @@ process SUMMARY_STATS_SAMPLE {
         tuple val(id), path(removed, stageAs: "REMOVED/*")
     
     output:
-        tuple val(id), path("*retained.stats.txt"), emit: retained_stats
-        tuple val(id), path("*.removed.stats.txt"), emit: removed_stats
+        tuple val(id), path("*retained_reads.txt"), emit: retained_stats
+        tuple val(id), path("*.removed_reads.txt"), emit: removed_stats
     
     publishDir "${params.outdir}/${id}", mode:'copy', overwrite:true, pattern:"*stats.txt"
     
     script:
     """
-    bam_stats.py --bam_files ${retained} --out_file ${id}.retained.stats.txt
-    bam_stats.py --bam_files ${removed} --out_file ${id}.removed.stats.txt
+    bam_stats.py --bam_files ${retained} --out_file ${id}.retained_reads.txt
+    bam_stats.py --bam_files ${removed} --out_file ${id}.removed_reads.txt
     """
 }
 
@@ -476,8 +476,8 @@ process RESTRICTION_DIGEST_ANALYSIS {
         tuple val(sample), path(telo_sequences), path(telo_stats)
     
     output:
-        path("*digest_stats.txt"), emit: stats
-    
+        tuple val(sample), path("*digest_stats.txt")
+
     publishDir "${params.outdir}/${sample}/", mode: 'copy', overwrite: true, pattern: "*digest_stats.txt"
 
     script:
@@ -499,13 +499,8 @@ process GENERATE_FINAL_REPORT {
         path("manifest.json")
         tuple val(run), path(stats_run_retained)
         tuple val(run1), path(stats_run_removed)
-        path(sample_stats_retained)
-        path(sample_stats_removed)
-        path(telo_stats_per_sample)
         path(vrr_descriptive_stats)
-        path(restriction_digest)
-        path(mutant_analysis_repeat_distribution)
-        path(mutant_analysis_processivity)
+        path(file_conglomerate)
 
     output:
         path("report.html")
@@ -526,17 +521,12 @@ process GENERATE_FINAL_REPORT {
                             --commandLine "${workflow.commandLine}" \
                             --run_stats_retained ${stats_run_retained} \
                             --run_stats_removed ${stats_run_removed} \
-                            --sample_stats_retained ${sample_stats_retained} \
-                            --sample_stats_removed ${sample_stats_removed} \
-                            --sample_telo_stats ${telo_stats_per_sample} \
                             --run_vrr_stats ${vrr_descriptive_stats} \
-                            --restriction_digest ${restriction_digest} \
                             --strand_comparison ${params.strand_comparison} \
+                            --repeat ${params.repeat} \
                             --detailed_stats ${params.detailed_stats} \
                             --mutant ${params.mutant} \
-                            --mutant_analysis_repeat_distribution ${mutant_analysis_repeat_distribution} \
-                            --mutant_analysis_processivity ${mutant_analysis_processivity} \
-                            --repeat ${params.repeat}
+                            --sample_specific_files ${file_conglomerate}
     """
 }
 
@@ -546,7 +536,7 @@ process getParams {
     tag "Getting Parameters"
 
     output:
-        path "params.json", emit:params
+        path "params.json", emit: params
 
     script:
     json_str = JsonOutput.toJson(params)
@@ -825,7 +815,7 @@ process MUTANT_ANALYSIS {
 process VARIANT_ANALYSIS {
 
     label 'tarpon'
-    tag "$sample - Mutant Repeat Analysis"
+    tag "$sample - Variant Repeat Analysis"
 
     input:
         tuple val(sample), path(reads), path(stats)
@@ -833,9 +823,7 @@ process VARIANT_ANALYSIS {
     output:
         tuple val(sample), path("*telo_stats.txt"), emit: statistics
         tuple val(sample), path("telo_sequences.txt"), emit: sequences
-        tuple val(sample), path("*processivity.txt"), emit: processivity
         tuple val(sample), path("*repeat_distribution.txt"), emit: repeat_distribution
-        //path("*.png")
         path("*.pdf")
 
     publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
@@ -849,7 +837,6 @@ process VARIANT_ANALYSIS {
                                 --repeat_distribution ${sample}.repeat_distribution.txt
 
     variantRepeatPlots.R ${sample}.telo_stats.txt ${sample}.repeat_distribution.txt ${params.repeat} ${params.mutant}
-    touch ${sample}.processivity.txt
     """
 }
 

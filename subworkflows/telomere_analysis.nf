@@ -81,14 +81,14 @@ workflow telomere_analysis_pipeline {
         // analyze reads and create stats file containing read_id, strand, read_len, VRR_Start, VRR_length, Telo_length, and read quality
         telo_stats = TELO_START_IDENTIFICATION(subtelo_ch.retained_reads)
 
+
         if (params.mutant != "false") {
             mutant_analysis = MUTANT_ANALYSIS(telo_stats.final_telomeric)
         }
-        else {
-            mutant_analysis = VARIANT_ANALYSIS(telo_stats.final_telomeric)
-        }
+       
+        variant_analysis = VARIANT_ANALYSIS(telo_stats.final_telomeric)
 
-        PLOT_TELO_GRAPHS(mutant_analysis.sequences)
+        PLOT_TELO_GRAPHS(variant_analysis.sequences)
         // merge all stats relevant to retained telomeric sequences
         run_retained = COMBINED_RETAINED_BAM(subtelo_ch.retained_reads.multiMap { label, stats -> stats: stats }.collect(). map { it -> [ "subtelo_pass", it ]}.mix(
                                                     telo_stats.retained_reads.multiMap { label, stats -> stats: stats }.collect().map {it -> [ "telo_retained", it]}))
@@ -139,60 +139,52 @@ workflow telomere_analysis_pipeline {
 
         // if detailed stats is specified analyze telomeric sequences but include things such as percentage telomeric, etc.
         if (params.detailed_stats) {
-            telo_stats = GENERATE_DETAILED_PLOTS(mutant_analysis.statistics)
+            telo_stats = GENERATE_DETAILED_PLOTS(variant_analysis.statistics)
         }
 
         // if a restriction digest sequence is provided run a restrition digest analysis
+
         if (params.restriction_digest_analysis != ""){
             restriction_digest = RESTRICTION_DIGEST_ANALYSIS(telo_stats.final_telomeric)
         }
         else {
-            // simply returns an empty channel for use in report
-            restriction_digest = GET_EMPTY_CHANNEL()
+            Channel.from() \
+                .map { it -> tuple(it[0], it[1]) } \
+                .set { restriction_digest }
         }
 
-        // maintenance details and compliation for report
-        params = getParams()
-        versions = getVersions()
-        manifest = getManifest()
-
-        sample_stats.retained_stats.multiMap{ label, stats ->
+        variant_analysis.statistics.multiMap{ label, stats ->
                 label: label
                 stats: stats
-            }.set { retained_sample }
- 
+            }.set { variant_analysis_stats }
 
-        sample_stats.removed_stats.multiMap{ label, stats ->
-                label: label
-                stats: stats
-            }.set { removed_sample }
-
-
-        mutant_analysis.statistics.multiMap{ label, stats ->
-                label: label
-                stats: stats
-            }.set { mutant_analysis_stats }
-
-        mutant_analysis.repeat_distribution.multiMap {label, stats ->
-                label: label
-                stats: stats
-            }.set { mutant_analysis_repeat_distribution }
-
-        mutant_analysis.processivity.multiMap {label, stats ->
-                label: label
-                stats: stats
-            }.set { mutant_analysis_processivity }
         
-        FINAL_TELO_STATS(mutant_analysis_stats.stats.collect())
+       // variant_analysis.statistics.map { it[1] }.collect().view()
 
-        //generate_html_report(file(params.outdir), stats_done[1])
-        report = GENERATE_FINAL_REPORT(params.params, versions.versions, manifest.manifest, \
-                            run_stats.retained_stats, run_stats.removed_stats, \
-                            retained_sample.stats.collect(), removed_sample.stats.collect(), \
-                            mutant_analysis_stats.stats.collect(), \
-                            FINAL_TELO_STATS.out.vrr_stats, \
-                            restriction_digest.stats.collect(), \
-                            mutant_analysis_repeat_distribution.stats.collect(), \
-                            mutant_analysis_processivity.stats.collect()
-        )
+        FINAL_TELO_STATS(variant_analysis.statistics.map { it[1] }.collect())
+
+        // combine all stats relevant to a sample into one tuple....
+            // pass this new item into GENERATE_FINAL_REPORT and python script
+        
+        
+        // run_stats.retained_stats - global statistics for the analysis of entire flow cell data
+        // run_stats.removed_stats - global statistcis for the anlaysis of entire flow cell data
+        // FINAL_TELO_STATS.out.vrr_stats - one line per sample regarding telomere statistic stats
+
+        // sample_stats.retained_stats - one tuple per sample with sample .retained.stats.txt
+        // sample_stats.removed_stats - one tuple per sample with sample .removed.stats.txt
+        // variant_analysis.statistics - one tuple per sample with telomere related statistics
+        // variant_analysis.repeat_distribution - one tuple per sample with one nucleotide point mutations of telomeric repeat
+
+        // restriction_digest is either one tuple per sample or just an empty tuple - if it is empty it is not included below
+        sample_stats.retained_stats.mix(sample_stats.removed_stats, variant_analysis.statistics, variant_analysis.repeat_distribution, restriction_digest)
+            .map { it[1] }
+            .set { file_conglomerate }
+
+        emit:
+            flowcell_retained = run_stats.retained_stats
+            flowcell_removed = run_stats.removed_stats
+            telomere_stats = FINAL_TELO_STATS.out.vrr_stats
+            sample_specific_stats = file_conglomerate
+
 }

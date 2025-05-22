@@ -56,58 +56,31 @@ read_vs_telo_quality <- ggplot() +
 
 ggsave("read_vs_vrr_telo_quality_scatter.pdf", width=12, height=10, plot=read_vs_telo_quality, device="pdf", create.dir = TRUE)
 
-# read quality by telo length (and vrr length)
-# telo quality by telo length (and vrr length)
+
+  # quality by length
+vrr_length_by_telo_quality <- ggplot() +
+  geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$telo_qual), adjust=4) +
+  scale_color_viridis() +
+  theme_minimal() +
+  xlab("VRR Telomere Length") + 
+  ylab("Telomere Quality") +
+  theme(axis.text=element_text(size=15),
+        axis.title=element_text(size=20))
+
+ggsave("vrr_telomere_length_vs_telomere_quality.pdf", width=12, height=10, plot=vrr_length_by_telo_quality, device="pdf", create.dir = TRUE)
+
+vrr_length_by_read_quality <- ggplot() +
+  geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$read_qual), adjust=4) +
+  scale_color_viridis() +
+  theme_minimal() +
+  xlab("VRR Telomere Length") + 
+  ylab("Read Quality") +
+  theme(axis.text=element_text(size=15),
+        axis.title=element_text(size=20))
+ggsave("vrr_telomere_length_vs_read_quality.pdf", width=12, height=10, plot=vrr_length_by_read_quality, device="pdf", create.dir = TRUE)  
+
+
 if (args[2]){
-  # quality by length
-  telo_length_by_telo_quality <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$telo_length, y=telo_stats$telo_qual), adjust=4) +
-    scale_color_viridis() +
-    theme_minimal() +
-    xlab("Telomere Length") + 
-    ylab("Telomere Quality") +
-    theme(axis.text=element_text(size=15),
-          axis.title=element_text(size=20))
-  telo_length_by_telo_quality
-  ggsave("telomere_length_vs_telomere_quality.pdf", width=12, height=10, plot=telo_length_by_telo_quality, device="pdf", create.dir = TRUE)
-  
-  telo_length_by_read_quality <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$telo_length, y=telo_stats$read_qual), adjust=4) +
-    scale_color_viridis() +
-    theme_minimal() +
-    xlab("Telomere Length") + 
-    ylab("Read Quality") +
-    theme(axis.text=element_text(size=15),
-          axis.title=element_text(size=20))
-  ggsave("telomere_length_vs_read_quality.pdf", width=12, height=10, plot=telo_length_by_read_quality, device="pdf", create.dir = TRUE)  
-}
-
-if (args[3]){
-  # quality by length
-  vrr_length_by_telo_quality <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$telo_qual), adjust=4) +
-    scale_color_viridis() +
-    theme_minimal() +
-    xlab("VRR Telomere Length") + 
-    ylab("Telomere Quality") +
-    theme(axis.text=element_text(size=15),
-          axis.title=element_text(size=20))
-  
-  ggsave("vrr_telomere_length_vs_telomere_quality.pdf", width=12, height=10, plot=vrr_length_by_telo_quality, device="pdf", create.dir = TRUE)
-  
-  vrr_length_by_read_quality <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$read_qual), adjust=4) +
-    scale_color_viridis() +
-    theme_minimal() +
-    xlab("VRR Telomere Length") + 
-    ylab("Read Quality") +
-    theme(axis.text=element_text(size=15),
-          axis.title=element_text(size=20))
-  ggsave("vrr_telomere_length_vs_read_quality.pdf", width=12, height=10, plot=vrr_length_by_read_quality, device="pdf", create.dir = TRUE)  
-  
-}
-
-if (args[4]){
   # read quality by strand
   quality_boxplot <- ggplot() +
     geom_boxplot(mapping=aes(y="C", x=telo_stats[telo_stats$strand=="C",]$telo_qual)) +
@@ -200,80 +173,33 @@ perfect_by_imperfect_scatter <- ggplot() +
 
 ggsave("telomere_vs_telomere_like_repeat_frequency_scatter.pdf", width=12, height=10, plot=perfect_by_imperfect_scatter, device="pdf", create.dir = TRUE)
 
-# telo length by vrr length scatter plot
 
-vrr_vs_telo_length <- ggplot() +
-  geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$telo_length), adjust=4) +
+# scatterplot telo length by percentage
+vrr_length_vs_perfect <- ggplot() +
+  geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$wt_composition), adjust=4) +
   scale_color_viridis() +
   theme_minimal() +
-  xlab("VRR Telomere Length (BP)") + 
-  ylab("Telomere Length (BP)") +
+  xlab("VRR Telomere Length") + 
+  ylab("% VRR of Perfect Repeats") +
   theme(axis.text=element_text(size=15),
         axis.title=element_text(size=20))
 
-ggsave("vrr_vs_telo_length_scatter.pdf", width=12, height=10, plot=vrr_vs_telo_length, device="pdf", create.dir = TRUE)
+ggsave("vrr_telomere_length_vs_percentage_perfect_scatter.pdf", width=12, height=10, plot=vrr_length_vs_perfect, device="pdf", create.dir = TRUE)
+
+# scatterplot telo length percentage one subs
+vrr_length_vs_imperfect <- ggplot() +
+  geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$one_nucl_variant_composition), adjust=4) +
+  scale_color_viridis() +
+  theme_minimal() +
+  xlab("VRR Telomere Length") + 
+  ylab("% VRR of One Nucl. Substitution Repeats") +
+  theme(axis.text=element_text(size=15),
+        axis.title=element_text(size=20))
+
+ggsave("vrr_telomere_length_vs_percentage_imperfect_scatter.pdf", width=12, height=10, plot=vrr_length_vs_imperfect, device="pdf", create.dir = TRUE)
 
 
-
-if (args[2]){
-  # plot using telo lengths
-  
-  # scatterplot telo length by percentage
-  telo_length_vs_perfect <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$telo_length, y=telo_stats$wt_composition), adjust=4) +
-    scale_color_viridis() +
-    theme_minimal() +
-    xlab("Telomere Length") + 
-    ylab("% VRR of Perfect Repeats") +
-    theme(axis.text=element_text(size=15),
-          axis.title=element_text(size=20))
-  telo_length_vs_perfect
-  ggsave("telomere_length_vs_percentage_repeats_scatteer.pdf", width=12, height=10, plot=telo_length_vs_perfect, device="pdf", create.dir = TRUE)
-  
-  # scatterplot telo length percentage one subs
-  telo_length_vs_imperfect <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$telo_length, y=telo_stats$one_nucl_variant_composition), adjust=4) +
-    scale_color_viridis() +
-    theme_minimal() +
-    xlab("Telomere Length") + 
-    ylab("% VRR of One Nucl. Substitution Repeats") +
-    theme(axis.text=element_text(size=15),
-          axis.title=element_text(size=20))
-
-    ggsave("telomere_length_vs_percentage_imperfect_scatter.pdf", width=12, height=10, plot=telo_length_vs_imperfect, device="pdf", create.dir = TRUE)
-  
-}
-
-if (args[3]){
-  # plot using VRR length
-
-  # scatterplot telo length by percentage
-  vrr_length_vs_perfect <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$wt_composition), adjust=4) +
-    scale_color_viridis() +
-    theme_minimal() +
-    xlab("VRR Telomere Length") + 
-    ylab("% VRR of Perfect Repeats") +
-    theme(axis.text=element_text(size=15),
-          axis.title=element_text(size=20))
-  
-  ggsave("vrr_telomere_length_vs_percentage_perfect_scatter.pdf", width=12, height=10, plot=vrr_length_vs_perfect, device="pdf", create.dir = TRUE)
-  
-  # scatterplot telo length percentage one subs
-  vrr_length_vs_imperfect <- ggplot() +
-    geom_pointdensity(mapping=aes(x=telo_stats$vrr_telo_length, y=telo_stats$one_nucl_variant_composition), adjust=4) +
-    scale_color_viridis() +
-    theme_minimal() +
-    xlab("VRR Telomere Length") + 
-    ylab("% VRR of One Nucl. Substitution Repeats") +
-    theme(axis.text=element_text(size=15),
-          axis.title=element_text(size=20))
-  
-  ggsave("vrr_telomere_length_vs_percentage_imperfect_scatter.pdf", width=12, height=10, plot=vrr_length_vs_imperfect, device="pdf", create.dir = TRUE)
-  
-}
-
-if (args[4]) {
+if (args[2]) {
   # plot c-g strand comparison
   
   # % telo histogram

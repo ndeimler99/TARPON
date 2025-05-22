@@ -40,6 +40,10 @@ workflow validate_parameters {
             println("Error - Input File or Directory Does not Exist")
         }
 
+        if (params.repeat == params.mutant){
+            println("Mutant repeat can not be the same as wild type repeat")
+            parameters_passed = false
+        }
         if (params.c_strand_only && params.strand_comparison) {
             parameters_passed = false
             println("C Strand Only can not be specific with Strand Comparison")

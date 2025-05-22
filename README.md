@@ -1,4 +1,4 @@
-# TARPON v1.0.1
+# TARPON v1.0.2
 Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 
 ## Table of Contents
