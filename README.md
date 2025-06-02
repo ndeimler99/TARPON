@@ -1,4 +1,4 @@
-# TARPON v1.0.2
+# TARPON v1.0.3
 Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 
 ## Table of Contents
@@ -19,7 +19,7 @@ bioRxiv 2025.04.22.649940; doi: https://doi.org/10.1101/2025.04.22.649940"
 
 ## [What is TARPON and Why Should I Use It?](#what_and_why)
 
-TARPON is a pipeline developed in the lab of Dr. Peter Baumann by PhD candidate Nathaniel Deimler. At the time of the pipeline's creation there were multiple publications (Karimian et al., 2024; Sanchez et al., 2024; Schmidt et al., 2024) that have developed protocols for the enrichment of telomeric sequences to succesfully sequence human telomeres by Nanopore sequencing while remaining cost productive. Unfortunately, these papers use different methods to identify and process telomeric reads. TARPON is the first fully automated and GUI-accessible telomere analysis pipeline tailored to nanopore sequencing. It supports both splint- and duplex-enriched telomeric libraries and is designed for ease of use with experimentally validated defaults and seamless integration into the EPI2ME platform. No command-line experience or manual data manipulation is required for standard operation. At the same time, TARPON offers advanced users full flexibility to adjust parameters for specialized research questions, including non-human samples and atypical telomeric features. For more information please see ....
+TARPON is a pipeline developed in the lab of Dr. Peter Baumann by PhD candidate Nathaniel Deimler. At the time of the pipeline's creation there were multiple publications (Karimian et al., 2024; Sanchez et al., 2024; Schmidt et al., 2024) that have developed protocols for the enrichment of telomeric sequences to succesfully sequence human telomeres by Nanopore sequencing while remaining cost productive. Unfortunately, these papers use different methods to identify and process telomeric reads. TARPON is the first fully automated and GUI-accessible telomere analysis pipeline tailored to nanopore sequencing. It supports both splint- and duplex-enriched telomeric libraries and is designed for ease of use with experimentally validated defaults and seamless integration into the EPI2ME platform. No command-line experience or manual data manipulation is required for standard operation. At the same time, TARPON offers advanced users full flexibility to adjust parameters for specialized research questions, including non-human samples and atypical telomeric features. For more information please see https://www.biorxiv.org/content/10.1101/2025.04.22.649940v1
 
 ## [The Pipeline](#pipeline)
 
@@ -31,9 +31,9 @@ After demultiplexing telomeric reads are filtered to ensure the telomere was com
 
 ## [Installation](#installation)
 
-TARPON is a nextflow pipeline and is readily integrable into Epi2Me but can also be installed on the command line. Nextflow must also be installed which requires a java and docker installation.  Please see https://www.nextflow.io/docs/latest/install.html for more information on installing nextflow and java. For more information on NextFlow please see https://www.nextflow.io/docs/latest/index.html. 
+TARPON is a nextflow pipeline and is readily integrable into Epi2Me but can also be installed on the command line. Nextflow must also be installed which requires a java and docker or singularity installation.  Please see https://www.nextflow.io/docs/latest/install.html for more information on installing nextflow and java. For more information on NextFlow please see https://www.nextflow.io/docs/latest/index.html. 
 
-To install TARPON on the command line simply clone this github repository and ensure Docker is installed on your system. Nextflow will automatically pull the appropriate docker images from dockerhub the first time the program is executed to ensure no dependency issues arise.
+To install TARPON on the command line simply clone this github repository and ensure Docker or singularity is installed on your system. Nextflow will automatically pull the appropriate docker or singularity images from dockerhub the first time the program is executed to ensure no dependency issues arise.
 
     git clone git@github.com:ndeimler99/TARPON.git
     chmod +x TARPON/bin/*
