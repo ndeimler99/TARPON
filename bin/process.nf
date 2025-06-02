@@ -288,7 +288,6 @@ process TELO_START_IDENTIFICATION {
 
     output:
         tuple val(sample), path("*telomeric.bam"), path("*telomeric_stats.txt"), emit: final_telomeric
-        path("*telomeric_stats.txt"), emit: final_telo_stats
         tuple val(sample), path("*no_telomere_start.bam"), emit: no_telo_start
         tuple val(sample), path("*.below_telo_%_threshold.bam"), emit: below_telo_threshold
         tuple val(sample), path("*telomeric.bam"), emit: retained_reads

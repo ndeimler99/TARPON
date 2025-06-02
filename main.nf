@@ -23,9 +23,11 @@ println """\
 
 include { validate_parameters } from "./subworkflows/parameter_validation.nf"
 include { preprocess_data_pipeline } from "./subworkflows/preprocess_and_basecall.nf"
+include { telomere_isolation_pipeline } from "./subworkflows/telomere_isolation.nf"
 include { telomere_analysis_pipeline } from "./subworkflows/telomere_analysis.nf"
 include { paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 include { getParams; getVersions; getManifest; GENERATE_FINAL_REPORT } from "./bin/process.nf"
+include { enrichment_stats_pipeline } from "./subworkflows/enrichment_stats.nf"
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -56,12 +58,18 @@ workflow {
         preprocess_data_pipeline(params.run_name, params.input)
 
         // takes putative telomeric sequences returned by preprocess data pipeline and runs all relevant processes to generate descriptive stats and report.html
-        telomere_stats = telomere_analysis_pipeline(preprocess_data_pipeline.out, params.sample_file)
+        telomere_isolation_pipeline(preprocess_data_pipeline.out, params.sample_file)
+
+        //telomere_isolation.collect().view()
+        telomere_stats = telomere_analysis_pipeline(telomere_isolation_pipeline.out)
+
+        enrichment_stats = enrichment_stats_pipeline(telomere_isolation_pipeline.out)
+        
 
         report = GENERATE_FINAL_REPORT(parameters.params, versions.versions, manifest.manifest, \
-                            telomere_stats.flowcell_retained, telomere_stats.flowcell_removed, \
+                            enrichment_stats.flowcell_retained, enrichment_stats.flowcell_removed, \
                             telomere_stats.telomere_stats, \
-                            telomere_stats.sample_specific_stats.collect()
+                            telomere_stats.sample_specific_stats.mix(enrichment_stats.sample_specific_stats).collect()
         )
     }
 
