@@ -84,6 +84,8 @@ To include a restriction digest analysis use the paramter --restriction_digest_a
 
     nextflow run main.nf --input ./test_data/simplex_test.duplex.bam --capture_probe_sequence ATGCTACGATCA --outdir ./simplex_test --restriction_digest_analysis GATATC,GAATTC
 
+If you are using a HPC that does not allow for docker connections, TARPON is also executable using singularity by specifying -profile singularity.
+
 ## [Additional Help and Information](#help)
 
 For additional help please contact Nathaniel Deimler by opening an issue on this repository or by email at ndeimler@uni-mainz.de or nathanieldeimler.research@gmail.com or visit Deimler et al., 2025 for more information. 
