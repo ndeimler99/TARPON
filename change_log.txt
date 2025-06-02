@@ -1,1 +1,2 @@
 May 6th, 2025 - no_capture_probe paramater was added to TARPON for those conducting basic whole genome sequencing. PLEASE read the manual as it is NOT recomended to run TARPON in this manner
+June 2nd, 2025 - Singularity support was added in version 1.0.3
