@@ -856,3 +856,29 @@ process PLOT_TELO_GRAPHS {
     plotTeloGraphs.py --telo_sequences ${telo_reads} --repeat ${params.repeat} --mutant ${params.mutant} --telo_plot ${sample}.telomere_visualization.png
     """
 }
+
+process telogator_clustering {
+
+    label 'tarpon'
+    tag "$sample - Clustering via Telogator2"
+
+    input:
+        tuple val(sample), path(telo_reads), path(stats_file)
+
+    script:
+    """
+    trim_telomeric_reads.py --telomeric_bam ${telo_reads} --stats_fh ${stats_file} \
+        --pre_vrr ${params.pre_vrr} --post_vrr ${params.post_vrr} \
+        --out_fasta ${sample}.telo_trimmed.fasta
+    telogator2.py -i ${sample}.telo_trimmed.fasta -tt 0.1 \
+        --collapse-hom 500 --o ${sample}.clustering_results \
+        -r ont -l 0 -p 2 --filt-tel 0 --filt-nontel 10000 \
+        --filt-sub 0 --debug-noanchor
+
+    process_clusters.py --stats_fh ${stats_file} --cluster_results ${sample}.clustering_results/tlens_by_allele.tsv \
+        --new_stats_fh ${sample}.telomeric_stats_with_cluster.txt \
+        --min_percentage ${params.minimum_cluster_size}
+    """
+    //plotClusters.R ${sample}.telomeric_stats_with_cluster.txt ${sample}.cluster_stats.txt 
+    
+}

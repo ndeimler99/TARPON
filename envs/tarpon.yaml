@@ -1,8 +1,11 @@
 name: tarpon
 channels:
-  - conda-forge
+  - anaconda
   - bioconda
   - defaults
+  - conda-forge
+  - https://repo.anaconda.com/pkgs/main
+  - https://repo.anaconda.com/pkgs/r
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=2_gnu
@@ -12,9 +15,9 @@ dependencies:
   - brotli-bin=1.1.0=hd590300_1
   - bzip2=1.0.8=hd590300_5
   - c-ares=1.34.3=hb9d3cd8_1
-  - ca-certificates=2025.1.31=hbcca054_0
+  - ca-certificates=2025.2.25=h06a4308_0
   - cairo=1.18.0=hbb29018_2
-  - certifi=2024.12.14=pyhd8ed1ab_0
+  - certifi=2025.4.26=py312h06a4308_0
   - contourpy=1.2.1=py312h8572e83_0
   - cycler=0.12.1=pyhd8ed1ab_0
   - dbus=1.13.6=h5008d03_3
@@ -130,6 +133,7 @@ dependencies:
   - python=3.12.2=hab00c5b_0_cpython
   - python-dateutil=2.9.0=pyhd8ed1ab_0
   - python_abi=3.12=4_cp312
+  - pywavelets=1.8.0=py312h5eee18b_0
   - qt-main=5.15.8=ha2b5568_22
   - readline=8.2=h8228510_1
   - regex=2024.5.15=py312h9a8786e_0
@@ -195,4 +199,4 @@ dependencies:
       - tzdata==2024.1
       - vbz-h5py-plugin==1.0.1
       - xyzservices==2024.6.0
-prefix: /media/data_01/ndeimler/SOFTWARE/anaconda3/envs/tarpon
+prefix: /home/ndeimler/miniconda3/envs/tarpon
