@@ -13,35 +13,9 @@ def argparser():
     parser.add_argument("--stats_out", required=True)
     parser.add_argument("--wt_processivity", required=True)
     parser.add_argument("--mt_processivity", required=True)
-    parser.add_argument("--repeat_distribution", required=True)
     parser.add_argument("--mutant", required=True)
 
     return parser
-
-def generate_one_nucleotide_dict(repeat):
-    
-    dna_list = ["A", "T", "C", "G"]
-    one_nucl_dict = {}
-    repeat = list(repeat)
-    for i in range(0, len(repeat)):
-        for nucl in dna_list:
-            if repeat[i] == nucl:
-                pass
-            else:
-                new_repeat = list(repeat)
-                new_repeat[i] = nucl
-                one_nucl_dict[''.join(new_repeat)] = 0
-    
-    return one_nucl_dict
-
-def hamming_distance(seq, repeat):
-    hamming = 0
-    for i in range(0, len(seq)):
-        if i > len(repeat):
-            return hamming
-        if seq[i] != repeat[i]:
-            hamming += 1
-    return hamming
 
 
 def calculate_variant_nucl(telo_seq, repeat, mutant):
@@ -94,9 +68,6 @@ def main(args):
 
     aln_file = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
     # loop through reads
-    one_nucl_dict = generate_one_nucleotide_dict(args.repeat)
-    if args.mutant not in one_nucl_dict:
-        one_nucl_dict[args.mutant] = 0
 
     wt_count = 0
     mt_count = 0
@@ -105,50 +76,23 @@ def main(args):
 
     with open(args.stats_out, "w") as stats_out_fh:
         # create new stats file with percentage of WT repeat, % of mutant repeat, % of other one nucleotide variations within each read - I can than histogram this in R and html report - as well as create bar plot and sort bar plot by vrr length
-        stats_out_fh.write("read_id\tstrand\tread_len\tvrr_start_pos\tvrr_telo_length\ttelo_length\tread_qual\ttelo_qual\twt_composition\tmutant_composition\tone_nucl_variant_composition\n")
+        
+        stats_out_fh.write("read_id\ttelo_length\twt_perc\tmt_perc\tother_perc\n")
+
         for aln in aln_file:
             telo_seq = aln.query_sequence[int(telo_dict[aln.query_name][3]):]
             telo_sequences.append(telo_seq)
             wt_nucl = telo_seq.count(args.repeat) * len(args.repeat)
             mt_nucl = telo_seq.count(args.mutant) * len(args.mutant)
-            
-            variant_nucl = calculate_variant_nucl(telo_seq, args.repeat, args.mutant)
 
             mt_comp = mt_nucl / len(telo_seq) * 100
             wt_comp = wt_nucl / len(telo_seq) * 100
 
-            variant_comp = variant_nucl / len(telo_seq) * 100 - wt_comp
-
-            telo_dict[aln.query_name].extend([str(wt_comp), str(mt_comp), str(variant_comp)])
-            stats_out_fh.write("\t".join(telo_dict[aln.query_name]) + "\n")
+            telo_dict[aln.query_name].extend([str(wt_comp), str(mt_comp)])
+            stats_out_fh.write("{}\t{}\t{}\t{}\n".format(aln.query_name, telo_dict[aln.query_name][4], wt_comp, mt_comp, 100-wt_comp-mt_comp))
 
             # calculate processivity
-            processivity_dict = update_processivity_dict(processivity_dict, telo_seq, args.repeat, args.mutant)
-
-
-            mt_read_count = telo_seq.count(args.mutant)
-            wt_count += telo_seq.count(args.repeat)
-            telo_seq = telo_seq.replace(args.repeat, "N"*len(args.repeat))
-            mt_count += mt_read_count
-            telo_seq = telo_seq.replace(args.mutant, "N" * len(args.mutant))
-            one_nucl_dict[args.mutant] += mt_read_count
-            for rep in one_nucl_dict:
-                if rep == args.mutant:
-                    continue
-                one_nucl_dict[rep] += telo_seq.count(rep)
-                telo_seq = telo_seq.replace(rep, "N"*len(rep))
-    
-    for rep in one_nucl_dict:
-        one_nucl_dict[rep] = one_nucl_dict[rep]/(sum(one_nucl_dict.values()) + wt_count) * 100
-    
-    with open(args.repeat_distribution, "w") as repeat_fh:
-        for rep in one_nucl_dict:
-            if rep == args.mutant and hamming_distance(args.repeat, args.mutant) > 1:
-                repeat_fh.write("{}\t{}\t{}\t{}\n".format(rep, "mutant", "mutant", one_nucl_dict[rep]))
-                continue
-            for i in range(0, len(args.repeat)):
-                if rep[i] != args.repeat[i]:
-                    repeat_fh.write("{}\t{}\t{}\t{}\n".format(rep, i, rep[i], one_nucl_dict[rep]))
+            processivity_dict = update_processivity_dict(processivity_dict, telo_seq[-1000:], args.repeat, args.mutant)
 
     with open("telo_sequences.txt", "w") as out_fh:
         for seq in telo_sequences:

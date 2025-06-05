@@ -16,7 +16,6 @@ mutant <- args[4]
 colnames(repeat_distribution) <- c("repeat", "pos", "replacement", "freq")
 
 if (mutant != "false") {
-  
   variant_histogram <- ggplot(data=stats) +
     geom_histogram(mapping=aes(one_nucl_variant_composition, fill="one_nucl_comp"), binwidth=1, alpha=0.5) +
     geom_histogram(mapping=aes(wt_composition, fill="wt_comp"), binwidth=1, alpha=0.5) +
@@ -110,37 +109,20 @@ if (mutant != "false") {
   
   ggsave("vrr_telo_lengths_barplot_by_composition.pdf", plot=telo_lengths_colored, width=12, height=10, device="pdf")
   
-  if (sum(!unlist(str_split(repeat_seq, "")) == unlist(str_split(mutant, ""))) == 1){
-    repeat_distribution$pos <- factor(repeat_distribution$pos, levels=c(sort(unique(repeat_distribution$pos), decreasing=TRUE)))
-    repeat_distribution_plot <- ggplot(data=repeat_distribution) +
-      geom_bar(mapping=aes(x=pos, y=freq, fill=replacement), stat='identity') +
-      coord_flip() +
-      ylab("Percentage of Repeats") + theme_minimal() +
-      theme(axis.text=element_text(size=15),
-            axis.title=element_text(size=20),
-            axis.title.y = element_blank(),
-            legend.title=element_blank(),
-            legend.text=element_text(size=15)) +
-      scale_fill_manual(values=c("#D81B60", "#1E88E5", "#FFC107", "#004D40")) +
-      scale_x_discrete(breaks=seq(0,(nchar(repeat_seq)-1)), labels=unlist(str_split(repeat_seq, "")))
+  repeat_distribution$pos <- factor(repeat_distribution$pos, levels=c(sort(unique(repeat_distribution$pos), decreasing=TRUE)))
+  repeat_distribution_plot <- ggplot(data=repeat_distribution) +
+    geom_bar(mapping=aes(x=pos, y=freq, fill=replacement), stat='identity') +
+    coord_flip() +
+    ylab("Percentage of Repeats") + theme_minimal() +
+    theme(axis.text=element_text(size=15),
+          axis.title=element_text(size=20),
+          axis.title.y = element_blank(),
+          legend.title=element_blank(),
+          legend.text=element_text(size=15)) +
+    scale_fill_manual(breaks=c("A", "T", "C", "G", "mutant"), values=c("#D81B60", "#1E88E5", "#FFC107", "#004D40", "red")) +
+    scale_x_discrete(breaks=c(seq(0,(nchar(repeat_seq)-1)),"mutant"), labels=c(unlist(str_split(repeat_seq, "")),mutant))
     
     ggsave("telomere_composition_one_nucleotide_variants.pdf", width=12, height=10, device="pdf", plot=repeat_distribution_plot)
-  } else {
-    repeat_distribution$pos <- factor(repeat_distribution$pos, levels=c(sort(unique(repeat_distribution$pos), decreasing=TRUE)))
-    repeat_distribution_plot <- ggplot(data=repeat_distribution) +
-      geom_bar(mapping=aes(x=pos, y=freq, fill=replacement), stat='identity') +
-      coord_flip() +
-      ylab("Percentage of Repeats") + theme_minimal() +
-      theme(axis.text=element_text(size=15),
-            axis.title=element_text(size=20),
-            axis.title.y = element_blank(),
-            legend.title=element_blank(),
-            legend.text=element_text(size=15)) +
-      scale_fill_manual(breaks=c("A", "T", "C", "G", "mutant"), values=c("#D81B60", "#1E88E5", "#FFC107", "#004D40", "red")) +
-      scale_x_discrete(breaks=c(seq(0,(nchar(repeat_seq)-1)),"mutant"), labels=c(unlist(str_split(repeat_seq, "")),mutant))
-    
-    ggsave("telomere_composition_one_nucleotide_variants.pdf", width=12, height=10, device="pdf", plot=repeat_distribution_plot)
-  }
   
 } else {
   variant_histogram <- ggplot(data=stats) +

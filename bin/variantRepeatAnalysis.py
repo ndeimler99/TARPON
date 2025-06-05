@@ -11,6 +11,7 @@ def argparser():
     parser.add_argument("--input_file", required=True)
     parser.add_argument("--stats_file", required=True)
     parser.add_argument("--repeat", required=True)
+    parser.add_argument("--mutant", required=True)
     parser.add_argument("--stats_out", required=True)
     parser.add_argument("--repeat_distribution", required=True)
     
@@ -18,7 +19,7 @@ def argparser():
 
 def hamming_distance(seq, repeat):
     hamming = 0
-    for i in range(0, len(seq)):
+    for i in range(0, min(len(seq), len(repeat))):
         if seq[i] != repeat[i]:
             hamming += 1
     return hamming
@@ -59,12 +60,16 @@ def main(args):
 
     one_nucl_dict = generate_one_nucleotide_dict(args.repeat)
     wt_count = 0
+    mt_count = 0
     telo_sequences = []
     with open(args.stats_out, "w") as stats_out_fh:
         # create new stats file with percentage of WT repeat, % of mutant repeat, % of other one nucleotide variations within each read - I can than histogram this in R and html report - as well as create bar plot and sort bar plot by vrr length
-        stats_out_fh.write("read_id\tstrand\tread_len\tvrr_start_pos\tvrr_telo_length\ttelo_length\tread_qual\ttelo_qual\twt_composition\tone_nucl_variant_composition\n")
+        if args.mutant == "false":
+            stats_out_fh.write("read_id\tstrand\tread_len\tvrr_start_pos\tvrr_telo_length\ttelo_length\tread_qual\ttelo_qual\twt_composition\tone_nucl_variant_composition\n")
+        else:
+            stats_out_fh.write("read_id\tstrand\tread_len\tvrr_start_pos\tvrr_telo_length\ttelo_length\tread_qual\ttelo_qual\twt_composition\tone_nucl_variant_composition\tmutant_composition\n")
+
         for aln in aln_file:
-            print(aln.query_name)
             telo_seq = aln.query_sequence[int(telo_dict[aln.query_name][3]):]
             
             wt_nucl = telo_seq.count(args.repeat) * len(args.repeat)
@@ -73,25 +78,39 @@ def main(args):
             wt_comp = wt_nucl / len(telo_seq) * 100
             variant_comp = variant_nucl / len(telo_seq) * 100 - wt_comp
             telo_dict[aln.query_name].extend([str(wt_comp), str(variant_comp)])
+
+            if args.mutant != "false":
+                mt_nucl = telo_seq.count(args.mutant) * len(args.repeat)
+                mt_comp = mt_nucl / len(telo_seq) * 100
+                telo_dict[aln.query_name].extend([str(mt_comp)])
+
             stats_out_fh.write("\t".join(telo_dict[aln.query_name]) + "\n")
             telo_sequences.append(telo_seq)
 
             wt_count += telo_seq.count(args.repeat)
             telo_seq = telo_seq.replace(args.repeat, "N"*len(args.repeat))
+
+            if args.mutant != "false":
+                mt_count += telo_seq.count(args.mutant)
+                telo_seq = telo_seq.replace(args.mutant, "N" * len(args.mutant))
+
+
             for rep in one_nucl_dict:
                 one_nucl_dict[rep] += telo_seq.count(rep)
                 telo_seq = telo_seq.replace(rep, "N"*len(rep))
-            print(wt_count)
     
-    print(one_nucl_dict)
+
     for rep in one_nucl_dict:
-        one_nucl_dict[rep] = one_nucl_dict[rep]/(sum(one_nucl_dict.values()) + wt_count) * 100
+        one_nucl_dict[rep] = one_nucl_dict[rep]/(sum(one_nucl_dict.values()) * len(args.repeat) + wt_count * len(args.repeat) + mt_count * len(args.mutant)) * 100
     
     with open(args.repeat_distribution, "w") as repeat_fh:
         for rep in one_nucl_dict:
             for i in range(0, len(args.repeat)):
                 if rep[i] != args.repeat[i]:
                     repeat_fh.write("{}\t{}\t{}\t{}\n".format(rep, i, rep[i], one_nucl_dict[rep]))
+        
+        if args.mutant != "false":
+            repeat_fh.write("{}\t{}\t{}\t{}\n".format(args.mutant, len(args.repeat), "mutant", mt_count))
 
     with open("telo_sequences.txt", "w") as out_fh:
         for seq in telo_sequences:

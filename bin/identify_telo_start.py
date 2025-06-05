@@ -103,7 +103,7 @@ def main(args):
 
     if args.mutant != "false":
         hamming = 0
-        for i in range(0, len(args.mutant)):
+        for i in range(0, min(len(args.repeat), len(args.mutant))):
             if args.mutant[i] != args.repeat[i]:
                 hamming += 1
         if hamming <= 1:

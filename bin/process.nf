@@ -787,27 +787,25 @@ process MUTANT_ANALYSIS {
         tuple val(sample), path(reads), path(stats)
 
     output:
-        tuple val(sample), path("*telo_stats.txt"), emit: statistics
-        tuple val(sample), path("telo_sequences.txt"), emit: sequences
+        tuple val(sample), path("*mutant_stats.txt"), emit: statistics
         tuple val(sample), path("*processivity_stats.txt"), emit: processivity
-        tuple val(sample), path("*repeat_distribution.txt"), emit: repeat_distribution
         path("*.pdf")
 
     // publish png images
     // publish processivty sand repeat distribution stats
     publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
-    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telo_stats.txt"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.mutant_stats.txt"
 
     script:
     """
     mutantRepeatAnalysis.py --input_file ${reads} --stats_file ${stats} \
-                            --wt_processivity ${sample}.wt.processivity_stats.txt \
-                            --mt_processivity ${sample}.mt.processivity_stats.txt \
-                            --stats_out ${sample}.telo_stats.txt \
-                            --repeat_distribution ${sample}.repeat_distribution.txt --repeat ${params.repeat} \
+                            --wt_processivity ${sample}.wt_processivity_stats.txt \
+                            --mt_processivity ${sample}.mt_processivity_stats.txt \
+                            --stats_out ${sample}.mutant_stats.txt \
+                            --repeat ${params.repeat} \
                             --mutant ${params.mutant}
-    variantRepeatPlots.R ${sample}.telo_stats.txt ${sample}.repeat_distribution.txt ${params.repeat} ${params.mutant}
-    processivityPlots.R ${sample}.wt.processivity_stats.txt ${sample}.mt.processivity_stats.txt ${params.repeat} ${params.mutant}
+
+    processivityPlots.R ${sample}.wt_processivity_stats.txt ${sample}.mt_processivity_stats.txt ${params.repeat} ${params.mutant}
     """
 }
 
@@ -833,8 +831,9 @@ process VARIANT_ANALYSIS {
     variantRepeatAnalysis.py --input_file ${reads} --stats_file ${stats} \
                                 --repeat ${params.repeat} \
                                 --stats_out ${sample}.telo_stats.txt \
-                                --repeat_distribution ${sample}.repeat_distribution.txt
-
+                                --repeat_distribution ${sample}.repeat_distribution.txt \
+                                --mutant ${params.mutant}
+    
     variantRepeatPlots.R ${sample}.telo_stats.txt ${sample}.repeat_distribution.txt ${params.repeat} ${params.mutant}
     """
 }

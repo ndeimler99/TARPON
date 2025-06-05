@@ -1285,3 +1285,94 @@ def colored_telo_length_barplot(data=None, *, x=None, y=None, hue=None, order=No
         p.xaxis.major_label_orientation = x_rotation
 
     return plt
+
+
+
+def summary_barplot(data=None, *, x=None, y=None, hue=None, order=None, hue_order=None,
+    estimator='mean', errorbar=('ci', 95), n_boot=1000, units=None, seed=None,
+    orient=None, color=None, palette=None, saturation=1.0, width=0.8,
+    errcolor='.26', errwidth=None, capsize=None, dodge=True, ci='deprecated',
+    ax=None, nested_x=False,  mutant=False, plt_title=None, y_title=None, x_title=None, x_rotation=None,
+    repeat="GGTTAG", **kwargs,
+):
+   
+    repeat = "GGTTAG"
+    mutant = "GTTTA"
+
+    fill = [repeat, mutant, "other"]
+    
+    colors=["#D81B60", "#1E88E5","#FFC107"]
+     
+    wt_count = sum(data["wt_perc"] / 100 * data["telo_length"]) 
+    mt_count = sum(data["mt_perc"] / 100 * data["telo_length"]) 
+    other = (sum(data["telo_length"]) - wt_count - mt_count )
+
+    # source_data = {"read_ids" : read_ids,
+    #                 "Non-{} or One Nucl. Substitutions".format(repeat): (100 - (data["one_nucl_variant_composition"] + data["wt_composition"]))/100 *data["vrr_telo_length"],
+    #                 "One Nucl. Substitition of {}".format(repeat) : data["one_nucl_variant_composition"]/100*data["vrr_telo_length"],
+    #                 repeat : data["wt_composition"]/100*data["vrr_telo_length"],
+    #                 mutant : data["mutant_composition"]/100*data["vrr_telo_length"]}
+
+    source_data = {"sample" : [x_title],
+                    repeat : [wt_count / sum(data["telo_length"]) * 100],
+                    mutant : [mt_count / sum(data["telo_length"]) * 100],
+                    "other" : [other / sum(data["telo_length"]) * 100]}
+
+    plt = BokehPlot(x_range=source_data['sample'], tooltips=[("Repeat", "$name"),("Percentage", "@$name")], tools="hover")
+    p = plt._fig
+    p.vbar_stack(fill, x="sample", width=0.9, color=colors, source=source_data, legend_label=fill)
+    #p.yaxis.major_grid_line_color = None
+    #p.yaxis.minor_grid_line_color = None
+    p.ygrid.grid_line_color = None
+    #p.yaxis.major_label_overrides([i for i in range(0, len(read_ids))])
+    p.yaxis.visible = True
+    p.legend.location = "bottom_right"
+    if plt_title is not None:
+        p.title.text = plt_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+    if x_rotation is not None:
+        p.xaxis.major_label_orientation = x_rotation
+
+    return plt
+
+
+def colored_telo_length_barplot_mutant(data=None, *, x=None, y=None, hue=None, order=None, hue_order=None,
+    estimator='mean', errorbar=('ci', 95), n_boot=1000, units=None, seed=None,
+    orient=None, color=None, palette=None, saturation=1.0, width=0.8,
+    errcolor='.26', errwidth=None, capsize=None, dodge=True, ci='deprecated',
+    ax=None, nested_x=False,  mutant=False, plt_title=None, y_title=None, x_title=None, x_rotation=None,
+    repeat="GGTTAG", **kwargs,
+):
+    
+    read_ids = data["read_id"]
+    
+    fill = [repeat, mutant, "other"]
+
+    colors=["#D81B60", "#1E88E5","#FFC107"]
+    
+    source_data = {"read_ids" : read_ids,
+                repeat: data["wt_perc"] / 100 * data["telo_length"],
+                mutant: data["mt_perc"] / 100 * data["telo_length"],
+                "other": (100-data["wt_perc"]-data["mt_perc"]) / 100 * data["telo_length"]}
+    plt = BokehPlot(y_range=read_ids)
+    p = plt._fig
+    p.hbar_stack(fill, y="read_ids", height=0.9, color=colors, source=source_data, legend_label=fill)
+    hover = plt._fig.select(dict(type=HoverTool))
+    hover.tooltips = None
+    #p.yaxis.major_grid_line_color = None
+    #p.yaxis.minor_grid_line_color = None
+    p.ygrid.grid_line_color = None
+    #p.yaxis.major_label_overrides([i for i in range(0, len(read_ids))])
+    p.yaxis.visible = False
+    p.legend.location = "bottom_right"
+    if plt_title is not None:
+        p.title.text = plt_title
+    if x_title is not None:
+        p.xaxis.axis_label = x_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+    if x_rotation is not None:
+        p.xaxis.major_label_orientation = x_rotation
+
+    return plt

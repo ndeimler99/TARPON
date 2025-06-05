@@ -12,7 +12,6 @@ def main(args):
     adaptor_fail = pysam.AlignmentFile(args.no_adaptor, "wb", template=fh)
                 
     for aln in fh:
-    
         matches = list(regex.finditer(r'(?e)(%s){e<=%s}' % (args.repeat*2, 2), aln.query_sequence)) 
         if len(matches) > 0:
             last_match = matches[-1]

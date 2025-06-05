@@ -17,6 +17,7 @@ import ezcharts as ezc
 from ezcharts.layout.base import IStyles, Snippet
 from ezcharts.components.ezchart import EZChart
 from ezcharts.components.fastcat import SeqSummary
+from ezcharts.layout.snippets.grid import IGridStyles
 #from ezcharts.components.reports.labs import LabsReport
 from extra.report import LabsReport
 #from report import BasicReport
@@ -980,7 +981,31 @@ def main(args):
     
     if args.mutant != "false":
         with report.add_section("Mutant Repeat Analysis", "Mutant Repeat Analysis"):
-            pass
+            tabs = Tabs()
+            for sample in sorted(list(sample_dict.keys())):
+                with tabs.add_dropdown_menu(sample, change_header=False):
+                    with tabs.add_dropdown_tab("{} Read Composition".format(sample)):
+                        df = pd.read_table(sample_dict[sample]["mutant_stats"], sep="\t")
+                        repeat_comp = report_utils.summary_barplot(df, mutant=args.mutant, repeat=args.repeat, y_title="Percentage of Telomere", x_title=sample)
+                        df = df.sort_values("telo_length")
+                        indiv_read_comp = report_utils.colored_telo_length_barplot_mutant(data=df, mutant=args.mutant, repeat=args.repeat, x_title = "Telomere Length")
+                        
+                        igrid = IGridStyles()
+                        igrid.container = css(
+                            "display: grid",
+                            "grid-template-rows: repeat(1, 1fr)",
+                            "grid-template-columns: 20% 80%",
+                            "grid-column-gap: 10px",
+                            "grid-row-gap: 20px")
+                        with Grid(columns=None, styles=igrid):
+                            EZChart(repeat_comp)
+                            EZChart(indiv_read_comp)
+
+                        EZChart(repeat_comp)
+                    with tabs.add_dropdown_tab("{} Processivity".format(sample)):
+                        pass
+                    with tabs.add_dropdown_tab("{} Processivity Stats".format(sample)):
+                        pass
 
     report.write(args.report)
 

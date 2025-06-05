@@ -27,14 +27,14 @@ def main(args):
         if args.mutant == "false":
             if args.c_strand_only and aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count:
                 out_fh.write(aln)
-            elif aln.query_sequence.count(args.repeat) >= args.repeat_count or aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count:
+            elif not args.c_strand_only and (aln.query_sequence.count(args.repeat) >= args.repeat_count or aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count):
                 out_fh.write(aln)
             else:
                 non_telo_fh.write(aln)
         else:
             if args.c_strand_only and aln.query_sequence.count(rev_complement(args.repeat)) + aln.query_sequence.count(rev_complement(args.mutant)) >= args.repeat_count:
                 out_fh.write(aln)
-            elif aln.query_sequence.count(args.repeat) + aln.query_sequence.count(args.mutant) >= args.repeat_count or aln.query_sequence.count(rev_complement(args.repeat)) + aln.query_sequence.count(rev_complement(args.mutant)) >= args.repeat_count:
+            elif not args.c_strand_only and (aln.query_sequence.count(args.repeat) + aln.query_sequence.count(args.mutant) >= args.repeat_count or aln.query_sequence.count(rev_complement(args.repeat)) + aln.query_sequence.count(rev_complement(args.mutant)) >= args.repeat_count):
                 out_fh.write(aln)
             else:
                 non_telo_fh.write(aln)
