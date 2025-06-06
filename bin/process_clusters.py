@@ -35,7 +35,7 @@ def main(args):
     
     removed_clusters = []
     for cluster in cluster_sizes:
-        if cluster_sizes[cluster] <= sum(cluster_sizes.values()) * args.min_percentage:
+        if cluster_sizes[cluster] <= sum(cluster_sizes.values()) * args.min_percentage/100:
             removed_clusters.append(cluster)
     
     for read in cluster_dict:
