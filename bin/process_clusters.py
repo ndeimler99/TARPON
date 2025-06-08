@@ -7,13 +7,14 @@ import pysam
 def main(args):
 
     args.min_percentage = float(args.min_percentage)
-
+    header = ""
     stats_dict = {}
     with open(args.stats_fh, "r") as stats:
         linecount = 1
         for line in stats:
             if linecount == 1:
                 linecount += 1
+                header = line.strip()
                 continue
             line = line.strip().split()
             stats_dict[line[0]] = line
@@ -38,14 +39,19 @@ def main(args):
         if cluster_sizes[cluster] <= sum(cluster_sizes.values()) * args.min_percentage:
             removed_clusters.append(cluster)
     
-    for read in cluster_dict:
-        if cluster_dict[read] in removed_clusters:
+    for read in stats_dict:
+        if read in cluster_dict:
+            if cluster_dict[read] in removed_clusters:
+                cluster_dict[read] = "NA"
+        else:
             cluster_dict[read] = "NA"
         stats_dict[read].append(cluster_dict[read])
 
     with open(args.new_stats_fh, "w") as stats_fh:
+        stats_fh.write(header + "\tCluster\n")
         for read in stats_dict:
             stats_fh.write("\t".join(stats_dict[read]))
+            stats_fh.write("\n")
 
 def argparser():
     parser = argparse.ArgumentParser()
