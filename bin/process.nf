@@ -880,14 +880,14 @@ process telogator_clustering {
         --out_fasta ${sample}.telo_trimmed.fasta
 
     telogator2.py -i ${sample}.telo_trimmed.fasta -tt 0.1 \
-        --collapse-hom 500 --o ${sample}.clustering_results \
-        -r ont -l 0 -p 2 --filt-tel 0 --filt-nontel 10000 \
-        --filt-sub 0 --debug-noanchor
+        --collapse-hom 500 -o ${sample}.clustering_results \
+         -r ont -l 0 -p 2 --filt-tel 0 --filt-nontel 10000 \
+         --filt-sub 0 --debug-noanchor
 
     process_clusters.py --stats_fh ${stats_file} --cluster_results ${sample}.clustering_results/tlens_by_allele.tsv \
         --new_stats_fh ${sample}.telomeric_stats_with_cluster.txt \
         --min_percentage ${params.minimum_cluster_size}
-    
-    plotClusters.R ${sample}.telomeric_stats_with_cluster.txt ${sample}e
+
+    plotClusters.R ${sample}.telomeric_stats_with_cluster.txt ${sample}
     """    
 }

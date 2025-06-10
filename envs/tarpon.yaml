@@ -9,6 +9,7 @@ channels:
 dependencies:
   - _libgcc_mutex=0.1=conda_forge
   - _openmp_mutex=4.5=2_gnu
+  - _sysroot_linux-64_curr_repodata_hack=3=haa98f57_10
   - alsa-lib=1.2.12=h4ab18f5_0
   - attr=2.5.1=h166bdaf_1
   - brotli=1.1.0=hd590300_1
@@ -41,6 +42,8 @@ dependencies:
   - harfbuzz=8.5.0=hfac3d4d_0
   - htslib=1.21=h5efdd21_0
   - icu=73.2=h59595ed_0
+  - k8=1.2=he8db53b_6
+  - kernel-headers_linux-64=3.10.0=h57e8cba_10
   - keyutils=1.6.1=h166bdaf_0
   - kiwisolver=1.4.5=py312h8572e83_1
   - krb5=1.21.3=h659f571_0
@@ -107,6 +110,7 @@ dependencies:
   - lz4-c=1.9.4=hcb278e6_0
   - matplotlib=3.8.4=py312h7900ff3_2
   - matplotlib-base=3.8.4=py312h20ab3a6_2
+  - minimap2=2.29=h577a1d6_0
   - mpg123=1.32.6=h59595ed_0
   - munkres=1.1.4=pyh9f0ad1d_0
   - mysql-common=8.3.0=hf1915f5_4
@@ -142,6 +146,7 @@ dependencies:
   - setuptools=70.1.1=pyhd8ed1ab_0
   - sip=6.7.12=py312h30efb56_0
   - six=1.16.0=pyh6c4a22f_0
+  - sysroot_linux-64=2.17=h57e8cba_10
   - tk=8.6.13=noxft_h4845f30_101
   - toml=0.10.2=pyhd8ed1ab_0
   - tomli=2.0.1=pyhd8ed1ab_0
