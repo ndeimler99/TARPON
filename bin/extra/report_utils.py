@@ -1285,3 +1285,70 @@ def colored_telo_length_barplot(data=None, *, x=None, y=None, hue=None, order=No
         p.xaxis.major_label_orientation = x_rotation
 
     return plt
+
+
+def cluster_size_boxplot(data, plt_title=None, x_title=None, y_title=None):
+
+    """Create a boxplot for the given column."""
+
+
+    plt = BokehPlot(tools="save", x_range=[1])
+    p = plt._fig
+    p.y_range = Range1d(start=0, end=max(data) + 2)
+
+    values = get_vals(data, 1)
+    
+    p.patch(values["kde_vals"], values["kde_support"], alpha=0.3)
+    padding_top = 10
+    p.y_range = Range1d(
+            start=min(data) - padding_top,
+            end=max(data) + padding_top
+    )
+
+    whisker_width = 0.1
+    
+    p.rect([1], values["lower"], whisker_width, values["hbar_height"], line_color="grey")
+    p.rect([1], values["upper"], whisker_width, values["hbar_height"], line_color="grey")
+    p.segment([1], values["upper"], ["G Strand"], values["q3"], line_color="grey")
+    p.segment([1], values["lower"], ["G Strand"], values["q1"], line_color="grey")
+    p.vbar([1], 0.2, values["q2"], values["q3"], line_color="black")
+    p.vbar([1], 0.2, values["q1"], values["q2"], line_color="black")
+
+    p.line([0.2, 1.8],[1.08, 1.08], color="red",  line_dash="dashed")
+    p.xaxis.major_label_orientation = "vertical"
+    p.yaxis.axis_label = 'Values'
+
+
+    if plt_title is not None:
+        p.title.text = plt_title
+    if x_title is not None:
+        p.xaxis.axis_label = x_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+
+    return plt
+
+
+def barplot_single_value(value, category, expected, plt_title=None):
+
+    categories = [category]
+    values = [value]
+
+    plt = BokehPlot(tools="save")
+    p = plt._fig
+
+    hover = plt._fig.select(dict(type=HoverTool))
+    hover.tooltips = [(stat.capitalize(), "@top")]
+
+    p.rect(x=1, y=value/2, h=value, width=0.8)
+    if expected is not None:
+        p.line([0.2, 1.8], [exepcted, expected], line_width=1, color="red",  line_dash="dashed")
+    p.xgrid.grid_line_color = None
+    p.y_range.start = 0
+
+    p.yaxis.axis_label = category
+    p.line()
+    
+    if plt_title is not None:
+        p.title.text = plt_title
+    return plt
