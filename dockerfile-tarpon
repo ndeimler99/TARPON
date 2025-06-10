@@ -6,7 +6,7 @@ RUN micromamba install -y -n base --file /tarpon.yaml && \
         micromamba clean --all --yes
 RUN git clone https://github.com/zstephens/telogator2.git /opt/telogator2
 WORKDIR /opt/telogator2
-RUN git checkout 3e704aa
+RUN git checkout d4e50d1
 RUN chmod +x /opt/telogator2/telogator2.py
 ENV PATH="/opt/telogator2/:${PATH}"
 RUN echo "r <- getOption('repos'); r['CRAN'] <- 'http://cran.us.r-project.org'; options(repos = r);" > ~/.Rprofile
