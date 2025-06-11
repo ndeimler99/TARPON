@@ -406,11 +406,11 @@ def main(args):
             with tabs.add_dropdown_menu(sample, change_header=False):
                 with tabs.add_dropdown_tab("{} Telomere Length".format(sample)):
                     df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
-                    df["telo_length"] = df["telo_length"].astype("float")
+                    df["vrr_telo_length"] = df["vrr_telo_length"].astype("float")
                     #telo length histogram next to barplot
                     new_tabs = Tabs()
 
-                    with new_tabs.add_tab("VRR Length Analysis (n={})".format(len(df['telo_length']))):
+                    with new_tabs.add_tab("VRR Length Analysis (n={})".format(len(df['vrr_telo_length']))):
                             # Telomere Length Histogram
                         telo_length_hist = report_utils.telo_length_hist(df["vrr_telo_length"], binwidth=200, binrange=[0,max(df["vrr_telo_length"])+200],
                                                             plt_title="VRR Telomere Length Histogram",
