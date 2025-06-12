@@ -16,12 +16,15 @@ def identify_first_barcode(header, barcode_dict, barcode_errors, repeat):
     if len(location_dict) == 0:
         return None, None
     
+    print(header)
+    print(location_dict)
     min_loc = [len(header), len(header)]
     barcode = None
     for sample in location_dict:
         if location_dict[sample][0] < min_loc[0]:
             min_loc = location_dict[sample]
             barcode = sample
+    print(barcode)
     return barcode, min_loc
 
 
@@ -51,7 +54,7 @@ def main(args):
     adaptor_fail = pysam.AlignmentFile(args.no_adaptor, "wb", template=in_fh)
 
     for aln in in_fh:
-
+        print(aln.query_name)
         matches = list(regex.finditer(r'(?e)(%s){e<=%s}' % (args.adaptor_sequence, args.adaptor_errors), aln.query_sequence)) 
         if len(matches) > 0:
             for match in matches:
@@ -65,12 +68,12 @@ def main(args):
                     q = aln.query_qualities
 
                     if aln.get_tag("XS") == "C":
-                        barcode_seq = aln.query_sequence[match.span()[0]-args.overhang_length:match.span()[0] + 100]
+                        barcode_seq = aln.query_sequence[match.span()[0]-args.overhang_length:match.span()[0] + 200]
                         aln.set_tag("XB", barcode_seq)
                         aln.query_sequence = aln.query_sequence[0:match.span()[0]-args.overhang_length]
                         aln.query_qualities = q[0:match.span()[0]-args.overhang_length]
                     else:
-                        barcode_seq = aln.query_sequence[match.span()[0]:match.span()[0] + 100]
+                        barcode_seq = aln.query_sequence[match.span()[0]:match.span()[0] + 200]
                         aln.set_tag("XB", barcode_seq)
                         aln.query_sequence = aln.query_sequence[0:match.span()[0]]
                         aln.query_qualities = q[0:match.span()[0]]
@@ -116,7 +119,7 @@ def argparser():
     parser.add_argument("--adaptor_errors", required=True)
     parser.add_argument("--repeat", required=True)
     parser.add_argument("--mutant", required=True)
-    parser.add_argument("--overhang_length"), required=True
+    parser.add_argument("--overhang_length", required=True)
     return parser
 
 if __name__ == "__main__":
