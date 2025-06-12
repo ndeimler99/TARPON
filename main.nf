@@ -29,6 +29,7 @@ include { clustering_pipeline } from "./subworkflows/clustering_analysis.nf"
 include { paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 include { getParams; getVersions; getManifest; GENERATE_FINAL_REPORT } from "./bin/process.nf"
 include { enrichment_stats_pipeline } from "./subworkflows/enrichment_stats.nf"
+include { telogator_clustering } from "./bin/process.nf"
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -55,26 +56,32 @@ workflow {
         // real_time_pipeline()
     }
     else {
-        // preprocess data pipeline takes the input files or directory and returns SUP basecalled telomeric sequences
-        preprocess_data_pipeline(params.run_name, params.input)
 
-        // takes putative telomeric sequences returned by preprocess data pipeline and runs all relevant processes to generate descriptive stats and report.html
-        telomere_isolation_pipeline(preprocess_data_pipeline.out, params.sample_file)
-
-        //telomere_isolation.collect().view()
-        telomere_stats = telomere_analysis_pipeline(telomere_isolation_pipeline.out)
-
-        enrichment_stats = enrichment_stats_pipeline(telomere_isolation_pipeline.out)
-        
-        if (params.clustering) {
-            clustering_results = clustering_pipeline(telomere_isolation_pipeline.out)
+        if (params.recluster_only){
+            clustering_results = telogator_clustering(tuple(params.sample_name, file(params.input), file(params.telomeric_stats)))
         }
+        else {
+            // preprocess data pipeline takes the input files or directory and returns SUP basecalled telomeric sequences
+            preprocess_data_pipeline(params.run_name, params.input)
 
-        report = GENERATE_FINAL_REPORT(parameters.params, versions.versions, manifest.manifest, \
-                            enrichment_stats.flowcell_retained, enrichment_stats.flowcell_removed, \
-                            telomere_stats.telomere_stats, \
-                            telomere_stats.sample_specific_stats.mix(enrichment_stats.sample_specific_stats).collect()
-        )
+            // takes putative telomeric sequences returned by preprocess data pipeline and runs all relevant processes to generate descriptive stats and report.html
+            telomere_isolation_pipeline(preprocess_data_pipeline.out, params.sample_file)
+
+            //telomere_isolation.collect().view()
+            telomere_stats = telomere_analysis_pipeline(telomere_isolation_pipeline.out)
+
+            enrichment_stats = enrichment_stats_pipeline(telomere_isolation_pipeline.out)
+            
+            if (params.clustering) {
+                clustering_results = clustering_pipeline(telomere_isolation_pipeline.out)
+            }
+
+            report = GENERATE_FINAL_REPORT(parameters.params, versions.versions, manifest.manifest, \
+                                enrichment_stats.flowcell_retained, enrichment_stats.flowcell_removed, \
+                                telomere_stats.telomere_stats, \
+                                telomere_stats.sample_specific_stats.mix(enrichment_stats.sample_specific_stats).collect()
+            )
+        }
     }
 
 }
