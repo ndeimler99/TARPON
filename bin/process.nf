@@ -868,6 +868,7 @@ process telogator_clustering {
 
     output:
         tuple val(sample), path("*telomeric_stats_with_cluster.txt"), path("*.clustering_summary_stats.txt"), emit: clustering_stats
+        path("*.pdf")
 
     publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
     publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telomeric_stats_with_cluster.txt"
@@ -881,7 +882,7 @@ process telogator_clustering {
 
     telogator2.py -i ${sample}.telo_trimmed.fasta -tt 0.1 \
         --collapse-hom 500 -o ${sample}.clustering_results \
-         -r ont -l 0 -p 2 --filt-tel 0 --filt-nontel 10000 \
+         -r ont -l 0 -p 20 --filt-tel 0 --filt-nontel 10000 \
          --filt-sub 0 --debug-noanchor
 
     process_clusters.py --stats_fh ${stats_file} --cluster_results ${sample}.clustering_results/tlens_by_allele.tsv \
