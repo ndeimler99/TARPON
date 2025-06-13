@@ -36,6 +36,15 @@ workflow validate_parameters {
                 println("Error - Telomeric Stats File Does not Exist")
             }
         }
+        else if (params.alignment) {
+            try {
+                file(params.reference, checkIfExists:true)
+            }
+            catch (Exception e) {
+                parameters_passed = false
+                println("Error - Reference File Does not Exist")
+            }
+        }
         else {
             
             // Checking to see if report.html already exists in outdir to prevent accidental overwrite of data

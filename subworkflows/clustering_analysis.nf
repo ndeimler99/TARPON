@@ -30,7 +30,6 @@ workflow clustering_pipeline {
 
         telogator_clustering(telomeric_reads_with_stats)
         
-        //plot_results()
 
 
 }

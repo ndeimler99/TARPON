@@ -30,6 +30,7 @@ include { paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-sche
 include { getParams; getVersions; getManifest; GENERATE_FINAL_REPORT } from "./bin/process.nf"
 include { enrichment_stats_pipeline } from "./subworkflows/enrichment_stats.nf"
 include { telogator_clustering } from "./bin/process.nf"
+include { alignment_to_ref } from "./bin/process.nf"
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -74,6 +75,10 @@ workflow {
             
             if (params.clustering) {
                 clustering_results = clustering_pipeline(telomere_isolation_pipeline.out)
+            }
+
+            if (params.alignment) {
+                alignment_results = alignment_to_ref(telomere_stats.telomeric_reads_with_stats, file(params.reference))
             }
 
             report = GENERATE_FINAL_REPORT(parameters.params, versions.versions, manifest.manifest, \

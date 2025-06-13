@@ -892,3 +892,33 @@ process telogator_clustering {
     plotClusters.R ${sample}.telomeric_stats_with_cluster.txt ${sample}
     """    
 }
+
+process alignment_to_ref {
+    label 'tarpon'
+    tag "$sample - Aligning to Reference"
+
+    input:
+        tuple val(sample), path(telo_reads), path(stats_file)
+        path(ref_file)
+    
+    output:
+        tuple val(sample), path("*telomeric_stats_with_alignment.txt", path("*.chrom_arm_summary.txt"))
+        path("*.pdf")
+
+    publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telomeric_stats_with_alignment.txt"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.chrom_arm_summary.txt"
+
+
+    script:
+    """
+    samtools fastq ${telo_reads} > ${sample}.telomeric_reads.fastq
+    minimap2 -ax map-ont ${ref_file} ${sample}.telomeric_reads.fastq > ${sample}.aligned_telomeric_reads.sam
+    samtools view -q ${params.minimum_mapq} ${sample}.aligned_telomeric_reads.sam > ${sample}.alignment.sam
+    process_alignment.py --stats_fh ${stats_file} \
+        --new_stats_fh ${sample}.telomeric_stats_with_chrom.txt \
+        --alignment ${sample}.alignment.sam 
+
+    plotClusters.R ${sample.alignment.sam} ${sample}
+    """
+}

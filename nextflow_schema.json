@@ -237,12 +237,6 @@
                     "default": false,
                     "description": "It is NOT recomended to run TARPON using this parameter. If true, no capture probe identification will occur and the telomere end will be identified by the terminal two conseuctive telomeric repeats. It is not recommended to run TARPON in this manner. Note it is not possible to demultiplex data via TARPON with no capture probe and that multiplexed data should be demultiplexed by dorado demux prior to TARPON execution"
                 },
-                "remove_wd":{
-                    "title":"Remove Work Directory",
-                    "type":"boolean",
-                    "default":false,
-                    "description": "If true, working directory is removed on run complete. This prevents build up of unnecesary files but prevents -resume from being used"
-                },
                 "detailed_stats":{
                     "title": "Detailed Plots",
                     "type":"boolean",
@@ -274,6 +268,70 @@
                     "default": "false"
                 }
             } 
+        },
+        "Chromosome Arm Specific Options": {
+            "title": "Advanced Options",
+            "type": "object",
+            "fa_icon": "fas fa-arrow-right",
+            "description": "Advanced Options regarding Clustering and Alignment",
+            "properties": {
+                "clustering":{
+                    "title": "Cluster Reads",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enabling this parameter will result in telomere sequence clustering. This greatly increases run time"
+                },
+                "pre_vrr":{
+                    "title":"Pre-VRR",
+                    "type":"number",
+                    "default":1000,
+                    "description": "Number of nucleotides in the subtelomere direction of the telomere start to use for clustering"
+                },
+                "post_vrr":{
+                    "title": "Post-VRR",
+                    "type":"number",
+                    "default":2000,
+                    "description": "Number of nucleotides in the telomere direction of the telomere start site to use for clustering"
+                },
+                "minimum_cluster_size":{
+                    "title": "Minimum Cluster Size",
+                    "type":"number",
+                    "default":0.2,
+                    "description":"Minimum percentage of telomeric reads needed for a cluster to pass filtering"
+                },
+                "reclustering_only":{
+                    "title":"Recluster Only",
+                    "type":"boolean",
+                    "default":false,
+                    "description": "Will only use input and --telomeric_stats to perform clustering analysis on samples already run through TARPON"
+                },
+                "telomeric_stats":{
+                    "title":"Telomeric Stats",
+                    "type": "string",
+                    "format": "path",
+                    "exists": true,
+                    "description":"Telomeric stats file returned by TARPON to aid in reclustering"
+                },
+                "alignment":{
+                    "title": "Perform Alignment",
+                    "type":"boolean",
+                    "default":false,
+                    "description": "Performs alignment to sample matched subtelomeric reference"
+                },
+                "reference":{
+                    "title": "Reference Genome for Alignment",
+                    "type": "string",
+                    "format": "path",
+                    "exists": true,
+                    "description":"Sample-matched subtelomeric reference genome for alignment"
+                },
+                "minimum_mapq":{
+                    "title": "Minimum Mapping Quality",
+                    "type": "number",
+                    "default":20,
+                    "description": "Minimum mapping quality for a read to be included in the alignment-based chromosome arm specific analysis"
+                }
+            }
         }
     },
     "allOf": [
