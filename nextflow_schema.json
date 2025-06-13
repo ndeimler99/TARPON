@@ -269,8 +269,8 @@
                 }
             } 
         },
-        "Chromosome Arm Specific Options": {
-            "title": "Advanced Options",
+        "Chromosome_Arm_Specific_Options": {
+            "title": "Chromosome Arm Specific Options",
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
             "description": "Advanced Options regarding Clustering and Alignment",
@@ -346,6 +346,9 @@
         },
         {
             "$ref": "#/definitions/Telo_Start"
+        },
+        {
+            "$ref": "#/definitions/Chromosome_Arm_Specific_Options"
         },
         {
             "$ref": "#/definitions/Advanced_Options"
