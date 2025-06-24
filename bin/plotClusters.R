@@ -15,8 +15,6 @@ summary_stats <- stats_df %>% group_by(Cluster) %>% summarize(count=n(), mean=me
                                                               q1=quantile(vrr_telo_length, 0.25), median=quantile(vrr_telo_length, 0.5),
                                                               q3=quantile(vrr_telo_length, 0.75))
 
-write.table(summary_stats, paste(args[2], ".clustering_summary_stats.txt", sep=""), sep="\t")
-
 clustering_summary <- stats_df %>% group_by(Cluster) %>% summarize(count=n())
 clustering_summary$proportion <- clustering_summary$count / sum(clustering_summary$count) * 100
 na_reads <- clustering_summary[is.na(clustering_summary$Cluster),]
@@ -33,7 +31,6 @@ proportion_of_reads <- ggplot(data=na_reads) +
         axis.title.x=element_blank()) +
   ylab("Percentage of Reads\nAssigned to Cluster")
 
-ggsave("reads_assigned_to_clusters.pdf", width=6, height=10, plot=proportion_of_reads)
 
 
 clustering_summary <- clustering_summary[!is.na(clustering_summary$Cluster),]
@@ -51,7 +48,6 @@ cluster_sizes <- ggplot(data=clustering_summary) +
         axis.ticks.x=element_blank()) +
   geom_hline(mapping=aes(yintercept=1.08), linetype="dashed", color="red")
 
-ggsave("cluster_sizes_boxplot.pdf", width=6, height=10, plot=cluster_sizes)
 
 # number of clusters
 
@@ -65,8 +61,6 @@ cluster_count <- ggplot() +
         axis.ticks.x=element_blank()) +
   geom_hline(mapping=aes(yintercept=92), linetype="dashed", color="red") +
   ylab("Number of Clusters")
-
-ggsave("cluster_counts.pdf", width=6, height=10, plot=cluster_count)
 
 # telomere length by cluster boxplot
 
@@ -83,5 +77,17 @@ cluster_by_telo_length <- ggplot(data=stats_df) +
         axis.text=element_text(size=15)) +
   ylab("VRR Telomere Length") 
 
-ggsave("cluster_by_telo_length.pdf", width=20, height=10, plot=cluster_by_telo_length)  
 
+if (grepl("cluster", args[1])){
+  write.table(summary_stats, paste(args[2], ".clustering_summary_stats.txt", sep=""), sep="\t")
+  ggsave("cluster_by_telo_length.pdf", width=20, height=10, plot=cluster_by_telo_length)  
+  ggsave("cluster_counts.pdf", width=6, height=10, plot=cluster_count)
+  ggsave("cluster_sizes_boxplot.pdf", width=6, height=10, plot=cluster_sizes)
+  ggsave("reads_assigned_to_clusters.pdf", width=6, height=10, plot=proportion_of_reads)
+} else {
+  write.table(summary_stats, paste(args[2], ".chrom_arm_summary.txt", sep=""), sep="\t")
+  ggsave("chrom_by_telo_length.pdf", width=20, height=10, plot=cluster_by_telo_length)  
+  ggsave("chrom_counts.pdf", width=6, height=10, plot=cluster_count)
+  ggsave("chrom_sizes_boxplot.pdf", width=6, height=10, plot=cluster_sizes)
+  ggsave("reads_assigned_to_chrom.pdf", width=6, height=10, plot=proportion_of_reads)
+}

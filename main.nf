@@ -10,7 +10,7 @@ nextflow.enable.dsl=2
 */
 
 println """\
-    TArPON - Telomere Analysis Pipeline on Nanopore Sequencing Data
+    TARPON - Telomere Analysis Pipeline on Nanopore Sequencing Data
     ================================================
     v1.0.3
     """.stripIndent()
@@ -75,16 +75,28 @@ workflow {
             
             if (params.clustering) {
                 clustering_results = clustering_pipeline(telomere_isolation_pipeline.out)
+                    .map {it -> tuple(it[1], it[2])}
+            }
+            else {
+                Channel.from() \
+                    .map { it -> tuple(it[0], it[1]) } \
+                    .set { clustering_results }
             }
 
             if (params.alignment) {
-                alignment_results = alignment_to_ref(telomere_stats.telomeric_reads_with_stats, file(params.reference))
+                alignment_results = alignment_to_ref(telomere_isolation_pipeline.out.telomeric_reads_with_stats, file(params.reference)).output
+                    .map {it -> tuple(it[1], it[2])}
+            }
+            else {
+                Channel.from() \
+                    .map { it -> tuple(it[0], it[1]) } \
+                    .set { alignment_results }
             }
 
             report = GENERATE_FINAL_REPORT(parameters.params, versions.versions, manifest.manifest, \
                                 enrichment_stats.flowcell_retained, enrichment_stats.flowcell_removed, \
                                 telomere_stats.telomere_stats, \
-                                telomere_stats.sample_specific_stats.mix(enrichment_stats.sample_specific_stats).collect()
+                                telomere_stats.sample_specific_stats.mix(enrichment_stats.sample_specific_stats, clustering_results, alignment_results).collect()
             )
         }
     }

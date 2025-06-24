@@ -28,8 +28,9 @@ workflow clustering_pipeline {
 
     main:
 
-        telogator_clustering(telomeric_reads_with_stats)
+        clustering_results = telogator_clustering(telomeric_reads_with_stats)
         
-
+    emit:
+        clustering_results.clustering_stats
 
 }

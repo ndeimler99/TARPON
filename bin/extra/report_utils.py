@@ -15,6 +15,7 @@ from scipy.stats import gaussian_kde
 from itertools import cycle
 from seaborn.relational import _ScatterPlotter
 import numbers
+from bokeh.models import FactorRange
 
 from bokeh.plotting import figure
 
@@ -1292,18 +1293,13 @@ def cluster_size_boxplot(data, plt_title=None, x_title=None, y_title=None):
     """Create a boxplot for the given column."""
 
 
-    plt = BokehPlot(tools="save", x_range=[1])
+    plt = BokehPlot(tools="save")
     p = plt._fig
     p.y_range = Range1d(start=0, end=max(data) + 2)
 
     values = get_vals(data, 1)
     
     p.patch(values["kde_vals"], values["kde_support"], alpha=0.3)
-    padding_top = 10
-    p.y_range = Range1d(
-            start=min(data) - padding_top,
-            end=max(data) + padding_top
-    )
 
     whisker_width = 0.1
     
@@ -1314,7 +1310,7 @@ def cluster_size_boxplot(data, plt_title=None, x_title=None, y_title=None):
     p.vbar([1], 0.2, values["q2"], values["q3"], line_color="black")
     p.vbar([1], 0.2, values["q1"], values["q2"], line_color="black")
 
-    p.line([0.2, 1.8],[1.08, 1.08], color="red",  line_dash="dashed")
+    p.line([0.6, 1.4],[1.08, 1.08], color="red",  line_dash="dashed")
     p.xaxis.major_label_orientation = "vertical"
     p.yaxis.axis_label = 'Values'
 
@@ -1338,11 +1334,11 @@ def barplot_single_value(value, category, expected, plt_title=None):
     p = plt._fig
 
     hover = plt._fig.select(dict(type=HoverTool))
-    hover.tooltips = [(stat.capitalize(), "@top")]
+    hover.tooltips = [(category, "@top")]
 
-    p.rect(x=1, y=value/2, h=value, width=0.8)
+    p.rect(x=1, y=value/2, height=value, width=0.8)
     if expected is not None:
-        p.line([0.2, 1.8], [exepcted, expected], line_width=1, color="red",  line_dash="dashed")
+        p.line([0.2, 1.8], [expected, expected], line_width=1, color="red",  line_dash="dashed")
     p.xgrid.grid_line_color = None
     p.y_range.start = 0
 
@@ -1351,4 +1347,72 @@ def barplot_single_value(value, category, expected, plt_title=None):
     
     if plt_title is not None:
         p.title.text = plt_title
+    return plt
+
+def telo_length_by_cluster(data, plt_title=None, x_title=None, y_title=None):
+
+    data["Cluster"] = data["Cluster"].astype(str)
+
+    # Sorted unique categories as strings
+    categories = sorted(data["Cluster"].unique(), key=lambda x: str(x))
+
+    groups = data.groupby("Cluster")["vrr_telo_length"]
+
+    stats = []
+    outliers_x, outliers_y = [], []
+
+    for cat in categories:
+        vals = groups.get_group(cat).values
+        q1 = np.percentile(vals, 25)
+        q2 = np.percentile(vals, 50)
+        q3 = np.percentile(vals, 75)
+        iqr = q3 - q1
+        lower_bound = q1 - 1.5 * iqr
+        upper_bound = q3 + 1.5 * iqr
+
+        lower = max(min(vals), lower_bound)
+        upper = min(max(vals), upper_bound)
+
+        stats.append((cat, q1, q2, q3, lower, upper))
+
+        outliers = vals[(vals > upper_bound) | (vals < lower_bound)]
+        outliers_x.extend([cat] * len(outliers))
+        outliers_y.extend(outliers)
+
+    # ✅ Sort by Q2 (median)
+    stats.sort(key=lambda x: x[2])  # x[2] is q2
+
+    # ✅ Unpack sorted stats
+    categories, q1s, q2s, q3s, lowers, uppers = zip(*stats)
+    categories = list(categories)  # ensure it's a list for FactorRange
+
+    # Create figure with categorical x-axis
+    plt = BokehPlot(x_range = FactorRange(*categories))
+    p = plt._fig
+
+    p.vbar(x=categories, width=0.7, bottom=q1s, top=q3s,
+           fill_color="#E08E79", line_color="black")
+    
+    p.segment(categories, q2, categories, q2, line_color="black", line_width=2)
+
+    source = ColumnDataSource(data=dict(
+        base=categories,
+        lower=lowers,
+        upper=uppers
+    ))
+    p.add_layout(Whisker(source=source, base="base", lower="lower", upper="upper"))
+
+    # Outliers
+    p.circle(outliers_x, outliers_y, size=6, color="#F38630", fill_alpha=0.6)
+
+    p.xaxis.major_label_orientation = 0.785
+   
+    if plt_title is not None:
+        p.title.text = plt_title
+
+    if x_title is not None:
+        p.xaxis.axis_label = x_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+
     return plt
