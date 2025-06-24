@@ -874,7 +874,7 @@ def main(args):
                                 # read quality by strand
                                 # telo quality by strand
 
-                                pass
+                        
                     with tabs.add_dropdown_tab("Telomeric Composition"):
                         new_tabs = Tabs()
                         with new_tabs.add_tab("Perfect Repeats Distribution"):
@@ -1000,12 +1000,17 @@ def main(args):
                         with Grid(columns=None, styles=igrid):
                             EZChart(repeat_comp)
                             EZChart(indiv_read_comp)
-
-                        EZChart(repeat_comp)
                     with tabs.add_dropdown_tab("{} Processivity".format(sample)):
-                        pass
+                        # remove greather than 97.5th percentile
+                        # plot tract occurences
+                        # plot repeat percentages
+                        # calculate processivity and consecutivity and return in pandas dataframe
+                        tract_counts, repeat_percs, processivity_stats = report_utils.analyze_processivity(sample_dict[sample]["wt_processivity_stats"], sample_dict[sample]["mt_processivity_stats"])
+                        with Grid(columns=2):
+                            EZChart(tract_counts)
+                            EZChart(repeat_percs)
                     with tabs.add_dropdown_tab("{} Processivity Stats".format(sample)):
-                        pass
+                        DataTable.from_pandas(processivity_stats, use_index=False)
 
     report.write(args.report)
 
