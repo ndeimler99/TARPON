@@ -4,7 +4,8 @@ import argparse
 import regex
 import pysam
 
-def identify_first_barcode(header, barcode_dict, barcode_errors, repeat):
+def identify_first_barcode(header, barcode_dict, barcode_errors):
+
     """identifies location of the first barcode existing within a given read after ten telomeric repeats are identified:
     returns none if no barcodes are found. returns the first barcode and its location when found"""
     location_dict = {}
@@ -79,7 +80,7 @@ def main(args):
                         aln.query_qualities = q[0:match.span()[0]]
 
                     
-                    barcode, location = identify_first_barcode(barcode_seq, barcode_dict, args.barcode_errors, args.repeat)
+                    barcode, location = identify_first_barcode(barcode_seq, barcode_dict, args.barcode_errors)
                     if barcode is not None and location[0] != len(barcode_seq):
                         barcode_seq = barcode_seq[location[0]:location[1]]
                         aln.set_tag("XB", barcode_seq)

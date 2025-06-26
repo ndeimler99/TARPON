@@ -15,7 +15,9 @@ from scipy.stats import gaussian_kde
 from itertools import cycle
 from seaborn.relational import _ScatterPlotter
 import numbers
+import math
 from bokeh.models import FactorRange
+
 
 from bokeh.plotting import figure
 
@@ -1287,7 +1289,85 @@ def colored_telo_length_barplot(data=None, *, x=None, y=None, hue=None, order=No
 
     return plt
 
+def summary_barplot(data=None, *, x=None, y=None, hue=None, order=None, hue_order=None,
+    estimator='mean', errorbar=('ci', 95), n_boot=1000, units=None, seed=None,
+    orient=None, color=None, palette=None, saturation=1.0, width=0.8,
+    errcolor='.26', errwidth=None, capsize=None, dodge=True, ci='deprecated',
+    ax=None, nested_x=False,  mutant=False, plt_title=None, y_title=None, x_title=None, x_rotation=None,
+    repeat="GGTTAG", **kwargs,
+):
+   
+    repeat = "GGTTAG"
+    mutant = "GTTTA"
 
+    fill = [repeat, mutant, "other"]
+    
+    colors=["#D81B60", "#1E88E5","#FFC107"]
+     
+    wt_count = sum(data["wt_perc"] / 100 * data["telo_length"]) 
+    mt_count = sum(data["mt_perc"] / 100 * data["telo_length"]) 
+    other = (sum(data["telo_length"]) - wt_count - mt_count )
+
+    # source_data = {"read_ids" : read_ids,
+    #                 "Non-{} or One Nucl. Substitutions".format(repeat): (100 - (data["one_nucl_variant_composition"] + data["wt_composition"]))/100 *data["vrr_telo_length"],
+    #                 "One Nucl. Substitition of {}".format(repeat) : data["one_nucl_variant_composition"]/100*data["vrr_telo_length"],
+    #                 repeat : data["wt_composition"]/100*data["vrr_telo_length"],
+    #                 mutant : data["mutant_composition"]/100*data["vrr_telo_length"]}
+
+    source_data = {"sample" : [x_title],
+                    repeat : [wt_count / sum(data["telo_length"]) * 100],
+                    mutant : [mt_count / sum(data["telo_length"]) * 100],
+                    "other" : [other / sum(data["telo_length"]) * 100]}
+
+    plt = BokehPlot(x_range=source_data['sample'], tooltips=[("Repeat", "$name"),("Percentage", "@$name")], tools="hover")
+    p = plt._fig
+    p.vbar_stack(fill, x="sample", width=0.9, color=colors, source=source_data, legend_label=fill)
+    #p.yaxis.major_grid_line_color = None
+    #p.yaxis.minor_grid_line_color = None
+    p.ygrid.grid_line_color = None
+    #p.yaxis.major_label_overrides([i for i in range(0, len(read_ids))])
+    p.yaxis.visible = True
+    p.legend.location = "bottom_right"
+    if plt_title is not None:
+        p.title.text = plt_title
+    if y_title is not None:
+        p.yaxis.axis_label = y_title
+    if x_rotation is not None:
+        p.xaxis.major_label_orientation = x_rotation
+
+    return plt
+
+
+def colored_telo_length_barplot_mutant(data=None, *, x=None, y=None, hue=None, order=None, hue_order=None,
+    estimator='mean', errorbar=('ci', 95), n_boot=1000, units=None, seed=None,
+    orient=None, color=None, palette=None, saturation=1.0, width=0.8,
+    errcolor='.26', errwidth=None, capsize=None, dodge=True, ci='deprecated',
+    ax=None, nested_x=False,  mutant=False, plt_title=None, y_title=None, x_title=None, x_rotation=None,
+    repeat="GGTTAG", **kwargs,
+):
+    
+    read_ids = data["read_id"]
+    
+    fill = [repeat, mutant, "other"]
+
+    colors=["#D81B60", "#1E88E5","#FFC107"]
+    
+    source_data = {"read_ids" : read_ids,
+                repeat: data["wt_perc"] / 100 * data["telo_length"],
+                mutant: data["mt_perc"] / 100 * data["telo_length"],
+                "other": (100-data["wt_perc"]-data["mt_perc"]) / 100 * data["telo_length"]}
+    plt = BokehPlot(y_range=read_ids)
+    p = plt._fig
+    p.hbar_stack(fill, y="read_ids", height=0.9, color=colors, source=source_data, legend_label=fill)
+    hover = plt._fig.select(dict(type=HoverTool))
+    hover.tooltips = None
+    #p.yaxis.major_grid_line_color = None
+    #p.yaxis.minor_grid_line_color = None
+    p.ygrid.grid_line_color = None
+    #p.yaxis.major_label_overrides([i for i in range(0, len(read_ids))])
+    p.yaxis.visible = False
+    p.legend.location = "bottom_right"
+=======
 def cluster_size_boxplot(data, plt_title=None, x_title=None, y_title=None):
 
     """Create a boxplot for the given column."""
@@ -1321,10 +1401,93 @@ def cluster_size_boxplot(data, plt_title=None, x_title=None, y_title=None):
         p.xaxis.axis_label = x_title
     if y_title is not None:
         p.yaxis.axis_label = y_title
+    if x_rotation is not None:
+        p.xaxis.major_label_orientation = x_rotation
 
     return plt
 
 
+
+def get_process_counts(stats):
+
+    stats_dict = {}
+    stats_list = []
+
+    with open(stats, "r") as stats:
+        for line in stats:
+            line = line.strip().split()
+            stats_dict[int(line[0])] = int(line[1])
+            stats_list.extend(int(line[1]) * [int(line[0])])
+
+    tract_counts, repeat_percs = {}, {}
+    maximum = np.quantile(stats_list, 0.975)
+    for i in stats_dict:
+        if i < maximum:
+            tract_counts[i] = stats_dict[i] 
+            repeat_percs[i] = stats_dict[i] * i
+    
+    tract_sum = sum(tract_counts.values())
+    repeat_sum = sum(repeat_percs.values())
+    for i in tract_counts:
+        tract_counts[i] = tract_counts[i]/tract_sum * 100
+        repeat_percs[i] = repeat_percs[i]/repeat_sum * 100
+
+    return tract_counts, repeat_percs
+
+
+def analyze_processivity(wt_stats, mt_stats):
+
+    wt_tracts, wt_repeats = get_process_counts(wt_stats)
+    mt_tracts, mt_repeats = get_process_counts(mt_stats)
+
+    mt_a_i, mt_b_i = np.polyfit( [ x for x in mt_tracts ], [ math.log(mt_tracts[x]) for x in mt_tracts], 1)
+    mt_consec = pow(math.e, mt_a_i)
+    mt_process = (pow(math.e,mt_a_i) - 0.5) / 0.5
+    
+    wt_a_i, wt_b_i = np.polyfit( [ x for x in wt_tracts ], [ math.log(wt_tracts[x]) for x in wt_tracts], 1)
+    wt_consec = pow(math.e, wt_a_i)
+    wt_process = (pow(math.e,wt_a_i) - 0.5) / 0.5
+
+    stats = pd.DataFrame([["WT", wt_consec, wt_process],["MT", mt_consec, mt_process]], columns=["Repeat", "P(consec)", "P(process)"])
+
+    for i in wt_tracts:
+        if i not in mt_tracts:
+            mt_tracts[i] = 0
+            mt_repeats[i] = 0
+    
+    for i in mt_tracts:
+        if i not in wt_tracts:
+            wt_tracts[i] = 0
+            wt_repeats[i] = 0
+
+    wt_tract_source = {"x":[i-0.2 for i in wt_tracts], "y":[wt_tracts[i] for i in wt_tracts]}
+    mt_tract_source = {"x":[i+0.2 for i in mt_tracts], "y":[mt_tracts[i] for i in mt_tracts]}
+
+
+    repeat_tracts = BokehPlot()
+    p1 = repeat_tracts._fig
+    p1.vbar(x="x", top="y", width=0.3, source=wt_tract_source, color="skyblue", legend_label="WT")
+    p1.vbar(x="x", top="y", width=0.3, source=mt_tract_source, color="salmon", legend_label="MT")
+    p1.legend.location = "top_right"
+    p1.xaxis.axis_label = "Consecutive Repeats"
+    p1.yaxis.axis_label = "Percentage of Repeat Tracts"
+
+
+
+    wt_perc_source = {"x":[i-0.2 for i in wt_repeats], "y":[wt_repeats[i] for i in wt_repeats]}
+    mt_perc_source = {"x":[i+0.2 for i in mt_repeats], "y":[mt_repeats[i] for i in mt_repeats]}
+
+
+    repeat_percs = BokehPlot()
+    p2 = repeat_percs._fig
+    p2.vbar(x="x", top="y", width=0.3, source=wt_perc_source, color="skyblue", legend_label="WT")
+    p2.vbar(x="x", top="y", width=0.3, source=mt_perc_source, color="salmon", legend_label="MT")
+    p2.legend.location = "top_right"
+    p2.xaxis.axis_label = "Consecutive Repeats"
+    p2.yaxis.axis_label = "Percentage of Repeat Tracts"
+
+    return repeat_tracts, repeat_percs, stats
+        
 def barplot_single_value(value, category, expected, plt_title=None):
 
     categories = [category]

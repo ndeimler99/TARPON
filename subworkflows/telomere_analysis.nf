@@ -47,6 +47,12 @@ workflow telomere_analysis_pipeline {
         if (params.mutant != "false") {
             mutant_analysis = MUTANT_ANALYSIS(telomeric_reads_with_stats)
         }
+        else {
+            Channel.from() \
+                .map { it -> tuple(it[0], it[1]) } \
+                .set { mutant_analysis }
+        }
+
         variant_analysis = VARIANT_ANALYSIS(telomeric_reads_with_stats)
 
         PLOT_TELO_GRAPHS(variant_analysis.sequences)
@@ -142,9 +148,17 @@ workflow telomere_analysis_pipeline {
         //     .map { it[1] }
         //     .set { file_conglomerate }
 
-        variant_analysis.statistics.mix(variant_analysis.repeat_distribution, restriction_digest)
-            .map { it[1] }
-            .set { file_conglomerate }
+
+        if (params.mutant != "false"){
+            variant_analysis.statistics.mix(variant_analysis.repeat_distribution, restriction_digest, mutant_analysis.statistics, mutant_analysis.processivity)
+                .map { it[1] }
+                .set { file_conglomerate }
+        } 
+        else {
+            variant_analysis.statistics.mix(variant_analysis.repeat_distribution, restriction_digest)
+                .map { it[1] }
+                .set { file_conglomerate }
+        }
             
     emit:
         // flowcell_retained = run_stats.retained_stats

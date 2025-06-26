@@ -30,7 +30,7 @@ mt_processivity$repeat_type <- "mutant"
 
 processivity_df <- rbind(wt_processivity, mt_processivity)
 
-ggplot(data=processivity_df) +
+processivity_occurences <- ggplot(data=processivity_df) +
   geom_bar(mapping=aes(x=repeat_count, y=percentage_of_occurences, fill=repeat_type), stat="identity", position=position_dodge2()) +
   theme_minimal() +
   xlab("Number of Consecutive Repeats") + ylab("Number of Occurences") +
@@ -41,7 +41,7 @@ ggplot(data=processivity_df) +
   scale_fill_manual(breaks=c("wild_type", "mutant"), values=c("#D81B60", "#FFC107"), labels=c(repeat_seq, mutant)) + 
   xlim(0,100)
 
-ggplot(data=processivity_df) +
+processivity_repeats <- ggplot(data=processivity_df) +
   geom_bar(mapping=aes(x=repeat_count, y=percentage_of_repeats, fill=repeat_type), stat="identity", position=position_dodge2()) +
   theme_minimal() +
   xlab("Number of Consecutive Repeats") + ylab("Number of Occurences") +
@@ -52,7 +52,7 @@ ggplot(data=processivity_df) +
   scale_fill_manual(breaks=c("wild_type", "mutant"), values=c("#D81B60", "#FFC107"), labels=c(repeat_seq, mutant)) + 
   xlim(0,100)
 
-ggplot(data=processivity_df) +
+processivity_stats <- ggplot(data=processivity_df) +
   geom_point(mapping=aes(x=repeat_count, y=log(percentage_of_occurences), color=repeat_type), size=4) +
   theme_minimal() +
   xlab("Number of Consecutive Repeats") + ylab("Number of Occurences") +
@@ -64,4 +64,6 @@ ggplot(data=processivity_df) +
   xlim(0,100)
 
 
-
+ggsave("repeat_tract_occurences.pdf", plot=processivity_occurences, width=12, height=10)
+ggsave("repeat_tract_occurences_log.pdf", plot=processivity_stats, width=12, height=10)
+ggsave("repeat_tract_percentages.pdf", plot=processivity_repeats, width=12, height=10)

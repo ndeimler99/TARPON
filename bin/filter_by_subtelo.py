@@ -19,7 +19,7 @@ def main(args):
         pass
     else:
         hamming = 0
-        for i in range(0, len(args.mutant)):
+        for i in range(0, min(len(args.mutant), len(args.repeat))):
             if args.mutant[i] != args.repeat[i]:
                 hamming += 1
         if hamming <= 1:
@@ -27,7 +27,7 @@ def main(args):
 
     for aln in fh:    
         # ensure that the read length is not less than the length of minimum subtelomere stretch
-        if len(aln.query_sequence) < args.min_subtelo_threshold:
+        if len(aln.query_sequence) < args.min_subtelo_length:
             subtelo_fail.write(aln)
         else:
             matches = list(regex.finditer(r'(%s){s<=1}' % args.repeat, aln.query_sequence[0:args.min_subtelo_length]))

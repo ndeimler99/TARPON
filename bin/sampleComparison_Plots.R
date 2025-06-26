@@ -8,7 +8,6 @@ COLORS=c('#0173b2', '#de8f05', '#029e73', '#d55e00', '#cc78bc', '#ca9161', '#fba
 
 args = commandArgs(trailingOnly=TRUE)
 
-
 stats <- read.table("combined_stats.VRR.txt", header=TRUE)
 
 stats$Sample_ID <- factor(stats$Sample_ID, levels=sort(stats$Sample_ID))

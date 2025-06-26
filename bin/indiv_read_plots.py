@@ -34,24 +34,44 @@ def main(args):
         ax1.set_ylim(0,100)
         ax1.vlines(start_dict[aln.query_name], 0, 100, label="VRR Start", color="red")
         ax1.set_title('{}-{} Strand'.format(aln.query_name, aln.get_tag("XS")))
-        x = []
-        perf = []
-        subs = []
-        for i in range(0, len(aln.query_sequence)-args.sliding_window, args.sliding_window_interval):
-            x.append(i)
-            perf.append((aln.query_sequence[i:i+args.sliding_window].count(args.repeat) * len(args.repeat) / args.sliding_window) * 100)
-            subs.append((len(list(regex.finditer(r"(%s){s<=1}" % args.repeat, aln.query_sequence[i:i+args.sliding_window]))) * len(args.repeat)) / args.sliding_window * 100)
+
+        if args.mutant == "false":
+            x = []
+            perf = []
+            subs = []
+            for i in range(0, len(aln.query_sequence)-args.sliding_window, args.sliding_window_interval):
+                x.append(i)
+                perf.append((aln.query_sequence[i:i+args.sliding_window].count(args.repeat) * len(args.repeat) / args.sliding_window) * 100)
+                subs.append((len(list(regex.finditer(r"(%s){s<=1}" % args.repeat, aln.query_sequence[i:i+args.sliding_window]))) * len(args.repeat)) / args.sliding_window * 100)
         
-        ax1.plot(x, perf, label="Perfect Repeats")
-        ax1.plot(x, subs, label="One Nucl. Substitution")
-        ax1.legend()
-        #print(read[0].split()[0].strip("@"))
+
+            ax1.plot(x, perf, label="Perfect Repeats")
+            ax1.plot(x, subs, label="One Nucl. Substitution")
+            ax1.legend()
+            
+        else:
+            x = []
+            perf_with_mutant = []
+            subs_with_mutant = []
+            mutant = []
+            for i in range(0, len(aln.query_sequence)-args.sliding_window, args.sliding_window_interval):
+                x.append(i)
+                perf_with_mutant.append(((aln.query_sequence[i:i+args.sliding_window].count(args.repeat) * len(args.repeat) + aln.query_sequence[i:i+args.sliding_window].count(args.mutant) * len(args.mutant)) / args.sliding_window) * 100)
+                subs_with_mutant.append(((len(list(regex.finditer(r"(%s){s<=1}" % args.repeat, aln.query_sequence[i:i+args.sliding_window]))) * len(args.repeat)) + aln.query_sequence[i:i+args.sliding_window].count(args.mutant) * len(args.mutant)  ) / args.sliding_window * 100)
+                mutant.append((aln.query_sequence[i:i+args.sliding_window].count(args.mutant) * len(args.mutant) / args.sliding_window) * 100)
+
+            ax1.plot(x, perf_with_mutant, label="Perfect Repeats (including mutant)")
+            ax1.plot(x, subs_with_mutant, label="One Nucl. Substitittions (including perfect Mutant Repeats)")
+            ax1.plot(x, mutant, label="Mutant Repeat Frequency")
+            ax1.legend()
+        
         fig1.savefig("{}.pdf".format(aln.query_name.strip("@")), format="pdf")
 
 def argparser():
     parser = argparse.ArgumentParser()
     parser.add_argument("--input_file", required=True)
     parser.add_argument("--repeat", required=True)
+    parser.add_argument("--mutant", required=True)
     parser.add_argument("--telo_stats", required=True)
     parser.add_argument("--sliding_window", required=True)
     parser.add_argument("--sliding_window_interval", required=True)

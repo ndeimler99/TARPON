@@ -17,6 +17,7 @@ import ezcharts as ezc
 from ezcharts.layout.base import IStyles, Snippet
 from ezcharts.components.ezchart import EZChart
 from ezcharts.components.fastcat import SeqSummary
+from ezcharts.layout.snippets.grid import IGridStyles
 #from ezcharts.components.reports.labs import LabsReport
 from extra.report import LabsReport
 #from report import BasicReport
@@ -883,7 +884,7 @@ def main(args):
                                 # read quality by strand
                                 # telo quality by strand
 
-                                pass
+                        
                     with tabs.add_dropdown_tab("Telomeric Composition"):
                         new_tabs = Tabs()
                         with new_tabs.add_tab("Perfect Repeats Distribution"):
@@ -990,7 +991,36 @@ def main(args):
     
     if args.mutant != "false":
         with report.add_section("Mutant Repeat Analysis", "Mutant Repeat Analysis"):
-            pass
+            tabs = Tabs()
+            for sample in sorted(list(sample_dict.keys())):
+                with tabs.add_dropdown_menu(sample, change_header=False):
+                    with tabs.add_dropdown_tab("{} Read Composition".format(sample)):
+                        df = pd.read_table(sample_dict[sample]["mutant_stats"], sep="\t")
+                        repeat_comp = report_utils.summary_barplot(df, mutant=args.mutant, repeat=args.repeat, y_title="Percentage of Telomere", x_title=sample)
+                        df = df.sort_values("telo_length")
+                        indiv_read_comp = report_utils.colored_telo_length_barplot_mutant(data=df, mutant=args.mutant, repeat=args.repeat, x_title = "Telomere Length")
+                        
+                        igrid = IGridStyles()
+                        igrid.container = css(
+                            "display: grid",
+                            "grid-template-rows: repeat(1, 1fr)",
+                            "grid-template-columns: 20% 80%",
+                            "grid-column-gap: 10px",
+                            "grid-row-gap: 20px")
+                        with Grid(columns=None, styles=igrid):
+                            EZChart(repeat_comp)
+                            EZChart(indiv_read_comp)
+                    with tabs.add_dropdown_tab("{} Processivity".format(sample)):
+                        # remove greather than 97.5th percentile
+                        # plot tract occurences
+                        # plot repeat percentages
+                        # calculate processivity and consecutivity and return in pandas dataframe
+                        tract_counts, repeat_percs, processivity_stats = report_utils.analyze_processivity(sample_dict[sample]["wt_processivity_stats"], sample_dict[sample]["mt_processivity_stats"])
+                        with Grid(columns=2):
+                            EZChart(tract_counts)
+                            EZChart(repeat_percs)
+                    with tabs.add_dropdown_tab("{} Processivity Stats".format(sample)):
+                        DataTable.from_pandas(processivity_stats, use_index=False)
 
     if clustering:
         with report.add_section("Clustering Analysis", "Clustering Analysis"):

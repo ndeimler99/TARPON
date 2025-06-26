@@ -21,8 +21,9 @@ def main(args):
             for match in matches:
                         # identify the first match that has at least ten telomeric repeats prior to the start of the match
                             # once this has been found chop the read at the start of the adaptor sequence and add the next 100bp to the header line and stop looping (discard portion of read further downstream)
+                
                 if args.mutant == "false":
-                    repeat_count = aln.query_sequence[0:match.span()[0]].count(args.repeat) / aln.query_sequence.count(args.repeat) * 100
+                    repeat_count = aln.query_sequence[0:match.span()[0]].count(args.repeat) #/ aln.query_sequence.count(args.repeat) * 100
                 else:
                     repeat_count = aln.query_sequence[0:match.span()[0]].count(args.repeat) + aln.query_sequence[0:match.span()[0]].count(args.mutant)
 
@@ -35,7 +36,7 @@ def main(args):
                     if aln.get_tag("XS") == "C":
                         #print(aln.query_sequence[match.span()[0]-50:match.span()[0]+50])
                         aln.query_sequence = aln.query_sequence[0:match.span()[0]-args.overhang_length]
-                        print(aln.query_sequence[match.span()[0]-200:match.span()[0]+50])
+                        #print(aln.query_sequence[match.span()[0]-200:match.span()[0]+50])
                         aln.query_qualities = q[0:match.span()[0]-args.overhang_length]
                         adaptor_out.write(aln)
                     else:
@@ -45,6 +46,8 @@ def main(args):
                     break
             else:
                         # this means no adaptor sequence was found after ten telomeric repeats
+                print(aln.query_name)
+                print(aln.query_sequence)
                 adaptor_fail.write(aln)
         else:
                     # no adaptor found at all

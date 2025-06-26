@@ -22,6 +22,7 @@ def main(args):
         else:
             c = aln.query_sequence.count(rev_complement(args.repeat)) + aln.query_sequence.count(rev_complement(args.mutant))
             g = aln.query_sequence.count(args.repeat) + aln.query_sequence.count(args.mutant)
+
         if args.c_strand_only:
             if c/(c+g) >= args.threshold:
                 q = aln.query_qualities
