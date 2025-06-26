@@ -1,4 +1,4 @@
-# TARPON v1.0.2
+# TARPON v1.0.3
 Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 
 ## Table of Contents
@@ -7,10 +7,11 @@ Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 3. [Installation](#installation)
 4. [Running Tarpon Through Epi2Me](#epi2me)
 5. [Running Tarpon Through the Command Line](#commandline)
-6. [Additional Help and Information](#help)
-7. [Input Paramaters](#input)
-8. [Advanced Input Parameteres](#advanced_input)
-9. [Output Files](#output)
+6. [Chromsome Arm Specific Assignment](#chromspecific)
+7. [Additional Help and Information](#help)
+8. [Input Paramaters](#input)
+9. [Advanced Input Parameteres](#advanced_input)
+10. [Output Files](#output)
 
 If you use this software please cite 
 "TARPON - a Telomere Analysis and Research Pipeline Optimized for Nanopore
@@ -19,7 +20,7 @@ bioRxiv 2025.04.22.649940; doi: https://doi.org/10.1101/2025.04.22.649940"
 
 ## [What is TARPON and Why Should I Use It?](#what_and_why)
 
-TARPON is a pipeline developed in the lab of Dr. Peter Baumann by PhD candidate Nathaniel Deimler. At the time of the pipeline's creation there were multiple publications (Karimian et al., 2024; Sanchez et al., 2024; Schmidt et al., 2024) that have developed protocols for the enrichment of telomeric sequences to succesfully sequence human telomeres by Nanopore sequencing while remaining cost productive. Unfortunately, these papers use different methods to identify and process telomeric reads. TARPON is the first fully automated and GUI-accessible telomere analysis pipeline tailored to nanopore sequencing. It supports both splint- and duplex-enriched telomeric libraries and is designed for ease of use with experimentally validated defaults and seamless integration into the EPI2ME platform. No command-line experience or manual data manipulation is required for standard operation. At the same time, TARPON offers advanced users full flexibility to adjust parameters for specialized research questions, including non-human samples and atypical telomeric features. For more information please see ....
+TARPON is a pipeline developed in the lab of Dr. Peter Baumann by PhD candidate Nathaniel Deimler. At the time of the pipeline's creation there were multiple publications (Karimian et al., 2024; Sanchez et al., 2024; Schmidt et al., 2024) that have developed protocols for the enrichment of telomeric sequences to succesfully sequence human telomeres by Nanopore sequencing while remaining cost productive. Unfortunately, these papers use different methods to identify and process telomeric reads. TARPON is the first fully automated and GUI-accessible telomere analysis pipeline tailored to nanopore sequencing. It supports both splint- and duplex-enriched telomeric libraries and is designed for ease of use with experimentally validated defaults and seamless integration into the EPI2ME platform. No command-line experience or manual data manipulation is required for standard operation. At the same time, TARPON offers advanced users full flexibility to adjust parameters for specialized research questions, including non-human samples and atypical telomeric features. For more information please see https://www.biorxiv.org/content/10.1101/2025.04.22.649940v1
 
 ## [The Pipeline](#pipeline)
 
@@ -31,9 +32,9 @@ After demultiplexing telomeric reads are filtered to ensure the telomere was com
 
 ## [Installation](#installation)
 
-TARPON is a nextflow pipeline and is readily integrable into Epi2Me but can also be installed on the command line. Nextflow must also be installed which requires a java and docker installation.  Please see https://www.nextflow.io/docs/latest/install.html for more information on installing nextflow and java. For more information on NextFlow please see https://www.nextflow.io/docs/latest/index.html. 
+TARPON is a nextflow pipeline and is readily integrable into Epi2Me but can also be installed on the command line. Nextflow must also be installed which requires a java and docker or singularity installation.  Please see https://www.nextflow.io/docs/latest/install.html for more information on installing nextflow and java. For more information on NextFlow please see https://www.nextflow.io/docs/latest/index.html. 
 
-To install TARPON on the command line simply clone this github repository and ensure Docker is installed on your system. Nextflow will automatically pull the appropriate docker images from dockerhub the first time the program is executed to ensure no dependency issues arise.
+To install TARPON on the command line simply clone this github repository and ensure Docker or singularity is installed on your system. Nextflow will automatically pull the appropriate docker or singularity images from dockerhub the first time the program is executed to ensure no dependency issues arise.
 
     git clone git@github.com:ndeimler99/TARPON.git
     chmod +x TARPON/bin/*
@@ -84,6 +85,18 @@ To include a restriction digest analysis use the paramter --restriction_digest_a
 
     nextflow run main.nf --input ./test_data/simplex_test.duplex.bam --capture_probe_sequence ATGCTACGATCA --outdir ./simplex_test --restriction_digest_analysis GATATC,GAATTC
 
+<<<<<<< clustering
+## [Chromosome Arm Specific Assignment](#chrom_specific)
+
+Three processes within TARPON allow for the user to assign chromosome arm specific information. The simplest is the --alignment option. This will align all filtered, fully telomeric sequences to the provided reference genome through --reference. This option should only be used if the reference genome is matched to the sample the telomeric sequences originated. Please see Deimler et al., 2025 for more details on why this is. 
+
+If a sample-matched reference is unavailable de novo clustering can be performed. --clustering must be set during execution. By default 1kb in the subtelomere direction of the telomere start and 2kb in the telomere direction the telomere start will be used to cluster the sequences using telogator2. These values can be changed by setting the parameters --pre_vrr and --post_vrr respectively. A cluster must contain a minimum of 0.2% of the telomeric sequences for it to be included in further analyses.
+
+Should TARPON already have run and you are unhappy with the clustering results or would like to cluster the telomeric sequences at a later time, the entire pipeline does not need to be executed. Specifying the parameter --recluster_only will only perform the clustering step of TARPON. In this case, --input must be a bam file composed of telomeric sequences (found in the output of TARPON) and --telomeric_stats must be the stats file that TARPON provides as output corresponding to the telomeric bam file. pre_vrr, post_vrr, and minimum_cluster_size can all be modified during reclustering. Note that performing a re-alignment after TARPON executes is not possible however can easily be replicated by running minimap2. Reclustering will not result in the production of a new HTML report.
+=======
+If you are using a HPC that does not allow for docker connections, TARPON is also executable using singularity by specifying -profile singularity.
+>>>>>>> main
+
 ## [Additional Help and Information](#help)
 
 For additional help please contact Nathaniel Deimler by opening an issue on this repository or by email at ndeimler@uni-mainz.de or nathanieldeimler.research@gmail.com or visit Deimler et al., 2025 for more information. 
@@ -130,7 +143,17 @@ For additional help please contact Nathaniel Deimler by opening an issue on this
 |restriction_digest_analysis| Restriction Digest Analysis|A comma separated list of restriction enzyme cut-sites to determine the completeness of digestion of telomeric sequences| String |None|
 |mutant| mutant | USE WITH CAUTION : If a telomerase RNA mutant incorporates mutant telomeric repeats into the telomere sequence, the mutant repeat of interest can be specified here to return mutant specific calculations of processivity and occurence. Note that this function is in it's preliminary development and is used for exploratory purposes only. It is highly recomended your own analysis is done on the isolated telomeric sequences for higher levels of clarity - I am more than happy to assist and program the analysis specific to your mutant of interest.  Specifying this argument also impacts all other functions of TARPON as the mutant repeat will be included as a telomeric repeat.| String | False |
 |no_capture_probe| No Capture Probe | It is NOT recomended to run TARPON using this parameter. If true, no capture probe identification will occur and the telomere end will be identified by the terminal two conseuctive telomeric repeats. It is not recommended to run TARPON in this manner. Note it is not possible to demultiplex data via TARPON with no capture probe and that multiplexed data should be demultiplexed by dorado demux prior to TARPON execution | Boolean | False |
+|clustering| Cluster Reads | Enabling this parameter will result in telomere sequence clustering. This greatly increases run time | Boolean | False |
+|pre_vrr| Pre-VRR | Number of nucleotides in the subtelomere direction of the telomere start to use for clustering | Number | 1000|
+|post_vrr| Post-VRR | Number of nucleotides in the telomere direction of the telomere start site to use for clustering | Number | 2000 |
+|minimum_cluster_size| Minimum Cluster Size | Minimum percentage of telomeric reads needed for a cluster to pass filtering | Number | 0.2 |
+|recluster_only| Recluster Only | Will only use input and --telomeric_stats to perform clustering analysis on samples already run through TARPON. Input must be a telomeric bam file | Boolean | false |
+|telomeric_stats| Telomeric Stats | Telomeric stats file returned by TARPON to aid in reclustering | File | None |
+|alignment| Perform Alignment | Performs alignment to sample matched subtelomeric reference | Boolean | false |
+|reference| Reference Genome for Alignment | Sample-matched subtelomeric reference genome for alignment | file | None |
+|minimum_mapq| Minimum Mapping Quality | Minimum mapping quality for a read to be included in the alignment-based chromosome arm specific analysis | number | 20|
 
+| Parameter      | Epi2Me Appearance |Description | Type | Default     |
 ## [Ouput](#output)
 
 Various output files are produced when the pipeline is run with different parameters. In all cases, the output directory is created containing the following subdirectories.

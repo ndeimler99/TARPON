@@ -525,6 +525,7 @@ process GENERATE_FINAL_REPORT {
                             --repeat ${params.repeat} \
                             --detailed_stats ${params.detailed_stats} \
                             --mutant ${params.mutant} \
+                            --clustering ${params.clustering} \
                             --sample_specific_files ${file_conglomerate}
     """
 }
@@ -854,4 +855,72 @@ process PLOT_TELO_GRAPHS {
     """
     plotTeloGraphs.py --telo_sequences ${telo_reads} --repeat ${params.repeat} --mutant ${params.mutant} --telo_plot ${sample}.telomere_visualization.png
     """
+}
+
+process telogator_clustering {
+
+    label 'tarpon'
+    tag "$sample - Clustering via Telogator2"
+    cpus params.threads
+
+    input:
+        tuple val(sample), path(telo_reads), path(stats_file)
+
+    output:
+        tuple val(sample), path("*telomeric_stats_with_cluster.txt"), path("*.clustering_summary_stats.txt"), emit: clustering_stats
+        path("*.pdf")
+
+    publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telomeric_stats_with_cluster.txt"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.clustering_summary_stats.txt"
+
+    script:
+    """
+    trim_telomeric_reads.py --telomeric_bam ${telo_reads} --stats_fh ${stats_file} \
+        --pre_vrr ${params.pre_vrr} --post_vrr ${params.post_vrr} \
+        --out_fasta ${sample}.telo_trimmed.fasta
+
+    telogator2.py -i ${sample}.telo_trimmed.fasta -tt 0.1 \
+        --collapse-hom 500 -o ${sample}.clustering_results \
+         -r ont -l 0 -p ${params.threads} --filt-tel 0 --filt-nontel 10000 \
+         --filt-sub 0 --debug-noanchor
+
+    process_clusters.py --stats_fh ${stats_file} --cluster_results ${sample}.clustering_results/tlens_by_allele.tsv \
+        --new_stats_fh ${sample}.telomeric_stats_with_cluster.txt \
+        --min_percentage ${params.minimum_cluster_size}
+
+    plotClusters.R ${sample}.telomeric_stats_with_cluster.txt ${sample}
+    """    
+}
+
+process alignment_to_ref {
+
+    label 'tarpon'
+    tag "$sample - Aligning to Reference"
+    cpus params.threads
+
+
+    input:
+        tuple val(sample), path(telo_reads), path(stats_file)
+        path(ref_file)
+    
+    output:
+        tuple val(sample), path("*telomeric_stats_with_alignment.txt"), path("*.chrom_arm_summary.txt"), emit: output
+        path("*.pdf")
+
+    publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telomeric_stats_with_alignment.txt"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.chrom_arm_summary.txt"
+
+    script:
+    """
+    samtools fastq ${telo_reads} > ${sample}.telomeric_reads.fastq
+    minimap2 -ax map-ont -t ${params.threads} ${ref_file} ${sample}.telomeric_reads.fastq > ${sample}.aligned_telomeric_reads.sam
+    samtools view -h -q ${params.minimum_mapq} ${sample}.aligned_telomeric_reads.sam > ${sample}.alignment.sam
+    process_alignment.py --stats_fh ${stats_file} --new_stats_fh ${sample}.telomeric_stats_with_alignment.txt --alignment ${sample}.alignment.sam 
+    plotClusters.R ${sample}.telomeric_stats_with_alignment.txt ${sample}
+    """
+    
+    
+    
 }

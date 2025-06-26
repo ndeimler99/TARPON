@@ -5,8 +5,8 @@ class WorkflowMain {
     // Citation string for pipeline
     public static String citation(workflow) {
         return "If you use ${workflow.manifest.name} for your analysis please cite:\n\n" +
-            "* The nf-core framework\n" +
-            "  https://doi.org/10.1038/s41587-020-0439-x\n\n"
+            "* Nathaniel Deimler, David Ho, Peter Baumann; bioRxiv 2025.04.22.649940\n" +
+            "* https://doi.org/10.1101/2025.04.22.649940\n"
     }
 
     // Generate help string

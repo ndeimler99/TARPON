@@ -10,9 +10,9 @@ nextflow.enable.dsl=2
 */
 
 println """\
-    TArPON - Telomere Analysis Pipeline on Nanopore Sequencing Data
+    TARPON - Telomere Analysis Pipeline on Nanopore Sequencing Data
     ================================================
-    v1.0.2
+    v1.0.3
     """.stripIndent()
 
 /*
@@ -25,9 +25,12 @@ include { validate_parameters } from "./subworkflows/parameter_validation.nf"
 include { preprocess_data_pipeline } from "./subworkflows/preprocess_and_basecall.nf"
 include { telomere_isolation_pipeline } from "./subworkflows/telomere_isolation.nf"
 include { telomere_analysis_pipeline } from "./subworkflows/telomere_analysis.nf"
+include { clustering_pipeline } from "./subworkflows/clustering_analysis.nf"
 include { paramsHelp; paramsSummaryLog; samplesheetToList } from 'plugin/nf-schema'
 include { getParams; getVersions; getManifest; GENERATE_FINAL_REPORT } from "./bin/process.nf"
 include { enrichment_stats_pipeline } from "./subworkflows/enrichment_stats.nf"
+include { telogator_clustering } from "./bin/process.nf"
+include { alignment_to_ref } from "./bin/process.nf"
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -54,23 +57,48 @@ workflow {
         // real_time_pipeline()
     }
     else {
-        // preprocess data pipeline takes the input files or directory and returns SUP basecalled telomeric sequences
-        preprocess_data_pipeline(params.run_name, params.input)
 
-        // takes putative telomeric sequences returned by preprocess data pipeline and runs all relevant processes to generate descriptive stats and report.html
-        telomere_isolation_pipeline(preprocess_data_pipeline.out, params.sample_file)
+        if (params.recluster_only){
+            clustering_results = telogator_clustering(tuple(params.sample_name, file(params.input), file(params.telomeric_stats)))
+        }
+        else {
+            // preprocess data pipeline takes the input files or directory and returns SUP basecalled telomeric sequences
+            preprocess_data_pipeline(params.run_name, params.input)
 
-        //telomere_isolation.collect().view()
-        telomere_stats = telomere_analysis_pipeline(telomere_isolation_pipeline.out)
+            // takes putative telomeric sequences returned by preprocess data pipeline and runs all relevant processes to generate descriptive stats and report.html
+            telomere_isolation_pipeline(preprocess_data_pipeline.out, params.sample_file)
 
-        enrichment_stats = enrichment_stats_pipeline(telomere_isolation_pipeline.out)
-        
+            //telomere_isolation.collect().view()
+            telomere_stats = telomere_analysis_pipeline(telomere_isolation_pipeline.out)
 
-        report = GENERATE_FINAL_REPORT(parameters.params, versions.versions, manifest.manifest, \
-                            enrichment_stats.flowcell_retained, enrichment_stats.flowcell_removed, \
-                            telomere_stats.telomere_stats, \
-                            telomere_stats.sample_specific_stats.mix(enrichment_stats.sample_specific_stats).collect()
-        )
+            enrichment_stats = enrichment_stats_pipeline(telomere_isolation_pipeline.out)
+            
+            if (params.clustering) {
+                clustering_results = clustering_pipeline(telomere_isolation_pipeline.out)
+                    .map {it -> tuple(it[1], it[2])}
+            }
+            else {
+                Channel.from() \
+                    .map { it -> tuple(it[0], it[1]) } \
+                    .set { clustering_results }
+            }
+
+            if (params.alignment) {
+                alignment_results = alignment_to_ref(telomere_isolation_pipeline.out.telomeric_reads_with_stats, file(params.reference)).output
+                    .map {it -> tuple(it[1], it[2])}
+            }
+            else {
+                Channel.from() \
+                    .map { it -> tuple(it[0], it[1]) } \
+                    .set { alignment_results }
+            }
+
+            report = GENERATE_FINAL_REPORT(parameters.params, versions.versions, manifest.manifest, \
+                                enrichment_stats.flowcell_retained, enrichment_stats.flowcell_removed, \
+                                telomere_stats.telomere_stats, \
+                                telomere_stats.sample_specific_stats.mix(enrichment_stats.sample_specific_stats, clustering_results, alignment_results).collect()
+            )
+        }
     }
 
 }
