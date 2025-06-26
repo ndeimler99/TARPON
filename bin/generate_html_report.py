@@ -54,6 +54,7 @@ def main(args):
 
     args.strand_comparison = args.strand_comparison == "true"
     args.detailed_stats = args.detailed_stats == "true"
+    args.clustering = args.clustering == "true"
     args.minimum_read_count = int(args.minimum_read_count)
 
     params = get_nextflow_attributes(args.params)
@@ -76,6 +77,15 @@ def main(args):
     else:
         restriction_digest = False
 
+    if "clustering_summary_stats" in sample_dict[list(sample_dict.keys())[0]]:
+        clustering = True
+    else:
+        clustering = False
+
+    if "chrom_arm_summary" in sample_dict[list(sample_dict.keys())[0]]:
+        alignment = True
+    else:
+        alignment = False
 
     vrr_summary_stats = pd.read_table(args.run_vrr_stats, sep="\t")
 
@@ -982,6 +992,74 @@ def main(args):
         with report.add_section("Mutant Repeat Analysis", "Mutant Repeat Analysis"):
             pass
 
+    if clustering:
+        with report.add_section("Clustering Analysis", "Clustering Analysis"):
+            tabs = Tabs()
+            for sample in sorted(list(sample_dict.keys())):
+                with tabs.add_dropdown_menu(sample, change_header=False):
+                    df = pd.read_table(sample_dict[sample]["telomeric_stats_with_cluster"], sep="\t")
+                    with tabs.add_dropdown_tab("{} Clustering Performance".format(sample)):
+                        # percentage of reads clustered
+                        perc_of_reads = sum(df["Cluster"].notna())/len(df["Cluster"]) * 100
+                        perc_reads_barplot = report_utils.barplot_single_value(perc_of_reads, "Percentage of Reads Clustered", 100)
+
+                        df = df[df["Cluster"].notna()]
+                        
+                        # number of clusters
+                        cluster_count = df["Cluster"].nunique()
+                        cluster_count_barplot = report_utils.barplot_single_value(cluster_count, "Number of Clusters", 92)
+
+                        # cluster size distribution plot
+                        cluster_sizes = pd.Series(df["Cluster"].value_counts() / sum(df["Cluster"].value_counts()) * 100)
+                        cluster_size_plot = report_utils.cluster_size_boxplot(cluster_sizes)
+                        with Grid(columns=3): 
+                            EZChart(perc_reads_barplot)
+                            EZChart(cluster_count_barplot)
+                            EZChart(cluster_size_plot)
+                        
+                    with tabs.add_dropdown_tab("{} Clustering Results".format(sample)):
+                        df = pd.read_table(sample_dict[sample]["telomeric_stats_with_cluster"], sep="\t")
+                        cluster_plot = report_utils.telo_length_by_cluster(df, "Telomere Length by Cluster", "Cluster #", "Telomere Length")
+                        EZChart(cluster_plot)
+                        # telomere length by cluster w/ read counts written
+                    with tabs.add_dropdown_tab("{} Clustering Table".format(sample)):
+                        df = pd.read_table(sample_dict[sample]["clustering_summary_stats"], sep="\t")
+                        DataTable.from_pandas(df, use_index=False)
+    
+    if alignment:
+        with report.add_section("Alignment Analysis", "Alignment Analysis"):
+            tabs = Tabs()
+            for sample in sorted(list(sample_dict.keys())):
+                with tabs.add_dropdown_menu(sample, change_header=False):
+                    df = pd.read_table(sample_dict[sample]["telomeric_stats_with_alignment"], sep="\t")
+                    with tabs.add_dropdown_tab("{} Alignment Performance".format(sample)):
+                        # percentage of reads clustered
+                        perc_of_reads = sum(df["Cluster"].notna())/len(df["Cluster"]) * 100
+                        perc_reads_barplot = report_utils.barplot_single_value(perc_of_reads, "Percentage of Reads Aligned Uniquely", 100)
+
+                        df = df[df["Cluster"].notna()]
+                        
+                        # number of clusters
+                        cluster_count = df["Cluster"].nunique()
+                        cluster_count_barplot = report_utils.barplot_single_value(cluster_count, "Number of Chrom. Arms", 92)
+
+                        # cluster size distribution plot
+                        cluster_sizes = pd.Series(df["Cluster"].value_counts() / sum(df["Cluster"].value_counts()) * 100)
+                        cluster_size_plot = report_utils.cluster_size_boxplot(cluster_sizes)
+                        with Grid(columns=3): 
+                            EZChart(perc_reads_barplot)
+                            EZChart(cluster_count_barplot)
+                            EZChart(cluster_size_plot)
+                        
+                    with tabs.add_dropdown_tab("{} Alignment Results".format(sample)):
+                        df = pd.read_table(sample_dict[sample]["telomeric_stats_with_alignment"], sep="\t")
+                        cluster_plot = report_utils.telo_length_by_cluster(df, "Telomere Length by Chrom. Arm", "Chromosome Arm", "Telomere Length")
+                        EZChart(cluster_plot)
+                        # telomere length by cluster w/ read counts written
+                    with tabs.add_dropdown_tab("{} Alignment Table".format(sample)):
+                        df = pd.read_table(sample_dict[sample]["chrom_arm_summary"], sep="\t")
+                        DataTable.from_pandas(df, use_index=False)
+
     report.write(args.report)
 
 def argparser():
@@ -1005,6 +1083,7 @@ def argparser():
     parser.add_argument("--mutant", required=True)
     parser.add_argument("--detailed_stats", required=True)
     parser.add_argument("--strand_comparison", required=True)
+    parser.add_argument("--clustering", required=True)
 
     ## Sample Specific Parameters
     parser.add_argument("--sample_specific_files", required=True, nargs="+")
