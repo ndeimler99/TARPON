@@ -1,4 +1,4 @@
-# TARPON v1.0.2
+# TARPON v1.0.3
 Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 
 ## Table of Contents
@@ -20,7 +20,7 @@ bioRxiv 2025.04.22.649940; doi: https://doi.org/10.1101/2025.04.22.649940"
 
 ## [What is TARPON and Why Should I Use It?](#what_and_why)
 
-TARPON is a pipeline developed in the lab of Dr. Peter Baumann by PhD candidate Nathaniel Deimler. At the time of the pipeline's creation there were multiple publications (Karimian et al., 2024; Sanchez et al., 2024; Schmidt et al., 2024) that have developed protocols for the enrichment of telomeric sequences to succesfully sequence human telomeres by Nanopore sequencing while remaining cost productive. Unfortunately, these papers use different methods to identify and process telomeric reads. TARPON is the first fully automated and GUI-accessible telomere analysis pipeline tailored to nanopore sequencing. It supports both splint- and duplex-enriched telomeric libraries and is designed for ease of use with experimentally validated defaults and seamless integration into the EPI2ME platform. No command-line experience or manual data manipulation is required for standard operation. At the same time, TARPON offers advanced users full flexibility to adjust parameters for specialized research questions, including non-human samples and atypical telomeric features. For more information please see ....
+TARPON is a pipeline developed in the lab of Dr. Peter Baumann by PhD candidate Nathaniel Deimler. At the time of the pipeline's creation there were multiple publications (Karimian et al., 2024; Sanchez et al., 2024; Schmidt et al., 2024) that have developed protocols for the enrichment of telomeric sequences to succesfully sequence human telomeres by Nanopore sequencing while remaining cost productive. Unfortunately, these papers use different methods to identify and process telomeric reads. TARPON is the first fully automated and GUI-accessible telomere analysis pipeline tailored to nanopore sequencing. It supports both splint- and duplex-enriched telomeric libraries and is designed for ease of use with experimentally validated defaults and seamless integration into the EPI2ME platform. No command-line experience or manual data manipulation is required for standard operation. At the same time, TARPON offers advanced users full flexibility to adjust parameters for specialized research questions, including non-human samples and atypical telomeric features. For more information please see https://www.biorxiv.org/content/10.1101/2025.04.22.649940v1
 
 ## [The Pipeline](#pipeline)
 
@@ -32,9 +32,9 @@ After demultiplexing telomeric reads are filtered to ensure the telomere was com
 
 ## [Installation](#installation)
 
-TARPON is a nextflow pipeline and is readily integrable into Epi2Me but can also be installed on the command line. Nextflow must also be installed which requires a java and docker installation.  Please see https://www.nextflow.io/docs/latest/install.html for more information on installing nextflow and java. For more information on NextFlow please see https://www.nextflow.io/docs/latest/index.html. 
+TARPON is a nextflow pipeline and is readily integrable into Epi2Me but can also be installed on the command line. Nextflow must also be installed which requires a java and docker or singularity installation.  Please see https://www.nextflow.io/docs/latest/install.html for more information on installing nextflow and java. For more information on NextFlow please see https://www.nextflow.io/docs/latest/index.html. 
 
-To install TARPON on the command line simply clone this github repository and ensure Docker is installed on your system. Nextflow will automatically pull the appropriate docker images from dockerhub the first time the program is executed to ensure no dependency issues arise.
+To install TARPON on the command line simply clone this github repository and ensure Docker or singularity is installed on your system. Nextflow will automatically pull the appropriate docker or singularity images from dockerhub the first time the program is executed to ensure no dependency issues arise.
 
     git clone git@github.com:ndeimler99/TARPON.git
     chmod +x TARPON/bin/*
@@ -85,6 +85,7 @@ To include a restriction digest analysis use the paramter --restriction_digest_a
 
     nextflow run main.nf --input ./test_data/simplex_test.duplex.bam --capture_probe_sequence ATGCTACGATCA --outdir ./simplex_test --restriction_digest_analysis GATATC,GAATTC
 
+<<<<<<< clustering
 ## [Chromosome Arm Specific Assignment](#chrom_specific)
 
 Three processes within TARPON allow for the user to assign chromosome arm specific information. The simplest is the --alignment option. This will align all filtered, fully telomeric sequences to the provided reference genome through --reference. This option should only be used if the reference genome is matched to the sample the telomeric sequences originated. Please see Deimler et al., 2025 for more details on why this is. 
@@ -92,6 +93,9 @@ Three processes within TARPON allow for the user to assign chromosome arm specif
 If a sample-matched reference is unavailable de novo clustering can be performed. --clustering must be set during execution. By default 1kb in the subtelomere direction of the telomere start and 2kb in the telomere direction the telomere start will be used to cluster the sequences using telogator2. These values can be changed by setting the parameters --pre_vrr and --post_vrr respectively. A cluster must contain a minimum of 0.2% of the telomeric sequences for it to be included in further analyses.
 
 Should TARPON already have run and you are unhappy with the clustering results or would like to cluster the telomeric sequences at a later time, the entire pipeline does not need to be executed. Specifying the parameter --recluster_only will only perform the clustering step of TARPON. In this case, --input must be a bam file composed of telomeric sequences (found in the output of TARPON) and --telomeric_stats must be the stats file that TARPON provides as output corresponding to the telomeric bam file. pre_vrr, post_vrr, and minimum_cluster_size can all be modified during reclustering. Note that performing a re-alignment after TARPON executes is not possible however can easily be replicated by running minimap2. Reclustering will not result in the production of a new HTML report.
+=======
+If you are using a HPC that does not allow for docker connections, TARPON is also executable using singularity by specifying -profile singularity.
+>>>>>>> main
 
 ## [Additional Help and Information](#help)
 

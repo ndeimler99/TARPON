@@ -71,13 +71,13 @@ def main(args):
         if barcode is not None and location != len(aln.query_sequence):
             q = aln.query_qualities
             if aln.get_tag("XS") == "C":
+                aln.set_tag("XB", aln.query_sequence[location-args.overhang_length:location+100])
                 aln.query_sequence = aln.query_sequence[0:location-args.overhang_length]
                 aln.query_qualities = q[0:location-args.overhang_length]
-                aln.set_tag("XB", aln.query_sequence[location-args.overhang_length:location+100])
             else:
+                aln.set_tag("XB", aln.query_sequence[location:location+100])
                 aln.query_sequence = aln.query_sequence[0:location]
                 aln.query_qualities = q[0:location]
-                aln.set_tag("XB", aln.query_sequence[location:location+100])
             read_dict[barcode].append(aln)
         else:
             adaptor_fail.write(aln)
