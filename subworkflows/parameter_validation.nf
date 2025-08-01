@@ -78,7 +78,7 @@ workflow validate_parameters {
             }
 
             // either adaptor sequence (simplex) or sample_file (multiplex) must be present otherwise telomere ends are not able to be accurately identified
-            if (params.capture_probe_sequence == "" && params.sample_file == "") {
+            if (params.capture_probe_sequence == "" && params.sample_file == "" and !params.no_capture_probe) {
                 parameters_passed = false
                 println ("Adaptor Sequence and Sample File cannot both be empty")
             }
