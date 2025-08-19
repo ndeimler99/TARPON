@@ -11,6 +11,7 @@ process PUTATIVE_ISOLATION {
 
     tag "$run_name - Putative Isolation"
     label 'tarpon'
+    cpus params.threads
 
     input:
         tuple val(run_name), path(reads_file, stageAs: "input.bam")
@@ -22,7 +23,8 @@ process PUTATIVE_ISOLATION {
 
     script:
     """
-    isolate_putative_telomeric_reads.py --input_file ${reads_file} --repeat ${params.repeat} --repeat_count ${params.repeat_count} --c_strand_only ${params.c_strand_only} --out_file putative_reads.bam --non_telo non_telomeric.bam --mutant ${params.mutant}
+    isolate_putative_telomeric_reads.py --input_file ${reads_file} --repeat ${params.repeat} --repeat_count ${params.repeat_count} --c_strand_only ${params.c_strand_only} \
+        --out_file putative_reads.bam --non_telo non_telomeric.bam --mutant ${params.mutant}  --threads ${params.threads}
     """
 }
 

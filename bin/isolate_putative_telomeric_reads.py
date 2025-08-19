@@ -4,13 +4,16 @@ import gzip
 import argparse
 import pysam
 import multiprocessing
+import time
+import os
 
 def rev_complement(seq):
     rev_dict = {'A':'T', 'T':'A', 'C':'G', 'G':'C'}
     return ''.join([rev_dict[i] for i in seq[::-1]])
 
 def isolate_reads(sequence_dict, repeat, repeat_count, c_strand_only, mutant):
-    
+
+    print("Chunk {} Started: {}".format(os.getpid(), time.ctime(time.time())))
     telo_reads = []
     non_telo_reads = []
 
@@ -29,7 +32,7 @@ def isolate_reads(sequence_dict, repeat, repeat_count, c_strand_only, mutant):
                 telo_reads.append(read)
             else:
                 non_telo_reads.append(read)
-
+    print("Chunk {} Ended: {}".format(os.getpid(), time.ctime(time.time())))
     return telo_reads, non_telo_reads
 
 def split_dict(d, n):
@@ -45,7 +48,10 @@ def split_dict(d, n):
 
 def main(args):
 
+    start = time.time()
+    print("Start Time: {}".format(time.ctime(start)))
     # convert parameters from strings to usable data types
+    print("CPU cores available:", multiprocessing.cpu_count())
 
     args.c_strand_only = args.c_strand_only == "true"
     args.repeat_count = int(args.repeat_count)
@@ -58,6 +64,7 @@ def main(args):
     out_fh = pysam.AlignmentFile(args.out_file, "wb", template=input_file_fh)
     non_telo_fh = pysam.AlignmentFile(args.non_telo, "wb", template=input_file_fh)
 
+    print("BAM Loaded at {} : Took {}".format(time.ctime(time.time()), time.time() - start))
     sequence_dict = {}
     aln_dict = {}
     for aln in input_file_fh:
@@ -65,20 +72,22 @@ def main(args):
         sequence_dict[aln.query_name] = aln.query_sequence
         aln_dict[aln.query_name] = aln
 
-
-    bam_chunks = split_dict(sequence_dict, args.threads)  # split into 4 equal sized chunks
+    bam_time = time.time()
+    print("Dictionaries Created at {} : Took {}".format(time.ctime(time.time()), time.time() - start))
+    bam_chunks = split_dict(sequence_dict, args.threads)  # split into equal sized chunks
 
     mp_args = [(chunk, args.repeat, args.repeat_count, args.c_strand_only, args.mutant) for chunk in bam_chunks]
     
+    print("Chunks Created")
     # for i, c in enumerate(chunks):
     #     print(f"Chunk {i} has {len(c)} reads")
-    pool = multiprocessing.Pool(args.threads)
-
-    results = pool.starmap(isolate_reads, mp_args)
+    with multiprocessing.Pool(args.threads) as pool:
+        results = pool.starmap(isolate_reads, mp_args)
     
     telo_reads = [read for out in results for read in out[0]]
     non_telo_reads = [read for out in results for read in out[1]]
     
+    print("Finished w/o Writing: {}".formt(time.time()-start))
     for read in telo_reads:
         out_fh.write(aln_dict[read])
     
