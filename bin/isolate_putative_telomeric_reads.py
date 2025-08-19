@@ -87,7 +87,7 @@ def main(args):
     telo_reads = [read for out in results for read in out[0]]
     non_telo_reads = [read for out in results for read in out[1]]
     
-    print("Finished w/o Writing: {}".formt(time.time()-start))
+    print("Finished w/o Writing: {}".format(time.time()-start))
     for read in telo_reads:
         out_fh.write(aln_dict[read])
     
