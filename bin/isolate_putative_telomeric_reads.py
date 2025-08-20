@@ -44,7 +44,6 @@ def split_dict(d, n):
 
 def main(args):
 
-    start = time.time()
     # convert parameters from strings to usable data types
 
     args.c_strand_only = args.c_strand_only == "true"
@@ -65,7 +64,6 @@ def main(args):
         sequence_dict[aln.query_name] = aln.query_sequence
         aln_dict[aln.query_name] = aln
 
-    bam_time = time.time()
     bam_chunks = split_dict(sequence_dict, args.threads)  # split into 4 equal sized chunks
 
     mp_args = [(chunk, args.repeat, args.repeat_count, args.c_strand_only, args.mutant) for chunk in bam_chunks]
