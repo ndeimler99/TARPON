@@ -288,6 +288,9 @@ process TELO_START_IDENTIFICATION {
 
     label 'tarpon'
     tag "$sample - Identifying Telomere Start"
+    cpus params.threads
+
+
     input:
         tuple val(sample), path(reads)
 
@@ -319,7 +322,8 @@ process TELO_START_IDENTIFICATION {
         --mutant ${params.mutant} \
         --pre_telomeric_repeat_percentage ${params.pretelomeric_repeat_percentage} \
         --pre_telo_distance ${params.pretelo_start} \
-        --minimum_telomere_length ${params.minimum_telomere_length}
+        --minimum_telomere_length ${params.minimum_telomere_length} \
+        --threads ${params.threads}
     """
 }
 
