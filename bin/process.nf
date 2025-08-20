@@ -170,6 +170,8 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE {
     // Nothing is published to output directory
     label 'tarpon'
     tag "$run_name - Identify Capture Probe and Demultiplexing"
+    cpus params.threads
+
 
     input:
         tuple val(run_name), path(reads)
@@ -189,7 +191,8 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE {
         --adaptor_found ${params.sample_name}.bam \
         --no_adaptor adaptor_removed.bam \
         --mutant ${params.mutant} \
-        --overhang_length ${params.capture_probe_overhang_length}
+        --overhang_length ${params.capture_probe_overhang_length} \
+        --threads ${params.threads}
 
     cp ${params.sample_name}.bam adaptor.bam
     """
