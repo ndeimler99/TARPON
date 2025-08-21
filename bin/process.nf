@@ -136,7 +136,8 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX {
              --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} \
               --out_fh DEMUX/ --no_adaptor adaptor_removed.bam \
               --mutant ${params.mutant} \
-              --overhang_length ${params.capture_probe_overhang_length}
+              --overhang_length ${params.capture_probe_overhang_length} \
+              --threads ${params.threads}
         samtools merge -o adaptor.bam DEMUX/*.bam
         """
     // if both an adaptor sequence and sample file are provided the telomeric end is first identified by the adaptor sequence and then downstream demultiplexed using the sample file
@@ -154,7 +155,8 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX {
             --barcode_errors ${params.barcode_errors} \
             --out_prefix DEMUX \
             --mutant ${params.mutant} \
-            --overhang_length ${params.capture_probe_overhang_length}
+            --overhang_length ${params.capture_probe_overhang_length} \
+            --threads ${params.threads}
 
         samtools merge -o adaptor.bam DEMUX/*.bam
 

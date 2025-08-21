@@ -80,6 +80,7 @@ def main(args):
                 aln_dict[read].set_tag("XB", aln_dict[read].query_sequence[result[1][read]:result[1][read] + 100])
                 aln_dict[read].query_sequence = aln_dict[read].query_sequence[0:result[1][read]]
                 aln_dict[read].query_qualities = q[0:result[1][read]]
+                adaptor_out.write(aln_dict[read])
     # for aln in fh:
     #     matches = list(regex.finditer(r'(?e)(%s){e<=%s}' % (args.adaptor_sequence, args.adaptor_errors), aln.query_sequence)) 
     #     if len(matches) > 0:
