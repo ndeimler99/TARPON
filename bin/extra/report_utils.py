@@ -1367,7 +1367,7 @@ def colored_telo_length_barplot_mutant(data=None, *, x=None, y=None, hue=None, o
     #p.yaxis.major_label_overrides([i for i in range(0, len(read_ids))])
     p.yaxis.visible = False
     p.legend.location = "bottom_right"
-=======
+
 def cluster_size_boxplot(data, plt_title=None, x_title=None, y_title=None):
 
     """Create a boxplot for the given column."""
