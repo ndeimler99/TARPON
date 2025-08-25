@@ -179,3 +179,8 @@ Specifying one of the booleans below will result in more detailed or additional 
 |<nobr>--restriction_digest_analysis | <nobr> sample directory / restriction_digest.stats.txt |Will create one additional file per sample containing the summary statistics of all reads containing each specified cut site produced by seqkit stats|
 |--plot_telo_length|sample directory / FIGURES |Will produce additional files for all predescribed telomere statistics, but using telomere length instead of the vrr telo length. This compounds with --strand_comparison to produce strand specific telo length plots |
 |--detailed_stats| sample directory / DETAILED_STATS / |Will produce multiple additional figures comparing telomere length to VRR length, looking at the percentage of perfect repeats within the sequencing data, looking at the quality of telomeric sequences, etc. All such files can be found in the sample directory under FIGURES/DETAILED_STATS. This compounds with both strand_comparison and plot_vrr_length to produce additional files in the C_G_Comparison directory |
+
+
+
+This pipeline utilizes ezcharts to aid in the generation of bokeh plots for the final HTML report. Please see the following disclaimer as well as the License provided in the LICENSE folder for use of this software.
+This product includes software developed by Oxford Nanopore Technologies Plc.
