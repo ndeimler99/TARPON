@@ -3,10 +3,44 @@
 import gzip
 import argparse
 import pysam
+import multiprocessing
 
 def rev_complement(seq):
     rev_dict = {'A':'T', 'T':'A', 'C':'G', 'G':'C'}
     return ''.join([rev_dict[i] for i in seq[::-1]])
+
+def isolate_reads(sequence_dict, repeat, repeat_count, c_strand_only, mutant):
+
+    telo_reads = []
+    non_telo_reads = []
+
+    for read in sequence_dict:
+        if mutant == "false":
+            if c_strand_only and sequence_dict[read].count(rev_complement(repeat)) >= repeat_count:
+                telo_reads.append(read)
+            elif not c_strand_only and (sequence_dict[read].count(repeat) >= repeat_count or sequence_dict[read].count(rev_complement(repeat)) >= repeat_count):
+                telo_reads.append(read)
+            else:
+                non_telo_reads.append(read)
+        else:
+            if c_strand_only and sequence_dict[read].count(rev_complement(repeat)) + sequence_dict[read].count(rev_complement(mutant)) >= repeat_count:
+                telo_reads.append(read)
+            elif not c_strand_only and (sequence_dict[read].count(repeat) + sequence_dict[read].count(mutant) >= repeat_count or sequence_dict[read].count(rev_complement(repeat)) + sequence_dict[read].count(rev_complement(mutant)) >= repeat_count):
+                telo_reads.append(read)
+            else:
+                non_telo_reads.append(read)
+    return telo_reads, non_telo_reads
+
+def split_dict(d, n):
+    """Split dictionary d into n smaller dictionaries."""
+    items = list(d.items())
+    k, m = divmod(len(items), n)
+    chunks = []
+    for i in range(n):
+        start = i*k + min(i, m)
+        end = (i+1)*k + min(i+1, m)
+        chunks.append(dict(items[start:end]))
+    return chunks
 
 def main(args):
 
@@ -14,6 +48,7 @@ def main(args):
 
     args.c_strand_only = args.c_strand_only == "true"
     args.repeat_count = int(args.repeat_count)
+    args.threads = int(args.threads)
 
     # for read in gzipped fastq file perform analysis
     # if the argument c strand only is set convert the telomeric repeat is C strand and identify reads
@@ -22,23 +57,30 @@ def main(args):
     out_fh = pysam.AlignmentFile(args.out_file, "wb", template=input_file_fh)
     non_telo_fh = pysam.AlignmentFile(args.non_telo, "wb", template=input_file_fh)
 
+    sequence_dict = {}
+    aln_dict = {}
     for aln in input_file_fh:
         aln.query_name = aln.query_name.split()[0]
-        if args.mutant == "false":
-            if args.c_strand_only and aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count:
-                out_fh.write(aln)
-            elif not args.c_strand_only and (aln.query_sequence.count(args.repeat) >= args.repeat_count or aln.query_sequence.count(rev_complement(args.repeat)) >= args.repeat_count):
-                out_fh.write(aln)
-            else:
-                non_telo_fh.write(aln)
-        else:
-            if args.c_strand_only and aln.query_sequence.count(rev_complement(args.repeat)) + aln.query_sequence.count(rev_complement(args.mutant)) >= args.repeat_count:
-                out_fh.write(aln)
-            elif not args.c_strand_only and (aln.query_sequence.count(args.repeat) + aln.query_sequence.count(args.mutant) >= args.repeat_count or aln.query_sequence.count(rev_complement(args.repeat)) + aln.query_sequence.count(rev_complement(args.mutant)) >= args.repeat_count):
-                out_fh.write(aln)
-            else:
-                non_telo_fh.write(aln)
-        
+        sequence_dict[aln.query_name] = aln.query_sequence
+        aln_dict[aln.query_name] = aln
+
+    bam_chunks = split_dict(sequence_dict, args.threads)  # split into 4 equal sized chunks
+
+    mp_args = [(chunk, args.repeat, args.repeat_count, args.c_strand_only, args.mutant) for chunk in bam_chunks]
+    
+    # for i, c in enumerate(chunks):
+    #     print(f"Chunk {i} has {len(c)} reads")
+    with multiprocessing.Pool(args.threads) as pool:
+        results = pool.starmap(isolate_reads, mp_args)
+    
+    telo_reads = [read for out in results for read in out[0]]
+    non_telo_reads = [read for out in results for read in out[1]]
+    
+    for read in telo_reads:
+        out_fh.write(aln_dict[read])
+    
+    for read in non_telo_reads:
+        non_telo_fh.write(aln_dict[read])
     input_file_fh.close()
     out_fh.close()
     non_telo_fh.close()
@@ -52,6 +94,7 @@ def argparser():
     parser.add_argument("--out_file", required=True)
     parser.add_argument("--non_telo", required=True)
     parser.add_argument("--mutant", required=True)
+    parser.add_argument("--threads", required=True)
     return parser
 
 if __name__ == "__main__":

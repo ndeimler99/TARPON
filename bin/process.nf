@@ -11,6 +11,7 @@ process PUTATIVE_ISOLATION {
 
     tag "$run_name - Putative Isolation"
     label 'tarpon'
+    cpus params.threads
 
     input:
         tuple val(run_name), path(reads_file, stageAs: "input.bam")
@@ -22,7 +23,8 @@ process PUTATIVE_ISOLATION {
 
     script:
     """
-    isolate_putative_telomeric_reads.py --input_file ${reads_file} --repeat ${params.repeat} --repeat_count ${params.repeat_count} --c_strand_only ${params.c_strand_only} --out_file putative_reads.bam --non_telo non_telomeric.bam --mutant ${params.mutant}
+    isolate_putative_telomeric_reads.py --input_file ${reads_file} --repeat ${params.repeat} --repeat_count ${params.repeat_count} --c_strand_only ${params.c_strand_only} \
+        --out_file putative_reads.bam --non_telo non_telomeric.bam --mutant ${params.mutant}  --threads ${params.threads}
     """
 }
 
@@ -134,7 +136,8 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX {
              --barcode_errors ${params.barcode_errors} --repeat ${params.repeat} \
               --out_fh DEMUX/ --no_adaptor adaptor_removed.bam \
               --mutant ${params.mutant} \
-              --overhang_length ${params.capture_probe_overhang_length}
+              --overhang_length ${params.capture_probe_overhang_length} \
+              --threads ${params.threads}
         samtools merge -o adaptor.bam DEMUX/*.bam
         """
     // if both an adaptor sequence and sample file are provided the telomeric end is first identified by the adaptor sequence and then downstream demultiplexed using the sample file
@@ -152,7 +155,8 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE_AND_DEMUX {
             --barcode_errors ${params.barcode_errors} \
             --out_prefix DEMUX \
             --mutant ${params.mutant} \
-            --overhang_length ${params.capture_probe_overhang_length}
+            --overhang_length ${params.capture_probe_overhang_length} \
+            --threads ${params.threads}
 
         samtools merge -o adaptor.bam DEMUX/*.bam
 
@@ -168,6 +172,8 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE {
     // Nothing is published to output directory
     label 'tarpon'
     tag "$run_name - Identify Capture Probe and Demultiplexing"
+    cpus params.threads
+
 
     input:
         tuple val(run_name), path(reads)
@@ -187,7 +193,8 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE {
         --adaptor_found ${params.sample_name}.bam \
         --no_adaptor adaptor_removed.bam \
         --mutant ${params.mutant} \
-        --overhang_length ${params.capture_probe_overhang_length}
+        --overhang_length ${params.capture_probe_overhang_length} \
+        --threads ${params.threads}
 
     cp ${params.sample_name}.bam adaptor.bam
     """
@@ -283,6 +290,9 @@ process TELO_START_IDENTIFICATION {
 
     label 'tarpon'
     tag "$sample - Identifying Telomere Start"
+    cpus params.threads
+
+
     input:
         tuple val(sample), path(reads)
 
@@ -314,7 +324,8 @@ process TELO_START_IDENTIFICATION {
         --mutant ${params.mutant} \
         --pre_telomeric_repeat_percentage ${params.pretelomeric_repeat_percentage} \
         --pre_telo_distance ${params.pretelo_start} \
-        --minimum_telomere_length ${params.minimum_telomere_length}
+        --minimum_telomere_length ${params.minimum_telomere_length} \
+        --threads ${params.threads}
     """
 }
 
