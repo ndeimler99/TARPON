@@ -364,7 +364,7 @@ def main(args):
                                      y_title="Number of Telomeres")
             hover = plt._fig.select(dict(type=HoverTool))
 
-            hover.tooltips = [("Sample", "@Sample_ID"), ("Number of Reads", "@Number_of_Reads"),("Mean_Telomere_Length", "@Mean_VRR_Telomere_Length")]
+            hover.tooltips = [("Sample", "@Sample_ID"), ("Number of Reads", "@Number_of_Reads"),("Mean_Telomere_Length", "@Mean_VRR_Telomere_Length"), ("Median Telomere Length", "@Median_Telomere_Length")]
 
             EZChart(plt, THEME)
             ####
@@ -406,6 +406,7 @@ def main(args):
             hover = plt._fig.select(dict(type=HoverTool))
             hover.tooltips = [("Sample", "@Sample_ID"),("Number of Reads", "@Number_of_Reads"),
                                 ("Avg Length", "@Mean_VRR_Telomere_Length"),
+                                ("Median Length", "@Median_Telomere_Length"),
                                     ("Q1", "@Q1"),("Q2", "@Q2"),("Q3", "@Q3"),
                                     ("Min Length", "@Min_VRR_Telo_Length"), ("Max Length", "@Max_VRR_Telo_Length")]
             EZChart(plt,THEME)
