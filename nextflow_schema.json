@@ -231,6 +231,12 @@
             "fa_icon": "fas fa-arrow-right",
             "description": "Advanced Options regarding Mutant and Other Analyses",
             "properties": {
+                "threads":{
+                    "title": "Threads",
+                    "type": "number",
+                    "deafult":10,
+                    "description": "Number of Threads to Parallelize TARPON functions across"
+                },
                 "no_capture_probe":{
                     "title": "No Capture Probe Used",
                     "type": "boolean",
@@ -299,7 +305,7 @@
                     "default":0.2,
                     "description":"Minimum percentage of telomeric reads needed for a cluster to pass filtering"
                 },
-                "reclustering_only":{
+                "recluster_only":{
                     "title":"Recluster Only",
                     "type":"boolean",
                     "default":false,
