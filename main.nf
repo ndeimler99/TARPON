@@ -31,6 +31,7 @@ include { getParams; getVersions; getManifest; GENERATE_FINAL_REPORT } from "./b
 include { enrichment_stats_pipeline } from "./subworkflows/enrichment_stats.nf"
 include { telogator_clustering } from "./bin/process.nf"
 include { alignment_to_ref } from "./bin/process.nf"
+include { methylation_detection } from "./subworkflows/methylation_detection.nf"
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,6 +82,16 @@ workflow {
                 Channel.from() \
                     .map { it -> tuple(it[0], it[1]) } \
                     .set { clustering_results }
+            }
+
+            if (params.methylation) {
+                methylation_results = methylation_detection(telomere_isolation_pipeline.out)
+                    .map {it -> tuple(it[1], it[2])}
+            }
+            else {
+                Channel.from() \
+                    .map { it -> tuple(it[0], it[1])} \
+                    .set { methylation_results }
             }
 
             if (params.alignment) {

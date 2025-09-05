@@ -904,6 +904,55 @@ process telogator_clustering {
     """    
 }
 
+process BAM_TO_MOD_TABLE {
+    
+    label 'modkit'
+    tag "$sample - Methylation Conversion"
+    stageInMode 'copy'
+    
+    input:
+        tuple val(sample), path(telo_reads), path(telo_stats)
+    
+    output:
+        tuple val(sample), path(telo_reads), path(telo_stats), path("*modification_table.txt"), emit: output
+        //path("*.pdf")
+
+    //publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+    //publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*modification_stats.txt"
+
+    script:
+    """
+    modkit extract --no-filtering ${telo_reads} modification_table.txt
+    """
+}
+
+process METHYLATION_ANALYSIS {
+
+    label 'tarpon'
+    tag "$sample - Methylation Analysis"
+
+    input:
+        tuple val(sample), path(telo_reads), path(stats_file), path(mod_table)
+
+    output:
+        tuple val(sample), path("*modification_stats.txt"), emit: modification_stats
+        path("*.pdf")
+
+    publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*modification_stats.txt"
+
+    script:
+    """
+    modification_analysis.py --modification_table ${sample}.modification_table.txt --telo_reads ${telo_reads} \
+        --modification_stats ${sample}.modification_stats.txt --stats_file ${stats_file}
+
+    modification_plots.R ${sample}.modification_stats.txt
+    """
+
+}
+
+
+
 process alignment_to_ref {
 
     label 'tarpon'
