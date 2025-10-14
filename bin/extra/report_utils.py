@@ -1018,6 +1018,9 @@ def create_multisample_boxplot(df, column_names, min_q, max_q,
 
 def get_vals(series, kde_x_pos):
 
+    print("within get_vals")
+    print(series)
+
     kde = gaussian_kde(series)
     kde_vals = kde.evaluate(np.linspace(series.min(), series.max(), 100))
 
@@ -1368,7 +1371,7 @@ def colored_telo_length_barplot_mutant(data=None, *, x=None, y=None, hue=None, o
     p.yaxis.visible = False
     p.legend.location = "bottom_right"
 
-def cluster_size_boxplot(data, plt_title=None, x_title=None, y_title=None):
+def cluster_size_boxplot(data, plt_title=None, x_title=None, y_title=None, x_rotation=None):
 
     """Create a boxplot for the given column."""
 

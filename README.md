@@ -97,6 +97,10 @@ Should TARPON already have run and you are unhappy with the clustering results o
 If you are using a HPC that does not allow for docker connections, TARPON is also executable using singularity by specifying -profile singularity.
 >>>>>>> main
 
+## [Methylation](#methylation)
+
+Methylation data can be implemented into TARPON by specifying the --methylation parameter. If this is the case the --input parameter must be bam files containing the modified basecalling tags.
+
 ## [Additional Help and Information](#help)
 
 For additional help please contact Nathaniel Deimler by opening an issue on this repository or by email at ndeimler@uni-mainz.de or nathanieldeimler.research@gmail.com or visit Deimler et al., 2025 for more information. 
@@ -152,6 +156,9 @@ For additional help please contact Nathaniel Deimler by opening an issue on this
 |alignment| Perform Alignment | Performs alignment to sample matched subtelomeric reference | Boolean | false |
 |reference| Reference Genome for Alignment | Sample-matched subtelomeric reference genome for alignment | file | None |
 |minimum_mapq| Minimum Mapping Quality | Minimum mapping quality for a read to be included in the alignment-based chromosome arm specific analysis | number | 20|
+|methylation| Methylation Analysis | Do you want to perform methylation analysis? If so, the input must be a bam file that contains modification calling information from dorado | Boolean | false |
+|min_mod_quality| Minimum Modification Quality Score | Will discard all modifications predicted with a confidence below this value | Number | 0.8|
+|mod_context| Modification Context | The sequence context of the modification of interest to calculate the percentage of modified bases | String | GC |
 
 | Parameter      | Epi2Me Appearance |Description | Type | Default     |
 ## [Ouput](#output)

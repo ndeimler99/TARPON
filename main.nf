@@ -85,8 +85,8 @@ workflow {
             }
 
             if (params.methylation) {
-                methylation_results = methylation_detection(telomere_isolation_pipeline.out)
-                    .map {it -> tuple(it[1], it[2])}
+                methylation_results = methylation_detection(telomere_isolation_pipeline.out)//.modification_stats
+                    .map {it -> tuple(it[1])}
             }
             else {
                 Channel.from() \
@@ -103,11 +103,17 @@ workflow {
                     .map { it -> tuple(it[0], it[1]) } \
                     .set { alignment_results }
             }
+            
+            //methylation_results.out.view()
+
+            //methylation_results.view()
+
+            //view(alignment_results)
 
             report = GENERATE_FINAL_REPORT(parameters.params, versions.versions, manifest.manifest, \
                                 enrichment_stats.flowcell_retained, enrichment_stats.flowcell_removed, \
                                 telomere_stats.telomere_stats, \
-                                telomere_stats.sample_specific_stats.mix(enrichment_stats.sample_specific_stats, clustering_results, alignment_results).collect()
+                                telomere_stats.sample_specific_stats.mix(enrichment_stats.sample_specific_stats, clustering_results, alignment_results, methylation_results).collect()
             )
         }
     }

@@ -28,10 +28,7 @@ workflow telomere_isolation_pipeline {
         sample_file
 
     main:
-
-        if (params.methylation){
-            modkit_conversion = BAM_TO_MOD_TABLE(telomeric_reads_with_stats)
-        }
+    
         // convert all C strand telomeric sequences to G strand for further code simplicity (this is tracked in header line)
         reversed_ch = REVERSE_COMPLEMENTATION(putative_reads)
 
