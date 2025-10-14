@@ -8,10 +8,11 @@ Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 4. [Running Tarpon Through Epi2Me](#epi2me)
 5. [Running Tarpon Through the Command Line](#commandline)
 6. [Chromsome Arm Specific Assignment](#chromspecific)
-7. [Additional Help and Information](#help)
-8. [Input Paramaters](#input)
-9. [Advanced Input Parameteres](#advanced_input)
-10. [Output Files](#output)
+7. [Methylation](#methylation)
+8. [Additional Help and Information](#help)
+9. [Input Paramaters](#input)
+10. [Advanced Input Parameteres](#advanced_input)
+11. [Output Files](#output)
 
 If you use this software please cite 
 "TARPON - a Telomere Analysis and Research Pipeline Optimized for Nanopore
@@ -85,7 +86,6 @@ To include a restriction digest analysis use the paramter --restriction_digest_a
 
     nextflow run main.nf --input ./test_data/simplex_test.duplex.bam --capture_probe_sequence ATGCTACGATCA --outdir ./simplex_test --restriction_digest_analysis GATATC,GAATTC
 
-<<<<<<< clustering
 ## [Chromosome Arm Specific Assignment](#chrom_specific)
 
 Three processes within TARPON allow for the user to assign chromosome arm specific information. The simplest is the --alignment option. This will align all filtered, fully telomeric sequences to the provided reference genome through --reference. This option should only be used if the reference genome is matched to the sample the telomeric sequences originated. Please see Deimler et al., 2025 for more details on why this is. 
@@ -93,9 +93,6 @@ Three processes within TARPON allow for the user to assign chromosome arm specif
 If a sample-matched reference is unavailable de novo clustering can be performed. --clustering must be set during execution. By default 1kb in the subtelomere direction of the telomere start and 2kb in the telomere direction the telomere start will be used to cluster the sequences using telogator2. These values can be changed by setting the parameters --pre_vrr and --post_vrr respectively. A cluster must contain a minimum of 0.2% of the telomeric sequences for it to be included in further analyses.
 
 Should TARPON already have run and you are unhappy with the clustering results or would like to cluster the telomeric sequences at a later time, the entire pipeline does not need to be executed. Specifying the parameter --recluster_only will only perform the clustering step of TARPON. In this case, --input must be a bam file composed of telomeric sequences (found in the output of TARPON) and --telomeric_stats must be the stats file that TARPON provides as output corresponding to the telomeric bam file. pre_vrr, post_vrr, and minimum_cluster_size can all be modified during reclustering. Note that performing a re-alignment after TARPON executes is not possible however can easily be replicated by running minimap2. Reclustering will not result in the production of a new HTML report.
-=======
-If you are using a HPC that does not allow for docker connections, TARPON is also executable using singularity by specifying -profile singularity.
->>>>>>> main
 
 ## [Methylation](#methylation)
 
@@ -160,7 +157,7 @@ For additional help please contact Nathaniel Deimler by opening an issue on this
 |min_mod_quality| Minimum Modification Quality Score | Will discard all modifications predicted with a confidence below this value | Number | 0.8|
 |mod_context| Modification Context | The sequence context of the modification of interest to calculate the percentage of modified bases | String | GC |
 
-| Parameter      | Epi2Me Appearance |Description | Type | Default     |
+
 ## [Ouput](#output)
 
 Various output files are produced when the pipeline is run with different parameters. In all cases, the output directory is created containing the following subdirectories.
