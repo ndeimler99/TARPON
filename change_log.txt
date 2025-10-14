@@ -2,3 +2,5 @@ May 6th, 2025 - no_capture_probe paramater was added to TARPON for those conduct
 June 2nd, 2025 - Singularity support was added in version 1.0.3
 July, 2025 - Clustering of telomeric sequences in a sub-telomeric reference independent manner was added to TARPON's functionality. Version # was updated to 2.0.0
 August 25th, 2025 - TARPON was parallelize to reduce run time resulting in v2.0.1
+October 14th, 2025 - Methylation data analysis was incorporated into TARON v2.1.0
+
