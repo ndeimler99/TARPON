@@ -277,7 +277,7 @@
                     "type":"boolean",
                     "title": "Methylation Analysis",
                     "description": "Does the input file contain methylation information from dorado?",
-                    "default": "false"
+                    "default": false
                 },
                 "min_mod_quality":{
                     "type":"number",
