@@ -28,17 +28,16 @@ def main(args):
             alignment_dict[aln.query_name] = [aln.reference_name]
 
     with open(args.new_stats_fh, "w") as stats_fh:
-        stats_fh.write(header + "\tCluster\n")
+        stats_fh.write("read_id\tCluster\n")
         for read in stats_dict:
             if read in alignment_dict:
                 if len(alignment_dict[read]) == 1:
-                    stats_dict[read].append(alignment_dict[read][0])
+                    stats_fh.write("{}\t{}\n".format(read, alignment_dict[read][0]))
                 else:
-                    stats_dict[read].append("NA")
+                    stats_fh.write("{}\tNA\n".format(read))
+            
             else:
-                stats_dict[read].append("NA")
-            stats_fh.write("\t".join(stats_dict[read]))
-            stats_fh.write("\n")
+                stats_fh.write("{}\tNA\n".format(read))
 
 def argparser():
     parser = argparse.ArgumentParser()

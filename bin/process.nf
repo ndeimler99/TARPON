@@ -520,7 +520,6 @@ process GENERATE_FINAL_REPORT {
 
     script:
     """
-    
     generate_html_report.py --workflow_name TArPON \
                             --report report.html \
                             --template_file ${baseDir}/bin/single_sample_template.html \
@@ -878,11 +877,11 @@ process telogator_clustering {
         tuple val(sample), path(telo_reads), path(stats_file)
 
     output:
-        tuple val(sample), path("*telomeric_stats_with_cluster.txt"), path("*.clustering_summary_stats.txt"), emit: clustering_stats
+        tuple val(sample), path("*.clusters.txt"), path("*.clustering_summary_stats.txt"), emit: clustering_stats
         path("*.pdf")
 
     publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
-    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telomeric_stats_with_cluster.txt"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.clusters.txt"
     publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.clustering_summary_stats.txt"
 
     script:
@@ -897,12 +896,81 @@ process telogator_clustering {
          --filt-sub 0 --debug-noanchor
 
     process_clusters.py --stats_fh ${stats_file} --cluster_results ${sample}.clustering_results/tlens_by_allele.tsv \
-        --new_stats_fh ${sample}.telomeric_stats_with_cluster.txt \
+        --new_stats_fh ${sample}.clusters.txt \
         --min_percentage ${params.minimum_cluster_size}
 
-    plotClusters.R ${sample}.telomeric_stats_with_cluster.txt ${sample}
+    plotClusters.R ${sample}.clusters.txt ${sample} ${stats_file}
     """    
 }
+
+process ISOLATION_BY_READ_ID {
+
+    label 'tarpon'
+    tag "$sample - Isolating Telomeric Reads for Methylation Analysis"
+    
+    input:
+        tuple val(sample), path(telo_reads), path(telo_stats)
+        tuple val(run_name), path(putative_reads)
+
+    output:
+        tuple val(sample), path(telo_reads), path(telo_stats), path("*putative_reads.bam"), emit: non_processed_reads
+    
+    script:
+    """
+    awk 'NR > 1 { print \$1 }' ${telo_stats} > telo_read_ids.txt
+    samtools view -b --qname-file telo_read_ids.txt ${putative_reads} > ${sample}.putative_reads.bam
+    """
+}
+
+process BAM_TO_MOD_TABLE {
+    
+    label 'modkit'
+    tag "$sample - Methylation Conversion"
+    stageInMode 'copy'
+    
+    input:
+        tuple val(sample), path(telo_reads), path(telo_stats), path(non_processed_bam)
+    
+    output:
+        tuple val(sample), path(telo_reads), path(telo_stats), path("*modification_table.txt"), emit: mod_table_out
+        //path("*.pdf")
+
+    //publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+    //publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*modification_stats.txt"
+
+    script:
+    """
+    modkit extract --no-filtering ${non_processed_bam} ${sample}.modification_table.txt
+    """
+}
+
+process METHYLATION_ANALYSIS {
+
+    label 'tarpon'
+    tag "$sample - Methylation Analysis"
+
+    input:
+        tuple val(sample), path(telo_reads), path(stats_file), path(mod_table)
+
+    output:
+        tuple val(sample), path("*modification.txt"), emit: modification_stats
+        path("*.pdf")
+
+    publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*modification.txt"
+
+    script:
+    """
+    modification_analysis.py --mod_table ${sample}.modification_table.txt --telo_reads ${telo_reads} \
+        --mod_stats_out ${sample}.modification.txt --stats_file ${stats_file} \
+        --min_mod_quality ${params.min_mod_quality} --mod_context ${params.mod_context}
+    
+    modification_plots.R ${sample}.modification.txt ${stats_file} ${sample}
+    """
+    
+}
+
+
 
 process alignment_to_ref {
 
@@ -916,11 +984,11 @@ process alignment_to_ref {
         path(ref_file)
     
     output:
-        tuple val(sample), path("*telomeric_stats_with_alignment.txt"), path("*.chrom_arm_summary.txt"), emit: output
+        tuple val(sample), path("*.alignment.txt"), path("*.chrom_arm_summary.txt"), emit: output
         path("*.pdf")
 
     publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
-    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telomeric_stats_with_alignment.txt"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.alignment.txt"
     publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.chrom_arm_summary.txt"
 
     script:
@@ -928,8 +996,8 @@ process alignment_to_ref {
     samtools fastq ${telo_reads} > ${sample}.telomeric_reads.fastq
     minimap2 -ax map-ont -t ${params.threads} ${ref_file} ${sample}.telomeric_reads.fastq > ${sample}.aligned_telomeric_reads.sam
     samtools view -h -q ${params.minimum_mapq} ${sample}.aligned_telomeric_reads.sam > ${sample}.alignment.sam
-    process_alignment.py --stats_fh ${stats_file} --new_stats_fh ${sample}.telomeric_stats_with_alignment.txt --alignment ${sample}.alignment.sam 
-    plotClusters.R ${sample}.telomeric_stats_with_alignment.txt ${sample}
+    process_alignment.py --stats_fh ${stats_file} --new_stats_fh ${sample}.alignment.txt --alignment ${sample}.alignment.sam 
+    plotClusters.R ${sample}.alignment.txt ${sample} ${stats_file}
     """
     
     

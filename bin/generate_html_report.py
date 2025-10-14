@@ -88,7 +88,33 @@ def main(args):
     else:
         alignment = False
 
+    if "modification" in sample_dict[list(sample_dict.keys())[0]]:
+        modifications = True
+    else:
+        modifications = False
+
     vrr_summary_stats = pd.read_table(args.run_vrr_stats, sep="\t")
+
+    # combine relevant files
+    for sample in sample_dict:
+        sample_dict[sample]["pd_table"] = pd.read_table(sample_dict[sample]["telo_stats"])
+        print(len(sample_dict[sample]["pd_table"]["vrr_telo_length"]))
+
+        if alignment:
+            alignment_table = pd.read_table(sample_dict[sample]["alignment"])
+            sample_dict[sample]["pd_table"] = pd.merge(sample_dict[sample]["pd_table"], alignment_table, how="left", on="read_id")
+        
+        if clustering:
+            clustering_table = pd.read_table(sample_dict[sample]["clusters"])
+            sample_dict[sample]["pd_table"] = pd.merge(sample_dict[sample]["pd_table"], clustering_table, how="left", on="read_id")
+            print(len(sample_dict[sample]["pd_table"]["vrr_telo_length"]))
+        if modifications:
+            modification_results = pd.read_table(sample_dict[sample]["modification"])
+            sample_dict[sample]["pd_table"] = pd.merge(sample_dict[sample]["pd_table"], modification_results, how="left", on="read_id")
+
+        # if modification - merge
+        print(list(sample_dict[sample]["pd_table"].columns.values))
+        print(len(sample_dict[sample]["pd_table"]["vrr_telo_length"]))
 
     report = LabsReport(
         f"Report for: {params['run_name']}", args.workflow_name,
@@ -377,7 +403,7 @@ def main(args):
         with tabs.add_tab("VRR Length Barchart"):
             master_df = pd.DataFrame()
             for sample in sample_dict.keys():
-                df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
+                df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
                 bins = [i*1000 for i in range(0,11)]
                 bins.append(100000)
                 telo_bar_df = np.histogram(df["vrr_telo_length"], bins=bins)
@@ -417,7 +443,7 @@ def main(args):
         for sample in sorted(list(sample_dict.keys())):
             with tabs.add_dropdown_menu(sample, change_header=False):
                 with tabs.add_dropdown_tab("{} Telomere Length".format(sample)):
-                    df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
+                    df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
                     df["vrr_telo_length"] = df["vrr_telo_length"].astype("float")
                     #telo length histogram next to barplot
                     new_tabs = Tabs()
@@ -767,7 +793,7 @@ def main(args):
                                 EZChart(c_plt, THEME)
                 with tabs.add_dropdown_tab("{} Telomere Composition".format(sample)):
                     new_tabs = Tabs()
-                    stats_df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
+                    stats_df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
                     with new_tabs.add_tab("Histogram and Boxplot"):
                         if args.mutant == "false":
                             histogram_repeat_freq = report_utils.repeat_freq_histogram(stats_df[["wt_composition","one_nucl_variant_composition"]],
@@ -820,7 +846,7 @@ def main(args):
         with report.add_section("Detailed Analysis", "Detailed Analysis"):
             tabs = Tabs()
             for sample in sorted(list(sample_dict.keys())):
-                df = pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
+                df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["telo_stats"], sep="\t")
                 with tabs.add_dropdown_menu(sample, change_header=False):
                     with tabs.add_dropdown_tab("Sequencing Quality"):
                         new_tabs = Tabs()
@@ -1028,7 +1054,7 @@ def main(args):
             tabs = Tabs()
             for sample in sorted(list(sample_dict.keys())):
                 with tabs.add_dropdown_menu(sample, change_header=False):
-                    df = pd.read_table(sample_dict[sample]["telomeric_stats_with_cluster"], sep="\t")
+                    df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["pd_table"], sep="\t")
                     with tabs.add_dropdown_tab("{} Clustering Performance".format(sample)):
                         # percentage of reads clustered
                         perc_of_reads = sum(df["Cluster"].notna())/len(df["Cluster"]) * 100
@@ -1049,7 +1075,7 @@ def main(args):
                             EZChart(cluster_size_plot)
                         
                     with tabs.add_dropdown_tab("{} Clustering Results".format(sample)):
-                        df = pd.read_table(sample_dict[sample]["telomeric_stats_with_cluster"], sep="\t")
+                        df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["pd_table"], sep="\t")
                         cluster_plot = report_utils.telo_length_by_cluster(df, "Telomere Length by Cluster", "Cluster #", "Telomere Length")
                         EZChart(cluster_plot)
                         # telomere length by cluster w/ read counts written
@@ -1062,7 +1088,7 @@ def main(args):
             tabs = Tabs()
             for sample in sorted(list(sample_dict.keys())):
                 with tabs.add_dropdown_menu(sample, change_header=False):
-                    df = pd.read_table(sample_dict[sample]["telomeric_stats_with_alignment"], sep="\t")
+                    df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["pd_table"], sep="\t")
                     with tabs.add_dropdown_tab("{} Alignment Performance".format(sample)):
                         # percentage of reads clustered
                         perc_of_reads = sum(df["Cluster"].notna())/len(df["Cluster"]) * 100
@@ -1076,6 +1102,7 @@ def main(args):
 
                         # cluster size distribution plot
                         cluster_sizes = pd.Series(df["Cluster"].value_counts() / sum(df["Cluster"].value_counts()) * 100)
+                        #print(cluster_sizes)
                         cluster_size_plot = report_utils.cluster_size_boxplot(cluster_sizes)
                         with Grid(columns=3): 
                             EZChart(perc_reads_barplot)
@@ -1083,13 +1110,34 @@ def main(args):
                             EZChart(cluster_size_plot)
                         
                     with tabs.add_dropdown_tab("{} Alignment Results".format(sample)):
-                        df = pd.read_table(sample_dict[sample]["telomeric_stats_with_alignment"], sep="\t")
+                        df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["pd_table"], sep="\t")
                         cluster_plot = report_utils.telo_length_by_cluster(df, "Telomere Length by Chrom. Arm", "Chromosome Arm", "Telomere Length")
                         EZChart(cluster_plot)
                         # telomere length by cluster w/ read counts written
                     with tabs.add_dropdown_tab("{} Alignment Table".format(sample)):
                         df = pd.read_table(sample_dict[sample]["chrom_arm_summary"], sep="\t")
                         DataTable.from_pandas(df, use_index=False)
+
+    if modifications:
+        with report.add_section("Modification Analysis", "Modification Analysis"):
+            tabs = Tabs()
+            for sample in sorted(list(sample_dict.keys())):
+                with tabs.add_dropdown_menu(sample, change_header=False):
+                    df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["pd_table"], sep="\t")
+                    with tabs.add_dropdown_tab("{} Modification Results".format(sample)):
+                        # histogram of modification frequencies
+                        modification_histogram = report_utils.telo_length_hist(df["m"], binwidth=2, binrange=[0,100],
+                                                            plt_title="Methylation Histogram",
+                                                            x_title = "% Methylated CpGs", y_title="Read Count")
+
+                        byscatter = report_utils.scatterplot(data=df, x="m", y="vrr_telo_length", 
+                                                            hover_tooltips=[("VRR Telomere Length", "@y"), ("Methylation Rate", "@x")],
+                                                            plt_title="VRR Telomere Length by Methylation of Subtelomere",
+                                                            x_title="Methylation Percentage", y_title="VRR Telomere Length (BP)")
+                        # modificaiton frequency vs telomere length
+                        with Grid(columns=2): 
+                            EZChart(modification_histogram)
+                            EZChart(byscatter)
 
     report.write(args.report)
 

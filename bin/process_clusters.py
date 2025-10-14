@@ -48,10 +48,10 @@ def main(args):
         stats_dict[read].append(cluster_dict[read])
 
     with open(args.new_stats_fh, "w") as stats_fh:
-        stats_fh.write(header + "\tCluster\n")
+        stats_fh.write("read_id\tCluster\n")
         for read in stats_dict:
-            stats_fh.write("\t".join(stats_dict[read]))
-            stats_fh.write("\n")
+            stats_fh.write("{}\t{}\n".format(read, cluster_dict[read]))#.join(stats_dict[read]))
+#            stats_fh.write("\n")
 
 def argparser():
     parser = argparse.ArgumentParser()

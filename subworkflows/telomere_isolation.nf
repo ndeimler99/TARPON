@@ -28,7 +28,7 @@ workflow telomere_isolation_pipeline {
         sample_file
 
     main:
-
+    
         // convert all C strand telomeric sequences to G strand for further code simplicity (this is tracked in header line)
         reversed_ch = REVERSE_COMPLEMENTATION(putative_reads)
 
