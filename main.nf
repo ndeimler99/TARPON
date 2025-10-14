@@ -12,7 +12,7 @@ nextflow.enable.dsl=2
 println """\
     TARPON - Telomere Analysis Pipeline on Nanopore Sequencing Data
     ================================================
-    v2.0.2
+    v2.1.0
     """.stripIndent()
 
 /*
