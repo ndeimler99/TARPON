@@ -19,6 +19,12 @@ workflow validate_parameters {
         parameters_passed = true
         print("Checking parameters")
 
+        available = Runtime.runtime.availableProcessors()
+        if (params.threads as int > available){
+            println("Specified number of threads ${params.threads} is greater than the number of available Processors ${available}")
+            println("Number of threads is reset to ${available}")
+        }
+
         if (params.recluster_only){
             try {
                 file(params.input, checkIfExists:true)

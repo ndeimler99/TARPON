@@ -172,7 +172,7 @@ process IDENTIFY_TAGGING_CAPTURE_PROBE {
     // Nothing is published to output directory
     label 'tarpon'
     tag "$run_name - Identify Capture Probe and Demultiplexing"
-    cpus params.threads
+    cpus Math.min(params.threads as int, Runtime.runtime.availableProcessors())
 
 
     input:
@@ -290,7 +290,7 @@ process TELO_START_IDENTIFICATION {
 
     label 'tarpon'
     tag "$sample - Identifying Telomere Start"
-    cpus params.threads
+    cpus Math.min(params.threads as int, Runtime.runtime.availableProcessors())
 
 
     input:
@@ -871,7 +871,7 @@ process telogator_clustering {
 
     label 'tarpon'
     tag "$sample - Clustering via Telogator2"
-    cpus params.threads
+    cpus Math.min(params.threads as int, Runtime.runtime.availableProcessors())
 
     input:
         tuple val(sample), path(telo_reads), path(stats_file)
@@ -976,7 +976,7 @@ process alignment_to_ref {
 
     label 'tarpon'
     tag "$sample - Aligning to Reference"
-    cpus params.threads
+    cpus Math.min(params.threads as int, Runtime.runtime.availableProcessors())
 
 
     input:
