@@ -11,7 +11,7 @@ process PUTATIVE_ISOLATION {
 
     tag "$run_name - Putative Isolation"
     label 'tarpon'
-    cpus params.threads
+    cpus Math.min(params.threads as int, Runtime.runtime.availableProcessors())
 
     input:
         tuple val(run_name), path(reads_file, stageAs: "input.bam")
