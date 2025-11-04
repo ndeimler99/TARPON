@@ -100,7 +100,7 @@ Methylation data can be implemented into TARPON by specifying the --methylation 
 
 ## [Additional Help and Information](#help)
 
-For additional help please contact Nathaniel Deimler by opening an issue on this repository or by email at ndeimler@uni-mainz.de or nathanieldeimler.research@gmail.com or visit Deimler et al., 2025 for more information. 
+For additional help please contact Nathaniel Deimler by opening an issue on this repository or by email at ndeimler@uni-mainz.de or nathanieldeimler.research@gmail.com or visit Deimler et al., 2025 for more information. We are currently aware of an issue when supplying very large fastq files to TARPON. Picard tools runs out of memory during the conversion to bam and we are working on a fix. 
 
 ## [Basic Input Parameters](#input)
 | Parameter      | Epi2Me Appearance |Description | Type | Default     |
