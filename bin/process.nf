@@ -977,7 +977,19 @@ process alignment_to_ref {
     label 'tarpon'
     tag "$sample - Aligning to Reference"
     cpus Math.min(params.threads as int, Runtime.runtime.availableProcessors())
+    memory {
+        // Try machine memory (for SLURM/AWS/etc)
+        def machineMem = task.machine?.memory
 
+        // Fallback for local/docker/etc
+        def localMem = Runtime.runtime.maxMemory().GB
+
+        // Choose whichever exists
+        def totalMem = machineMem ?: localMem
+
+        def maxAllowed = totalMem * 0.9
+        return maxAllowed < 30.GB ? maxAllowed : 30.GB
+    }
 
     input:
         tuple val(sample), path(telo_reads), path(stats_file)
