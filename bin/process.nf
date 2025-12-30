@@ -585,7 +585,11 @@ process getVersions {
     python --version | sed 's/ /,/' >> versions.txt
     python -c "import regex; print(f'regex,{regex.__version__}')" >> versions.txt
     python -c "import pandas; print(f'pandas,{pandas.__version__}')" >> versions.txt
-    seqkit version | sed 's/ /,/' >> versions.txt
+    python -c "import argparse; print(f'argparse,{argparse.__version__}')" >> versions.txt
+    python -c "import pysam; print(f'pysam,{pysam.__version__}')" >> versions.txt
+    python -c "import dominate; print(f'dominate,{dominate.__version__}')" >> versions.txt
+    python -c "import ezcharts; print(f'ezcharts,{ezcharts.__version__}')" >> versions.txt
+    python -c "import numpy; print(f'numpy,{numpy.__version__}')" >> versions.txt
     """
 }
 
@@ -1006,7 +1010,7 @@ process alignment_to_ref {
     script:
     """
     samtools fastq ${telo_reads} > ${sample}.telomeric_reads.fastq
-    minimap2 -ax map-ont -t ${params.threads} ${ref_file} ${sample}.telomeric_reads.fastq > ${sample}.aligned_telomeric_reads.sam
+    minimap2 -ax map-ont -t ${task.cpus} ${ref_file} ${sample}.telomeric_reads.fastq > ${sample}.aligned_telomeric_reads.sam
     samtools view -h -q ${params.minimum_mapq} ${sample}.aligned_telomeric_reads.sam > ${sample}.alignment.sam
     process_alignment.py --stats_fh ${stats_file} --new_stats_fh ${sample}.alignment.txt --alignment ${sample}.alignment.sam 
     plotClusters.R ${sample}.alignment.txt ${sample} ${stats_file}
