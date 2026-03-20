@@ -5,8 +5,8 @@ class WorkflowMain {
     // Citation string for pipeline
     public static String citation(workflow) {
         return "If you use ${workflow.manifest.name} for your analysis please cite:\n\n" +
-            "* Nathaniel Deimler, David Ho, Peter Baumann; bioRxiv 2025.04.22.649940\n" +
-            "* https://doi.org/10.1101/2025.04.22.649940\n"
+            "* Deimler N, Ho DV, Paul N, Gill Z, Baumann P (2026) TARPON—A Telomere Analysis and Research Pipeline Optimized for Nanopore.\n"+
+            "* PLOS Computational Biology 22(2): e1013915. https://doi.org/10.1371/journal.pcbi.1013915"
     }
 
     // Generate help string
