@@ -15,9 +15,7 @@ Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 11. [Output Files](#output)
 
 If you use this software please cite 
-"TARPON - a Telomere Analysis and Research Pipeline Optimized for Nanopore
-Nathaniel Deimler, David Ho, Peter Baumann
-bioRxiv 2025.04.22.649940; doi: https://doi.org/10.1101/2025.04.22.649940"
+"Deimler N, Ho DV, Paul N, Gill Z, Baumann P (2026) TARPON—A Telomere Analysis and Research Pipeline Optimized for Nanopore. PLoS Comput Biol 22(2): e1013915. https://doi.org/10.1371/journal.pcbi.1013915"
 
 ## [What is TARPON and Why Should I Use It?](#what_and_why)
 
