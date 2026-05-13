@@ -907,72 +907,72 @@ process telogator_clustering {
     """    
 }
 
-process ISOLATION_BY_READ_ID {
+// process ISOLATION_BY_READ_ID {
 
-    label 'tarpon'
-    tag "$sample - Isolating Telomeric Reads for Methylation Analysis"
+//     label 'tarpon'
+//     tag "$sample - Isolating Telomeric Reads for Methylation Analysis"
     
-    input:
-        tuple val(sample), path(telo_reads), path(telo_stats)
-        tuple val(run_name), path(putative_reads)
+//     input:
+//         tuple val(sample), path(telo_reads), path(telo_stats)
+//         tuple val(run_name), path(putative_reads)
 
-    output:
-        tuple val(sample), path(telo_reads), path(telo_stats), path("*putative_reads.bam"), emit: non_processed_reads
+//     output:
+//         tuple val(sample), path(telo_reads), path(telo_stats), path("*putative_reads.bam"), emit: non_processed_reads
     
-    script:
-    """
-    awk 'NR > 1 { print \$1 }' ${telo_stats} > telo_read_ids.txt
-    samtools view -b --qname-file telo_read_ids.txt ${putative_reads} > ${sample}.putative_reads.bam
-    """
-}
+//     script:
+//     """
+//     awk 'NR > 1 { print \$1 }' ${telo_stats} > telo_read_ids.txt
+//     samtools view -b --qname-file telo_read_ids.txt ${putative_reads} > ${sample}.putative_reads.bam
+//     """
+// }
 
-process BAM_TO_MOD_TABLE {
+// process BAM_TO_MOD_TABLE {
     
-    label 'modkit'
-    tag "$sample - Methylation Conversion"
-    stageInMode 'copy'
+//     label 'modkit'
+//     tag "$sample - Methylation Conversion"
+//     stageInMode 'copy'
     
-    input:
-        tuple val(sample), path(telo_reads), path(telo_stats), path(non_processed_bam)
+//     input:
+//         tuple val(sample), path(telo_reads), path(telo_stats), path(non_processed_bam)
     
-    output:
-        tuple val(sample), path(telo_reads), path(telo_stats), path("*modification_table.txt"), emit: mod_table_out
-        //path("*.pdf")
+//     output:
+//         tuple val(sample), path(telo_reads), path(telo_stats), path("*modification_table.txt"), emit: mod_table_out
+//         //path("*.pdf")
 
-    //publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
-    //publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*modification_stats.txt"
+//     //publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+//     //publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*modification_stats.txt"
 
-    script:
-    """
-    modkit extract --no-filtering ${non_processed_bam} ${sample}.modification_table.txt
-    """
-}
+//     script:
+//     """
+//     modkit extract --no-filtering ${non_processed_bam} ${sample}.modification_table.txt
+//     """
+// }
 
-process METHYLATION_ANALYSIS {
+// process METHYLATION_ANALYSIS {
 
-    label 'tarpon'
-    tag "$sample - Methylation Analysis"
+//     label 'tarpon'
+//     tag "$sample - Methylation Analysis"
 
-    input:
-        tuple val(sample), path(telo_reads), path(stats_file), path(mod_table)
+//     input:
+//         tuple val(sample), path(telo_reads), path(stats_file), path(mod_table)
 
-    output:
-        tuple val(sample), path("*modification.txt"), emit: modification_stats
-        path("*.pdf")
+//     output:
+//         tuple val(sample), path("*modification.txt"), emit: modification_stats
+//         path("*.pdf")
 
-    publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
-    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*modification.txt"
+//     publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
+//     publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*modification.txt"
 
-    script:
-    """
-    modification_analysis.py --mod_table ${sample}.modification_table.txt --telo_reads ${telo_reads} \
-        --mod_stats_out ${sample}.modification.txt --stats_file ${stats_file} \
-        --min_mod_quality ${params.min_mod_quality} --mod_context ${params.mod_context}
+//     script:
+//     """
+//     modification_analysis.py --mod_table ${sample}.modification_table.txt --telo_reads ${telo_reads} \
+//         --mod_stats_out ${sample}.modification.txt --stats_file ${stats_file} \
+//         --min_mod_quality ${params.min_mod_quality} --mod_context ${params.mod_context}
     
-    modification_plots.R ${sample}.modification.txt ${stats_file} ${sample}
-    """
+//     modification_plots.R ${sample}.modification.txt ${stats_file} ${sample}
+//     """
     
-}
+// }
 
 
 

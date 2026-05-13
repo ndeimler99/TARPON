@@ -12,7 +12,7 @@ nextflow.enable.dsl=2
 println """\
     TARPON - Telomere Analysis Pipeline on Nanopore Sequencing Data
     ================================================
-    v2.1.0
+    v2.1.1
     """.stripIndent()
 
 /*
@@ -31,7 +31,7 @@ include { getParams; getVersions; getManifest; GENERATE_FINAL_REPORT } from "./b
 include { enrichment_stats_pipeline } from "./subworkflows/enrichment_stats.nf"
 include { telogator_clustering } from "./bin/process.nf"
 include { alignment_to_ref } from "./bin/process.nf"
-include { methylation_detection } from "./subworkflows/methylation_detection.nf"
+//include { methylation_detection } from "./subworkflows/methylation_detection.nf"
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -84,15 +84,15 @@ workflow {
                     .set { clustering_results }
             }
 
-            if (params.methylation) {
-                methylation_results = methylation_detection(telomere_isolation_pipeline.out)//.modification_stats
-                    .map {it -> tuple(it[1])}
-            }
-            else {
-                Channel.from() \
-                    .map { it -> tuple(it[0], it[1])} \
-                    .set { methylation_results }
-            }
+            // if (params.methylation) {
+            //     methylation_results = methylation_detection(telomere_isolation_pipeline.out)//.modification_stats
+            //         .map {it -> tuple(it[1])}
+            // }
+            //else {
+            Channel.from() \
+                .map { it -> tuple(it[0], it[1])} \
+                .set { methylation_results }
+            //}
 
             if (params.alignment) {
                 alignment_results = alignment_to_ref(telomere_isolation_pipeline.out.telomeric_reads_with_stats, file(params.reference)).output
