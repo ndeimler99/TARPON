@@ -3,4 +3,7 @@ June 2nd, 2025 - Singularity support was added in version 1.0.3
 July, 2025 - Clustering of telomeric sequences in a sub-telomeric reference independent manner was added to TARPON's functionality. Version # was updated to 2.0.0
 August 25th, 2025 - TARPON was parallelize to reduce run time resulting in v2.0.1
 October 14th, 2025 - Methylation data analysis was incorporated into TARON v2.1.0
-
+October 29th, 2025 - Added paternity assignment script to Extra Tools directory v2.1.0
+December 9th, 2025 - Added additional memory check to alignment processes v2.1.0
+January 26th, 2026 - Added Levensthein distance option in Extra Tools Paterntity Assignment Script v2.1.0
+June 1st, 2026 - Removed methylation options for TARPON and instead incroporated modified bases into TeloMod. v2.1.1

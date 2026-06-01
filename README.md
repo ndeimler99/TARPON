@@ -1,4 +1,4 @@
-# TARPON v2.1.0
+# TARPON v2.1.1
 Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 
 ## Table of Contents
@@ -94,7 +94,7 @@ Should TARPON already have run and you are unhappy with the clustering results o
 
 ## [Methylation](#methylation)
 
-Methylation data can be implemented into TARPON by specifying the --methylation parameter. If this is the case the --input parameter must be bam files containing the modified basecalling tags.
+Methylation is no longer directly implemented in TARPON but a stand alone program, TELOMOD. Please see [ndeimler99/TeloMod](https://github.com/ndeimler99/TeloMod) for more information. This pipeline requires TARPON output and a basecalling file including methylation results from the same version of dorado basecalling as the initially executed TARPON file.
 
 ## [Additional Help and Information](#help)
 
@@ -151,9 +151,6 @@ For additional help please contact Nathaniel Deimler by opening an issue on this
 |alignment| Perform Alignment | Performs alignment to sample matched subtelomeric reference | Boolean | false |
 |reference| Reference Genome for Alignment | Sample-matched subtelomeric reference genome for alignment | file | None |
 |minimum_mapq| Minimum Mapping Quality | Minimum mapping quality for a read to be included in the alignment-based chromosome arm specific analysis | number | 20|
-|methylation| Methylation Analysis | Do you want to perform methylation analysis? If so, the input must be a bam file that contains modification calling information from dorado | Boolean | false |
-|min_mod_quality| Minimum Modification Quality Score | Will discard all modifications predicted with a confidence below this value | Number | 0.8|
-|mod_context| Modification Context | The sequence context of the modification of interest to calculate the percentage of modified bases | String | GC |
 
 
 ## [Ouput](#output)

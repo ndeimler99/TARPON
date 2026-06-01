@@ -272,23 +272,6 @@
                     "title":"Mutant Repeat of Interest",
                     "description":"Telomeric Mutation of Interest - See Manual for more details",
                     "default": "false"
-                },
-                "methylation":{
-                    "type":"boolean",
-                    "title": "Methylation Analysis",
-                    "description": "Does the input file contain methylation information from dorado?",
-                    "default": false
-                },
-                "min_mod_quality":{
-                    "type":"number",
-                    "title":"Minimum Modification Quality Score",
-                    "default":0.8
-                },
-                "mod_context": {
-                    "title": "Modification Context",
-                    "type":"string",
-                    "default":"GC",
-                    "description": "Sequence context of modification used to calculate % of modifications identified"
                 }
             } 
         },
