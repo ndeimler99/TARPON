@@ -94,7 +94,7 @@ Should TARPON already have run and you are unhappy with the clustering results o
 
 ## [Methylation](#methylation)
 
-Methylation is no longer directly implemented in TARPON but a stand alone program, TELOMOD. Please see [ndeimler99/TeloMod](https://github.com/ndeimler99/TeloMod) for more information. This pipeline requires TARPON output and a basecalling file including methylation results from the same version of dorado basecalling as the initially executed TARPON file.
+Methylation has now been discontinued in TARPON. It is recommend that if you are interested in looking at modified bases within telomeric sequences you use TELOMOD which can be found at github.com/ndeimler99/TELOMOD/. TeloMod uses TARPON stats, bam, and clustering outputs as well as the raw ubam from modified basecalling to return cluster specific modification analyses.
 
 ## [Additional Help and Information](#help)
 
@@ -151,7 +151,10 @@ For additional help please contact Nathaniel Deimler by opening an issue on this
 |alignment| Perform Alignment | Performs alignment to sample matched subtelomeric reference | Boolean | false |
 |reference| Reference Genome for Alignment | Sample-matched subtelomeric reference genome for alignment | file | None |
 |minimum_mapq| Minimum Mapping Quality | Minimum mapping quality for a read to be included in the alignment-based chromosome arm specific analysis | number | 20|
+<<<<<<< HEAD
 
+=======
+>>>>>>> 93ebffa69e04e86038e7c9e1749bc1c1b55f3681
 
 ## [Ouput](#output)
 
