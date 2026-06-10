@@ -3,21 +3,24 @@
 import gzip
 import argparse
 import pysam
+import pandas as pd
 
 def main(args):
 
     args.min_percentage = float(args.min_percentage)
     header = ""
-    stats_dict = {}
-    with open(args.stats_fh, "r") as stats:
-        linecount = 1
-        for line in stats:
-            if linecount == 1:
-                linecount += 1
-                header = line.strip()
-                continue
-            line = line.strip().split()
-            stats_dict[line[0]] = line
+    # stats_dict = {}
+
+    stats_dict = pd.read_table(args.stats_fh, delimiter="\t")
+    # with open(args.stats_fh, "r") as stats:
+    #     linecount = 1
+    #     for line in stats:
+    #         if linecount == 1:
+    #             linecount += 1
+    #             header = line.strip()
+    #             continue
+    #         line = line.strip().split()
+    #         stats_dict[line[0]] = line
     
     cluster_dict = {}
     cluster_sizes = {}
@@ -39,19 +42,21 @@ def main(args):
         if cluster_sizes[cluster] <= sum(cluster_sizes.values()) * args.min_percentage/100:
             removed_clusters.append(cluster)
     
-    for read in stats_dict:
+
+    for read in stats_dict["read_id"]:
         if read in cluster_dict:
             if cluster_dict[read] in removed_clusters:
                 cluster_dict[read] = "NA"
         else:
             cluster_dict[read] = "NA"
-        stats_dict[read].append(cluster_dict[read])
+        stats_dict.loc[stats_dict["read_id"]==read, "Cluster"] = cluster_dict[read]#[read].append(cluster_dict[read])
 
-    with open(args.new_stats_fh, "w") as stats_fh:
-        stats_fh.write("read_id\tCluster\n")
-        for read in stats_dict:
-            stats_fh.write("{}\t{}\n".format(read, cluster_dict[read]))#.join(stats_dict[read]))
-#            stats_fh.write("\n")
+    stats_dict.to_csv(args.new_stats_fh, index=False, sep="\t")
+#     with open(args.new_stats_fh, "w") as stats_fh:
+#         stats_fh.write("read_id\tCluster\n")
+#         for read in stats_dict:
+#             stats_fh.write("{}\t{}\n".format(read, cluster_dict[read]))#.join(stats_dict[read]))
+# #            stats_fh.write("\n")
 
 def argparser():
     parser = argparse.ArgumentParser()

@@ -4,6 +4,7 @@ import argparse
 import regex
 import matplotlib.pyplot as plt
 import pysam
+import pandas as pd
 
 
 def main(args):
@@ -16,13 +17,16 @@ def main(args):
     # create telomere statistics dictionary to draw telo start
     start_dict = {}
     linecount = 0
-    with open(args.telo_stats, 'r') as telo_stats_fh:
-        for line in telo_stats_fh:
-            if linecount == 0:
-                linecount += 1
-                continue
-            line = line.strip().split()
-            start_dict[line[0]] = int(line[3])
+
+    df = pd.read_table(args.telo_stats, delimiter="\t")
+    start_dict = dict(zip(df["read_id"], df["vrr_start_pos"]))
+    # with open(args.telo_stats, 'r') as telo_stats_fh:
+    #     for line in telo_stats_fh:
+    #         if linecount == 0:
+    #             linecount += 1
+    #             continue
+    #         line = line.strip().split()
+    #         start_dict[line[0]] = int(line[3])
 
     # for each read in fastq file draw the telomeric sequence
     input_fh = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
@@ -44,7 +48,6 @@ def main(args):
                 perf.append((aln.query_sequence[i:i+args.sliding_window].count(args.repeat) * len(args.repeat) / args.sliding_window) * 100)
                 subs.append((len(list(regex.finditer(r"(%s){s<=1}" % args.repeat, aln.query_sequence[i:i+args.sliding_window]))) * len(args.repeat)) / args.sliding_window * 100)
         
-
             ax1.plot(x, perf, label="Perfect Repeats")
             ax1.plot(x, subs, label="One Nucl. Substitution")
             ax1.legend()

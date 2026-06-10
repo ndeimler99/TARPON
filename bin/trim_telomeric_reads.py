@@ -3,21 +3,24 @@
 import gzip
 import argparse
 import pysam
+import pandas as pd
 
 def main(args):
 
     args.pre_vrr = int(args.pre_vrr)
     args.post_vrr = int(args.post_vrr)
 
-    stats_dict = {}
-    linecount = 1
-    with open(args.stats_fh, "r") as stats:
-        for line in stats:
-            if linecount == 1:
-                linecount += 1
-                continue
-            line = line.strip().split()
-            stats_dict[line[0]] = int(line[3])
+    df = pd.read_table(args.stats_fh, delimiter="\t")
+    stats_dict = dict(zip(df["read_id"], df["vrr_start_pos"]))
+    # stats_dict = {}
+    # linecount = 1
+    # with open(args.stats_fh, "r") as stats:
+    #     for line in stats:
+    #         if linecount == 1:
+    #             linecount += 1
+    #             continue
+    #         line = line.strip().split()
+    #         stats_dict[line[0]] = int(line[3])
     
 
     telo_file = pysam.AlignmentFile(args.telomeric_bam, "rb", check_sq=False)

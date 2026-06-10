@@ -352,7 +352,7 @@ process INDIVIDUAL_READ_PLOTS {
 
     script:
     """
-    indiv_read_plots.py --input_file ${reads} --repeat ${params.repeat} --telo_stats ${stats} --sliding_window ${params.sliding_window_size} --sliding_window_interval ${params.sliding_window_interval}
+    indiv_read_plots.py --input_file ${reads} --repeat ${params.repeat} --telo_stats ${stats} --sliding_window ${params.sliding_window_size} --sliding_window_interval ${params.sliding_window_interval} --mutant ${params.mutant}
     """
 }
 
@@ -534,6 +534,7 @@ process GENERATE_FINAL_REPORT {
                             --strand_comparison ${params.strand_comparison} \
                             --repeat ${params.repeat} \
                             --detailed_stats ${params.detailed_stats} \
+                            --c_strand_only ${params.c_strand_only} \
                             --mutant ${params.mutant} \
                             --clustering ${params.clustering} \
                             --sample_specific_files ${file_conglomerate}
@@ -881,11 +882,11 @@ process telogator_clustering {
         tuple val(sample), path(telo_reads), path(stats_file)
 
     output:
-        tuple val(sample), path("*.clusters.txt"), path("*.clustering_summary_stats.txt"), emit: clustering_stats
+        tuple val(sample), path("*.stats_with_clusters.txt"), path("*.clustering_summary_stats.txt"), emit: clustering_stats
         path("*.pdf")
 
     publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
-    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.clusters.txt"
+    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.stats_with_clusters.txt"
     publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.clustering_summary_stats.txt"
 
     script:
@@ -900,10 +901,10 @@ process telogator_clustering {
          --filt-sub 0 --debug-noanchor
 
     process_clusters.py --stats_fh ${stats_file} --cluster_results ${sample}.clustering_results/tlens_by_allele.tsv \
-        --new_stats_fh ${sample}.clusters.txt \
+        --new_stats_fh ${sample}.stats_with_clusters.txt \
         --min_percentage ${params.minimum_cluster_size}
 
-    plotClusters.R ${sample}.clusters.txt ${sample} ${stats_file}
+    plotClusters.R ${sample}.stats_with_clusters.txt ${sample}
     """    
 }
 
@@ -1013,7 +1014,7 @@ process alignment_to_ref {
     minimap2 -ax map-ont -t ${task.cpus} ${ref_file} ${sample}.telomeric_reads.fastq > ${sample}.aligned_telomeric_reads.sam
     samtools view -h -q ${params.minimum_mapq} ${sample}.aligned_telomeric_reads.sam > ${sample}.alignment.sam
     process_alignment.py --stats_fh ${stats_file} --new_stats_fh ${sample}.alignment.txt --alignment ${sample}.alignment.sam 
-    plotClusters.R ${sample}.alignment.txt ${sample} ${stats_file}
+    plotAlignment.R ${sample}.alignment.txt ${sample} ${stats_file}
     """
     
     

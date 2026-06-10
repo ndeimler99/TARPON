@@ -6,11 +6,13 @@ library(dplyr)
 library(viridis)
 library(ggpointdensity)
 
-# get args args[1] = telo_stats (file), args[2] = sample name
+# get args args[1] = arm assignments, args[2] = sample name, args[3]= telo_stats
 args = commandArgs(trailingOnly=TRUE)
 
 # open telo stats file into dataframe
-stats_df <- read.table(args[1], sep="\t", header=TRUE)
+stats_df <- read.table(args[3], sep="\t", header=TRUE)
+aln_df <- read.table(args[1], sep="\t", header=TRUE)
+stats_df <- left_join(stats_df, aln_df, by="read_id")
 
 summary_stats <- stats_df %>% group_by(Cluster) %>% summarize(count=n(), mean=mean(vrr_telo_length), sd=sd(vrr_telo_length),
                                                               q1=quantile(vrr_telo_length, 0.25), median=quantile(vrr_telo_length, 0.5),

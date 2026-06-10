@@ -1045,19 +1045,20 @@ def get_vals(series, kde_x_pos):
 
     return {"kde_vals":kde_vals, "kde_support":kde_support, "lower":lower, "upper":upper, "q1":q1, "q2":q2, "q3":q3, "hbar_height":hbar_height}
 
-def create_boxplot_by_strand(df, column_name, plt_title=None, x_title=None, y_title=None):
+def create_boxplot_by_strand(df, column_name, c_strand_only, plt_title=None, x_title=None, y_title=None):
 
     """Create a boxplot for the given column."""
-
+    print(c_strand_only)
 
     plt = BokehPlot(tools="save", x_range=["G Strand", "C Strand"])
     p = plt._fig
     p.y_range = Range1d(start=df[column_name].min() - 10, end=df[column_name].max() + 10)
 
-    g_strand = get_vals(df[df["strand"]=="G"][column_name], 0.5)
+    if not c_strand_only:
+        g_strand = get_vals(df[df["strand"]=="G"][column_name], 0.5)
+        p.patch(g_strand["kde_vals"], g_strand["kde_support"], alpha=0.3)
+
     c_strand = get_vals(df[df["strand"]=="C"][column_name], 1.5)
-    
-    p.patch(g_strand["kde_vals"], g_strand["kde_support"], alpha=0.3)
     p.patch(c_strand["kde_vals"], c_strand["kde_support"], alpha=0.3)
 
     padding_top = 10
@@ -1068,12 +1069,13 @@ def create_boxplot_by_strand(df, column_name, plt_title=None, x_title=None, y_ti
 
     whisker_width = 0.1
     
-    p.rect(["G Strand"], g_strand["lower"], whisker_width, g_strand["hbar_height"], line_color="grey")
-    p.rect(["G Strand"], g_strand["upper"], whisker_width, g_strand["hbar_height"], line_color="grey")
-    p.segment(["G Strand"], g_strand["upper"], ["G Strand"], g_strand["q3"], line_color="grey")
-    p.segment(["G Strand"], g_strand["lower"], ["G Strand"], g_strand["q1"], line_color="grey")
-    p.vbar(["G Strand"], 0.2, g_strand["q2"], g_strand["q3"], line_color="black")
-    p.vbar(["G Strand"], 0.2, g_strand["q1"], g_strand["q2"], line_color="black")
+    if not c_strand_only:
+        p.rect(["G Strand"], g_strand["lower"], whisker_width, g_strand["hbar_height"], line_color="grey")
+        p.rect(["G Strand"], g_strand["upper"], whisker_width, g_strand["hbar_height"], line_color="grey")
+        p.segment(["G Strand"], g_strand["upper"], ["G Strand"], g_strand["q3"], line_color="grey")
+        p.segment(["G Strand"], g_strand["lower"], ["G Strand"], g_strand["q1"], line_color="grey")
+        p.vbar(["G Strand"], 0.2, g_strand["q2"], g_strand["q3"], line_color="black")
+        p.vbar(["G Strand"], 0.2, g_strand["q1"], g_strand["q2"], line_color="black")
 
     p.rect(["C Strand"], c_strand["lower"], whisker_width, c_strand["hbar_height"], line_color="grey")
     p.rect(["C Strand"], c_strand["upper"], whisker_width, c_strand["hbar_height"], line_color="grey")

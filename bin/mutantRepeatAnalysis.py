@@ -57,14 +57,16 @@ def main(args):
     telo_dict = {}
     #line[3] = telo_start
     #line[1] = strand
-    with open(args.stats_file, "r") as stats_fh:
-        linecount = 0 
-        for line in stats_fh:
-            if linecount == 0:
-                linecount += 1
-                continue
-            line = line.strip().split()
-            telo_dict[line[0]] = line
+
+    df = pd.read_table(args.stats_file, delimiter="\t")
+    # with open(args.stats_file, "r") as stats_fh:
+    #     linecount = 0 
+    #     for line in stats_fh:
+    #         if linecount == 0:
+    #             linecount += 1
+    #             continue
+    #         line = line.strip().split()
+    #         telo_dict[line[0]] = line
 
     aln_file = pysam.AlignmentFile(args.input_file, "rb", check_sq=False)
     # loop through reads
@@ -74,13 +76,17 @@ def main(args):
 
     processivity_dict = {"wild_type":{}, "mutant":{}}
 
+    wt_comp = {}
+    mt_comp {}
+
+
     with open(args.stats_out, "w") as stats_out_fh:
         # create new stats file with percentage of WT repeat, % of mutant repeat, % of other one nucleotide variations within each read - I can than histogram this in R and html report - as well as create bar plot and sort bar plot by vrr length
         
         stats_out_fh.write("read_id\ttelo_length\twt_perc\tmt_perc\tother_perc\n")
 
         for aln in aln_file:
-            telo_seq = aln.query_sequence[int(telo_dict[aln.query_name][3]):]
+            telo_seq = aln.query_sequence[int(telo_dict.loc[telo_dict["read_id"] == aln.query_name]["vrr_start_pos"]):]
             telo_sequences.append(telo_seq)
             wt_nucl = telo_seq.count(args.repeat) * len(args.repeat)
             mt_nucl = telo_seq.count(args.mutant) * len(args.mutant)
@@ -88,8 +94,8 @@ def main(args):
             mt_comp = mt_nucl / len(telo_seq) * 100
             wt_comp = wt_nucl / len(telo_seq) * 100
 
-            telo_dict[aln.query_name].extend([str(wt_comp), str(mt_comp)])
-            stats_out_fh.write("{}\t{}\t{}\t{}\n".format(aln.query_name, telo_dict[aln.query_name][4], wt_comp, mt_comp, 100-wt_comp-mt_comp))
+            #telo_dict[aln.query_name].extend([str(wt_comp), str(mt_comp)])
+            stats_out_fh.write("{}\t{}\t{}\t{}\n".format(aln.query_name, telo_dict.loc[telo_dict["read_id"]==aln.query_name]["vrr_telo_length"], wt_comp, mt_comp, 100-wt_comp-mt_comp))
 
             # calculate processivity
             processivity_dict = update_processivity_dict(processivity_dict, telo_seq[-1000:], args.repeat, args.mutant)

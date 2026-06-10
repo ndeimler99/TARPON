@@ -56,6 +56,7 @@ def main(args):
     args.strand_comparison = args.strand_comparison == "true"
     args.detailed_stats = args.detailed_stats == "true"
     args.clustering = args.clustering == "true"
+    args.c_strand_only = args.c_strand_only == "true"
     args.minimum_read_count = int(args.minimum_read_count)
 
     params = get_nextflow_attributes(args.params)
@@ -88,10 +89,10 @@ def main(args):
     else:
         alignment = False
 
-    if "modification" in sample_dict[list(sample_dict.keys())[0]]:
-        modifications = True
-    else:
-        modifications = False
+    # if "modification" in sample_dict[list(sample_dict.keys())[0]]:
+    #     modifications = True
+    # else:
+    #     modifications = False
 
     vrr_summary_stats = pd.read_table(args.run_vrr_stats, sep="\t")
 
@@ -105,12 +106,12 @@ def main(args):
             sample_dict[sample]["pd_table"] = pd.merge(sample_dict[sample]["pd_table"], alignment_table, how="left", on="read_id")
         
         if clustering:
-            clustering_table = pd.read_table(sample_dict[sample]["clusters"])
+            clustering_table = pd.read_table(sample_dict[sample]["stats_with_clusters"])[["read_id", "Cluster"]]
             sample_dict[sample]["pd_table"] = pd.merge(sample_dict[sample]["pd_table"], clustering_table, how="left", on="read_id")
-            print(len(sample_dict[sample]["pd_table"]["vrr_telo_length"]))
-        if modifications:
-            modification_results = pd.read_table(sample_dict[sample]["modification"])
-            sample_dict[sample]["pd_table"] = pd.merge(sample_dict[sample]["pd_table"], modification_results, how="left", on="read_id")
+        #     print(len(sample_dict[sample]["pd_table"]["vrr_telo_length"]))
+        # if modifications:
+        #     modification_results = pd.read_table(sample_dict[sample]["modification"])
+        #     sample_dict[sample]["pd_table"] = pd.merge(sample_dict[sample]["pd_table"], modification_results, how="left", on="read_id")
 
         # if modification - merge
         print(list(sample_dict[sample]["pd_table"].columns.values))
@@ -511,17 +512,18 @@ def main(args):
                                                                                 x_title="Telomere Length (BP)", y_title="Percentage of Sequences")
                                     EZChart(plt, THEME)
 
-                                telo_hist = report_utils.create_boxplot_by_strand(df, "vrr_telo_length", plt_title="Telo Length by Strand", x_title="Strand", y_title="Telomere Length (bp)")
+                                telo_hist = report_utils.create_boxplot_by_strand(df, "vrr_telo_length", args.c_strand_only, plt_title="Telo Length by Strand", x_title="Strand", y_title="Telomere Length (bp)")
                                 EZChart(telo_hist, THEME)
                                     
 
                                 bins = [i*1000 for i in range(0,11)]
                                 bins.append(100000)
-                                telo_bar_df_g = np.histogram(df[df["strand"]=="G"]["vrr_telo_length"], bins=bins)
-                                telo_bar_df_g = pd.DataFrame(list(zip(telo_bar_df_g[1], telo_bar_df_g[0])), columns=["bin_start", "bin_size"])
-                                telo_bar_df_g["bin_start"] = telo_bar_df_g["bin_start"].astype("string")
-                                telo_bar_df_g["sample"] = "G"
-                                telo_bar_df_g["bin_size"] = telo_bar_df_g["bin_size"] / sum(telo_bar_df_g["bin_size"]) * 100
+                                if not args.c_strand_only:
+                                    telo_bar_df_g = np.histogram(df[df["strand"]=="G"]["vrr_telo_length"], bins=bins)
+                                    telo_bar_df_g = pd.DataFrame(list(zip(telo_bar_df_g[1], telo_bar_df_g[0])), columns=["bin_start", "bin_size"])
+                                    telo_bar_df_g["bin_start"] = telo_bar_df_g["bin_start"].astype("string")
+                                    telo_bar_df_g["sample"] = "G"
+                                    telo_bar_df_g["bin_size"] = telo_bar_df_g["bin_size"] / sum(telo_bar_df_g["bin_size"]) * 100
 
                                 telo_bar_df_c = np.histogram(df[df["strand"]=="C"]["vrr_telo_length"], bins=bins)
                                 telo_bar_df_c = pd.DataFrame(list(zip(telo_bar_df_c[1], telo_bar_df_c[0])), columns=["bin_start", "bin_size"])
@@ -529,8 +531,11 @@ def main(args):
                                 telo_bar_df_c["sample"] = "C"
                                 telo_bar_df_c["bin_size"] = telo_bar_df_c["bin_size"] / sum(telo_bar_df_c["bin_size"]) * 100
 
-
-                                telo_bar_plot = report_utils.telo_barplot(data=pd.concat([telo_bar_df_g, telo_bar_df_c]), 
+                                if args.c_strand_only:
+                                    input_df = telo_bar_df_c
+                                else:
+                                    input_df = pd.concat([telo_bar_df_g, telo_bar_df_c])
+                                telo_bar_plot = report_utils.telo_barplot(data=input_df, 
                                                         x="sample", x_rotation=45, x_title="Strand",
                                                         y="bin_size", y_title="Percentage of Reads",
                                                         hue="bin_start", dodge=False,
@@ -900,9 +905,9 @@ def main(args):
                         if args.strand_comparison:
                             with new_tabs.add_tab("Strand Comparison"):
                                 
-                                read_quality = report_utils.create_boxplot_by_strand(df, "read_qual", 
+                                read_quality = report_utils.create_boxplot_by_strand(df, "read_qual", args.c_strand_only,
                                     plt_title="Read Quality by Strand", x_title="Strand", y_title="Read Quality")
-                                telo_quality = report_utils.create_boxplot_by_strand(df, "telo_qual", 
+                                telo_quality = report_utils.create_boxplot_by_strand(df, "telo_qual", args.c_strand_only,
                                     plt_title="Telo Quality by Strand", x_title="Strand", y_title="Telomere Quality")
 
                                 with Grid(columns=2):
@@ -1003,12 +1008,12 @@ def main(args):
                         if args.strand_comparison:
                             with new_tabs.add_tab("Strand Comparison"):
                                 # perfect repeat percentage by strand
-                                perf_repeat = report_utils.create_boxplot_by_strand(df, "wt_composition", 
+                                perf_repeat = report_utils.create_boxplot_by_strand(df, "wt_composition", args.c_strand_only,
                                                                                     plt_title="Perfect Repeat Composition", x_title="Strand", 
                                                                                     y_title="Percentage Perfect Repeats")
 
                                 # imperfect repeat percentage by strand
-                                imperf_repeat = report_utils.create_boxplot_by_strand(df, "one_nucl_variant_composition", 
+                                imperf_repeat = report_utils.create_boxplot_by_strand(df, "one_nucl_variant_composition", args.c_strand_only,
                                                                                     plt_title="Telomere-Like Repeat Composition", x_title="Strand", 
                                                                                     y_title="Percentage Telomere-Like Repeats")
 
@@ -1118,26 +1123,26 @@ def main(args):
                         df = pd.read_table(sample_dict[sample]["chrom_arm_summary"], sep="\t")
                         DataTable.from_pandas(df, use_index=False)
 
-    if modifications:
-        with report.add_section("Modification Analysis", "Modification Analysis"):
-            tabs = Tabs()
-            for sample in sorted(list(sample_dict.keys())):
-                with tabs.add_dropdown_menu(sample, change_header=False):
-                    df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["pd_table"], sep="\t")
-                    with tabs.add_dropdown_tab("{} Modification Results".format(sample)):
-                        # histogram of modification frequencies
-                        modification_histogram = report_utils.telo_length_hist(df["m"], binwidth=2, binrange=[0,100],
-                                                            plt_title="Methylation Histogram",
-                                                            x_title = "% Methylated CpGs", y_title="Read Count")
+    # if modifications:
+    #     with report.add_section("Modification Analysis", "Modification Analysis"):
+    #         tabs = Tabs()
+    #         for sample in sorted(list(sample_dict.keys())):
+    #             with tabs.add_dropdown_menu(sample, change_header=False):
+    #                 df = sample_dict[sample]["pd_table"]#pd.read_table(sample_dict[sample]["pd_table"], sep="\t")
+    #                 with tabs.add_dropdown_tab("{} Modification Results".format(sample)):
+    #                     # histogram of modification frequencies
+    #                     modification_histogram = report_utils.telo_length_hist(df["m"], binwidth=2, binrange=[0,100],
+    #                                                         plt_title="Methylation Histogram",
+    #                                                         x_title = "% Methylated CpGs", y_title="Read Count")
 
-                        byscatter = report_utils.scatterplot(data=df, x="m", y="vrr_telo_length", 
-                                                            hover_tooltips=[("VRR Telomere Length", "@y"), ("Methylation Rate", "@x")],
-                                                            plt_title="VRR Telomere Length by Methylation of Subtelomere",
-                                                            x_title="Methylation Percentage", y_title="VRR Telomere Length (BP)")
-                        # modificaiton frequency vs telomere length
-                        with Grid(columns=2): 
-                            EZChart(modification_histogram)
-                            EZChart(byscatter)
+    #                     byscatter = report_utils.scatterplot(data=df, x="m", y="vrr_telo_length", 
+    #                                                         hover_tooltips=[("VRR Telomere Length", "@y"), ("Methylation Rate", "@x")],
+    #                                                         plt_title="VRR Telomere Length by Methylation of Subtelomere",
+    #                                                         x_title="Methylation Percentage", y_title="VRR Telomere Length (BP)")
+    #                     # modificaiton frequency vs telomere length
+    #                     with Grid(columns=2): 
+    #                         EZChart(modification_histogram)
+    #                         EZChart(byscatter)
 
     report.write(args.report)
 
@@ -1162,6 +1167,7 @@ def argparser():
     parser.add_argument("--mutant", required=True)
     parser.add_argument("--detailed_stats", required=True)
     parser.add_argument("--strand_comparison", required=True)
+    parser.add_argument("--c_strand_only", required=True)
     parser.add_argument("--clustering", required=True)
 
     ## Sample Specific Parameters
