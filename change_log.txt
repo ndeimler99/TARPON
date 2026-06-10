@@ -7,3 +7,4 @@ October 29th, 2025 - Added paternity assignment script to Extra Tools directory 
 December 9th, 2025 - Added additional memory check to alignment processes v2.1.0
 January 26th, 2026 - Added Levensthein distance option in Extra Tools Paterntity Assignment Script v2.1.0
 June 1st, 2026 - Removed methylation options for TARPON and instead incroporated modified bases into TeloMod. v2.1.1
+June 10th, 2026 - converted file loading to pandas based system v2.1.1
