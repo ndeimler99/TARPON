@@ -31,6 +31,7 @@ include { getParams; getVersions; getManifest; GENERATE_FINAL_REPORT } from "./b
 include { enrichment_stats_pipeline } from "./subworkflows/enrichment_stats.nf"
 include { telogator_clustering } from "./bin/process.nf"
 include { alignment_to_ref } from "./bin/process.nf"
+//include { inheritance_assignment_pipeline } from "./subworkflows/inheritance.nf"
 //include { methylation_detection } from "./subworkflows/methylation_detection.nf"
 
 /*
@@ -62,6 +63,11 @@ workflow {
         if (params.recluster_only){
             clustering_results = telogator_clustering(tuple(params.sample_name, file(params.input), file(params.telomeric_stats)))
         }
+        // else if (params.inheritance_mode) {
+
+        //     inheritance_assignment_pipeline(params.maternal_telobam, params.paternal_telobam, params.offspring_telobam, params.maternal_stats, params.paternal_stats, params.offspring_stats)
+        //     //report = GENERATE_INHERITANCE_REPORT(parameters.params, versions.versions, manifest.manifest)
+        // }
         else {
             // preprocess data pipeline takes the input files or directory and returns SUP basecalled telomeric sequences
             preprocess_data_pipeline(params.run_name, params.input)

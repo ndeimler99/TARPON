@@ -98,6 +98,7 @@ def main(args):
 
     # combine relevant files
     for sample in sample_dict:
+        os.makedirs(sample, exist_ok=True)
         sample_dict[sample]["pd_table"] = pd.read_table(sample_dict[sample]["telo_stats"])
         print(len(sample_dict[sample]["pd_table"]["vrr_telo_length"]))
 
@@ -108,6 +109,10 @@ def main(args):
         if clustering:
             clustering_table = pd.read_table(sample_dict[sample]["stats_with_clusters"])[["read_id", "Cluster"]]
             sample_dict[sample]["pd_table"] = pd.merge(sample_dict[sample]["pd_table"], clustering_table, how="left", on="read_id")
+            sample_dict[sample]["pd_table"]["Cluster"] = sample_dict[sample]["pd_table"]["Cluster"].astype("Int64")
+            sample_dict[sample]["pd_table"].to_csv("{}/{}.telo_stats.txt".format(sample, sample), sep="\t", index=False, na_rep="NA")
+        else:
+            sample_dict[sample]["pd_table"].to_csv("{}/{}.telo_stats.txt".format(sample, sample), sep="\t", index=False, na_rep="NA")
         #     print(len(sample_dict[sample]["pd_table"]["vrr_telo_length"]))
         # if modifications:
         #     modification_results = pd.read_table(sample_dict[sample]["modification"])
