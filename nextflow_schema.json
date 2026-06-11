@@ -10,7 +10,6 @@
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
             "description": "Mandatory Parameters to set up the Analysis",
-            "required": ["input", "outdir", "run_name"],
             "properties": {
                 "input": {
                     "type": "string",
@@ -77,7 +76,6 @@
             "type": "object",
             "fa_icon": "fas fa-arrow-right",
             "description": "Basic Pipeline Options",
-            "required": ["repeat", "minimum_telo_reads_per_sample"],
             "properties": {
                 "repeat": {
                     "type": "string",

@@ -514,13 +514,16 @@ process GENERATE_FINAL_REPORT {
 
     output:
         path("report.html")
+        path("**/*telo_stats.txt")
     
     publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "report.html"
     publishDir "${params.out_dir}/", mode: 'copy', overwrite: true, pattern: "report.html"
+    publishDir "${params.outdir}/", mode: 'copy', overwrite: true, pattern: "**/*telo_stats.txt"
+                                                                                   
 
     script:
     """
-    generate_html_report.py --workflow_name TArPON \
+    generate_html_report.py --workflow_name TARPON \
                             --report report.html \
                             --template_file ${baseDir}/bin/single_sample_template.html \
                             --params params.json \
@@ -840,7 +843,7 @@ process VARIANT_ANALYSIS {
         path("*.pdf")
 
     publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
-    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telo_stats.txt"
+    //publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.telo_stats.txt"
 
     script:
     """
@@ -886,7 +889,7 @@ process telogator_clustering {
         path("*.pdf")
 
     publishDir "${params.outdir}/${sample}/FIGURES/", overwrite: true, mode: "copy", pattern: "*.pdf"
-    publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.stats_with_clusters.txt"
+    //publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.stats_with_clusters.txt"
     publishDir "${params.outdir}/${sample}/", overwrite: true, mode: "copy", pattern: "*.clustering_summary_stats.txt"
 
     script:
@@ -1020,3 +1023,43 @@ process alignment_to_ref {
     
     
 }
+
+
+// process CREATE_CLUSTER_SPECIFIC_FASTA {
+
+//     label 'inheritance'
+//     tag 'Cluster Cluster FASTA'
+
+//     input:
+//         path(telo_stats)
+//         path(telobam)
+
+//     output:
+//         path("*.fa"), emit: fasta
+
+//     script:
+//     """
+//     ${baseDir}/bin/create_cluster_fasta.py --telo_stats ${telo_stats} --telobam ${telobam}
+//     """
+// }
+
+
+
+// process GENERATE_CONSENSUS {
+//     maxForks 5
+//     label 'inheritance'
+//     tag 'Generate Consensus and Align Reads'
+
+//     input:
+//         tuple val(cluster), path(cluster_fasta)
+
+//     output:
+//         tuple val(cluster), path("*.consensus.fa")
+
+//     publishDir "${params.outdir}/MATERNAL_CLUSTERS/", mode: 'copy', overwrite:true, pattern:"*.consensus.fa"
+
+//     script:
+//     """
+//     spoa -l 0 -r 0 ${cluster_fasta} > ${cluster}.consensus.fa
+//     """
+// }
