@@ -1025,41 +1025,111 @@ process alignment_to_ref {
 }
 
 
-// process CREATE_CLUSTER_SPECIFIC_FASTA {
+process CREATE_CLUSTER_SPECIFIC_FASTA {
 
-//     label 'inheritance'
-//     tag 'Cluster Cluster FASTA'
+    label 'inheritance'
+    tag 'Cluster Cluster FASTA'
 
-//     input:
-//         path(telo_stats)
-//         path(telobam)
+    input:
+        path(telo_stats)
+        path(telobam)
 
-//     output:
-//         path("*.fa"), emit: fasta
+    output:
+        path("*.fa"), emit: fasta
 
-//     script:
-//     """
-//     ${baseDir}/bin/create_cluster_fasta.py --telo_stats ${telo_stats} --telobam ${telobam}
-//     """
-// }
+    script:
+    """
+    ${baseDir}/bin/create_cluster_fasta.py --telo_stats ${telo_stats} --telobam ${telobam}
+    """
+}
 
 
 
-// process GENERATE_CONSENSUS {
-//     maxForks 5
-//     label 'inheritance'
-//     tag 'Generate Consensus and Align Reads'
+process GENERATE_CONSENSUS {
+    maxForks 5
+    label 'inheritance'
+    tag 'Generate Consensus and Align Reads'
 
-//     input:
-//         tuple val(cluster), path(cluster_fasta)
+    input:
+        tuple val(cluster), path(cluster_fasta)
 
-//     output:
-//         tuple val(cluster), path("*.consensus.fa")
+    output:
+        tuple val(cluster), path("*.consensus.fa")
 
-//     publishDir "${params.outdir}/MATERNAL_CLUSTERS/", mode: 'copy', overwrite:true, pattern:"*.consensus.fa"
+    script:
+    """
+    spoa -l 0 -r 0 ${cluster_fasta} > ${cluster}.consensus.fa
+    """
+}
 
-//     script:
-//     """
-//     spoa -l 0 -r 0 ${cluster_fasta} > ${cluster}.consensus.fa
-//     """
-// }
+
+process MERGE_CONSENSUS {
+
+    label 'inheritance'
+    tag 'Merging Consensus Sequences'
+
+    input:
+        path(consensus_files)
+
+    output:
+        path("*combined_consensus.fa"), emit: consensus_fa
+
+    script:
+    """
+    for file in ${consensus_files}
+    do
+        cluster=\$(basename  "\$file" | cut -f 1 -d ".")
+        sed "s/^>Consensus/>\$cluster/g" "\$file" > "\$cluster.renamed.fasta"
+    done
+    cat *.renamed.fasta > combined_consensus.fa
+    """
+}
+
+
+process ALIGN_TO_PARENT {
+
+    label 'inheritance'
+    tag 'Aligning to Parent'
+
+    input:
+        path(parental_file, stageAs: "parent.fa")
+        path(offspring_file, stageAs: "offspring.fa")
+
+    output:
+        path("alignment_stats.txt"), emit: aln_results
+
+    script:
+    """
+    parentalAlignment.py --offspring offspring.fa --parental parent.fa --output alignment_stats.txt
+    """
+}
+
+process ASSIGN_PATERNITY {
+    
+    label 'inheritance'
+    tag 'Assigning Paternity and Plotting'
+
+    input:
+        path(maternal_alignments, stageAs: "maternal.aln.txt")
+        path(paternal_alignments, stageAs: "paternal.aln.txt")
+        path(maternal_consensus, stageAs: "maternal_consensus_seqs.fa")
+        path(paternal_consensus, stageAs: "paternal_consensus_seqs.fa")
+        path(offspring_consensus, stageAs: "offspring_consensus_seqs.fa")
+        path(offspring_stats, stageAs: "offspring_telo_stats_old.txt")
+    
+    output:
+        path("offspring_telo_stats.txt")
+        path("maternal_consensus_seqs.fa")
+        path("paternal_consensus_seqs.fa")
+        path("offspring_consensus_seqs.fa")
+        path("*.pdf")
+    
+    publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "*.fa"
+    publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "*.pdf"
+    publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "offspring_telo_stats.txt"
+    
+    script:
+    """
+    assignPaternityAndPlot.R maternal.aln.txt paternal.aln.txt offspring_telo_stats_old.txt
+    """
+}
