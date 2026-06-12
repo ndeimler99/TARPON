@@ -336,6 +336,62 @@
                     "description": "Minimum mapping quality for a read to be included in the alignment-based chromosome arm specific analysis"
                 }
             }
+        },
+        "Inheritance_Mode": {
+            "title": "Inheritance Mode",
+            "type": "object",
+            "fa_icon": "fas fa-arrow-right",
+            "description": "Assigning either Maternal or Paternal Inheritance to offspring telomeric sequences",
+            "properties": {
+                "inheritance_mode":{
+                    "title": "Inheritance Mode",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enabling this parameter will result in TAPRON not executing in the standard fashion. Instead it will use the below parameters and assign offspring telomeric sequences to either a maternal or paternal inheritance"
+                },
+                "maternal_telobam":{
+                    "title": "Maternal Telomeric Reads",
+                    "type": "string",
+                    "format": "path",
+                    "exists":true,
+                    "description": "Telomeric BAM file produced by TARPON run"
+                },
+                "maternal_stats":{
+                    "title": "Maternal Telomeric Stats",
+                    "type": "string",
+                    "format": "path",
+                    "exists":true,
+                    "description": "Telomeric Stats file produced by TARPON run"
+                },
+                "paternal_telobam":{
+                    "title": "Paternal Telomeric Reads",
+                    "type": "string",
+                    "format": "path",
+                    "exists":true,
+                    "description": "Telomeric BAM file produced by TARPON run"
+                },
+                "paternal_stats":{
+                    "title": "Paternal Telomeric Stats",
+                    "type": "string",
+                    "format": "path",
+                    "exists":true,
+                    "description": "Telomeric Stats file produced by TARPON run"
+                },
+                "offspring_telobam":{
+                    "title": "Offspring Telomeric Reads",
+                    "type": "string",
+                    "format": "path",
+                    "exists":true,
+                    "description": "Telomeric BAM file produced by TARPON run"
+                },
+                "offspring_stats":{
+                    "title": "Offspring Telomeric Stats",
+                    "type": "string",
+                    "format": "path",
+                    "exists":true,
+                    "description": "Telomeric Stats file produced by TARPON run"
+                }
+            }
         }
     },
     "allOf": [
@@ -356,6 +412,9 @@
         },
         {
             "$ref": "#/definitions/Advanced_Options"
+        },
+        {
+            "$ref": "#/definitions/Inheritance_Mode"
         }
     ],
     "resources": {
