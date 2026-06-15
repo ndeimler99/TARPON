@@ -25,57 +25,57 @@ workflow validate_parameters {
             println("Number of threads is reset to ${available}")
         }
 
-        // if (params.inheritance_mode){
-        //     try {
-        //         file(params.maternal_telobam, checkIfExists:true)
-        //     }
-        //     catch (Exception e) {
-        //         parameters_passed = false
-        //         println("Error - Maternal Telobam must be provided")
-        //     }
+        if (params.inheritance_mode){
+            try {
+                file(params.maternal_telobam, checkIfExists:true)
+            }
+            catch (Exception e) {
+                parameters_passed = false
+                println("Error - Maternal Telobam must be provided")
+            }
 
-        //     try {
-        //         file(params.paternal_telobam, checkIfExists:true)
-        //     }
-        //     catch (Exception e) {
-        //         parameters_passed = false
-        //         println("Error - Paternal Telobam must be provided")
-        //     }
+            try {
+                file(params.paternal_telobam, checkIfExists:true)
+            }
+            catch (Exception e) {
+                parameters_passed = false
+                println("Error - Paternal Telobam must be provided")
+            }
 
-        //     try {
-        //         file(params.offspring_telobam, checkIfExists:true)
-        //     }
-        //     catch (Exception e) {
-        //         parameters_passed = false
-        //         println("Error - Offspring Telobam must be provided")
-        //     }
+            try {
+                file(params.offspring_telobam, checkIfExists:true)
+            }
+            catch (Exception e) {
+                parameters_passed = false
+                println("Error - Offspring Telobam must be provided")
+            }
 
-        //     try {
-        //         file(params.maternal_stats, checkIfExists:true)
-        //     }
-        //     catch (Exception e) {
-        //         parameters_passed = false
-        //         println("Error - Maternal Stats File must be provided")
-        //     }
+            try {
+                file(params.maternal_stats, checkIfExists:true)
+            }
+            catch (Exception e) {
+                parameters_passed = false
+                println("Error - Maternal Stats File must be provided")
+            }
 
-        //     try {
-        //         file(params.paternal_stats, checkIfExists:true)
-        //     }
-        //     catch (Exception e) {
-        //         parameters_passed = false
-        //         println("Error - Paternal Stats File must be provided")
-        //     }
+            try {
+                file(params.paternal_stats, checkIfExists:true)
+            }
+            catch (Exception e) {
+                parameters_passed = false
+                println("Error - Paternal Stats File must be provided")
+            }
 
-        //     try {
-        //         file(params.offspring_stats, checkIfExists:true)
-        //     }
-        //     catch (Exception e) {
-        //         parameters_passed = false
-        //         println("Error - Offspring Stats File must be provided")
-        //     }
-        // }
-        if (true) {
-        // else{
+            try {
+                file(params.offspring_stats, checkIfExists:true)
+            }
+            catch (Exception e) {
+                parameters_passed = false
+                println("Error - Offspring Stats File must be provided")
+            }
+        }
+
+        else{
             if (params.recluster_only){
                 try {
                     file(params.input, checkIfExists:true)
