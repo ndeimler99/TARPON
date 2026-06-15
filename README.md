@@ -1,4 +1,4 @@
-# TARPON v2.1.1
+# TARPON v2.2.1
 Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 
 ## Table of Contents
@@ -13,7 +13,13 @@ Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 9. [Input Paramaters](#input)
 10. [Advanced Input Parameteres](#advanced_input)
 11. [Output Files](#output)
+12. [Inheritance Mode(#inheritance)
 
+# NEW!!!! - Inheritance Mode #
+
+By specifying the paramter --inheritance_mode and providing the output from TARPON, inheritance of telomeric reads can be assigned to an offspring sample when both parents are also sequenced. Please see below for more information
+
+# How To Cite #
 If you use this software please cite 
 "Deimler N, Ho DV, Paul N, Gill Z, Baumann P (2026) TARPON—A Telomere Analysis and Research Pipeline Optimized for Nanopore. PLoS Comput Biol 22(2): e1013915. https://doi.org/10.1371/journal.pcbi.1013915"
 
@@ -151,10 +157,6 @@ For additional help please contact Nathaniel Deimler by opening an issue on this
 |alignment| Perform Alignment | Performs alignment to sample matched subtelomeric reference | Boolean | false |
 |reference| Reference Genome for Alignment | Sample-matched subtelomeric reference genome for alignment | file | None |
 |minimum_mapq| Minimum Mapping Quality | Minimum mapping quality for a read to be included in the alignment-based chromosome arm specific analysis | number | 20|
-<<<<<<< HEAD
-
-=======
->>>>>>> 93ebffa69e04e86038e7c9e1749bc1c1b55f3681
 
 ## [Ouput](#output)
 
@@ -182,7 +184,9 @@ Specifying one of the booleans below will result in more detailed or additional 
 |--plot_telo_length|sample directory / FIGURES |Will produce additional files for all predescribed telomere statistics, but using telomere length instead of the vrr telo length. This compounds with --strand_comparison to produce strand specific telo length plots |
 |--detailed_stats| sample directory / DETAILED_STATS / |Will produce multiple additional figures comparing telomere length to VRR length, looking at the percentage of perfect repeats within the sequencing data, looking at the quality of telomeric sequences, etc. All such files can be found in the sample directory under FIGURES/DETAILED_STATS. This compounds with both strand_comparison and plot_vrr_length to produce additional files in the C_G_Comparison directory |
 
+## [Inheritance Mode](#inheritance)
 
+Inheritance mode allows the user to provide telomeric sequences and stats produced by TARPON for three individuals (mother, father, and offspring). TARPON must be run with the --clustering parameter activitated. --inheritance_mode will then create a consensus sequence per cluster for each individual before aligning the consensus of the mother and father to the offspring in a pairwise manner. Best matches per cluster are identified by requiring a minimum percent identity of 85% and at least a 1% difference in alignment between either parent. 
 
 This pipeline utilizes ezcharts to aid in the generation of bokeh plots for the final HTML report. Please see the following disclaimer as well as the License provided in the LICENSE folder for use of this software.
 This product includes software developed by Oxford Nanopore Technologies Plc.
