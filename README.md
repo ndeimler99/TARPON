@@ -13,7 +13,7 @@ Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 9. [Input Paramaters](#input)
 10. [Advanced Input Parameteres](#advanced_input)
 11. [Output Files](#output)
-12. [Inheritance Mode(#inheritance)
+12. [Inheritance Mode](#inheritance)
 
 # NEW!!!! - Inheritance Mode #
 
