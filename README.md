@@ -186,7 +186,7 @@ Specifying one of the booleans below will result in more detailed or additional 
 
 ## [Inheritance Mode](#inheritance)
 
-Inheritance mode allows the user to provide telomeric sequences and stats produced by TARPON for three individuals (mother, father, and offspring). TARPON must be run with the --clustering parameter activitated. --inheritance_mode will then create a consensus sequence per cluster for each individual before aligning the consensus of the mother and father to the offspring in a pairwise manner. Best matches per cluster are identified by requiring a minimum percent identity of 85% and at least a 1% difference in alignment between either parent. The following parameters must be set for Inheritance Mode to activate. All provided files must have valid paths and exist.
+Inheritance mode allows the user to provide telomeric sequences and stats produced by TARPON for three individuals (mother, father, and offspring). TARPON must be run with the --clustering parameter activitated. --inheritance_mode will then create a consensus sequence per cluster for each individual before aligning the consensus of the mother and father to the offspring in a pairwise manner. Best matches per cluster are identified by requiring a minimum percent identity of 85% and at least a 1% difference in alignment between either parent. The following parameters must be set for Inheritance Mode to activate. All provided files must have valid paths and exist. No HTML report is generated, however the stats file is updated and additional figures are generated.
 
 | Parameter | Description |
 |:-----:|:----:|
@@ -197,6 +197,7 @@ Inheritance mode allows the user to provide telomeric sequences and stats produc
 |--paternal_stats |  Telomeric Stats File provided by TARPON for father |
 |--offspring_telobam|Telomeric Ubam file provided by TARPON for offspring of interest |
 |--offspring_stats |  Telomeric Stats File provided by TARPON for offspring of interest |
+|--outdir | Location of where you would like the Pipeline to output results (Default ./output) |
 
 
 This pipeline utilizes ezcharts to aid in the generation of bokeh plots for the final HTML report. Please see the following disclaimer as well as the License provided in the LICENSE folder for use of this software.
