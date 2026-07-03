@@ -37,38 +37,59 @@ workflow inheritance_assignment_pipeline {
 
     main:
 
-        maternal_fastas = M_CLUS_FA(maternal_stats, maternal_telobam)
+        maternal_fastas = M_CLUS_FA(tuple "maternal", file(maternal_stats), file(maternal_telobam))
 
+        //maternal_fastas.view()
         maternal_fastas.fasta
-            .flatten()
-            .map { file -> tuple(file.baseName, file) }
+            .flatMap { sample, files -> files.collect { file -> tuple(sample, file.baseName, file) } }
             .set { maternal_fasta_ch }
-            
+
         maternal_consensus = M_CONS_GEN(maternal_fasta_ch)
 
-        maternal_consensus = M_MERGE_CONS(maternal_consensus.map{ id, cons -> cons }.collect())
+        maternal_consensus
+            .map { sample, cluster, fasta ->
+                tuple(sample, fasta)
+            }
+            .groupTuple()
+            .set { maternal_consensus }
 
-        paternal_fastas = P_CLUS_FA(paternal_stats, paternal_telobam)
+        maternal_consensus = M_MERGE_CONS( maternal_consensus )
+
+        maternal_consensus.view()
+
+        paternal_fastas = P_CLUS_FA(tuple "paternal", file(paternal_stats), file(paternal_telobam))
 
         paternal_fastas.fasta
-            .flatten()
-            .map { file -> tuple(file.baseName, file) }
+            .flatMap { sample, files -> files.collect { file -> tuple(sample, file.baseName, file) } }
             .set { paternal_fasta_ch }
             
         paternal_consensus = P_CONS_GEN(paternal_fasta_ch)
 
-        paternal_consensus = P_MERGE_CONS(paternal_consensus.map{ id, cons -> cons }.collect())
+        paternal_consensus
+            .map { sample, cluster, fasta ->
+                tuple(sample, fasta)
+            }
+            .groupTuple()
+            .set { paternal_consensus }
 
-        offspring_fastas = O_CLUS_FA(offspring_stats, offspring_telobam)
+        paternal_consensus = P_MERGE_CONS( paternal_consensus )
+
+        offspring_fastas = O_CLUS_FA(tuple "offspring", file(offspring_stats), file(offspring_telobam))
 
         offspring_fastas.fasta
-            .flatten()
-            .map { file -> tuple(file.baseName, file) }
+            .flatMap { sample, files -> files.collect { file -> tuple(sample, file.baseName, file) } }
             .set { offspring_fasta_ch }
             
         offspring_consensus = O_CONS_GEN(offspring_fasta_ch)
 
-        offspring_consensus =O_MERGE_CONS(offspring_consensus.map{ id, cons -> cons }.collect())
+        offspring_consensus
+            .map { sample, cluster, fasta ->
+                tuple(sample, fasta)
+            }
+            .groupTuple()
+            .set { offspring_consensus }
+
+        offspring_consensus = O_MERGE_CONS(offspring_consensus)
 
         maternal_alignment = M_ALIGN(maternal_consensus.consensus_fa, offspring_consensus.consensus_fa)
         paternal_alignment = P_ALIGN(paternal_consensus.consensus_fa, offspring_consensus.consensus_fa)

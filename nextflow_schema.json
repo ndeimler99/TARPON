@@ -392,6 +392,27 @@
                     "description": "Telomeric Stats file produced by TARPON run"
                 }
             }
+        },
+        "Cluster_Concordance_Mode": {
+            "title": "Cluster Concordance Mode",
+            "type": "object",
+            "fa_icon": "fas fa-arrow-right",
+            "description": "Take multiple samples and assign clusters to each other creating concordance clusters",
+            "properties": {
+                "cluster_concordance":{
+                    "title": "Cluster Concordance Mode",
+                    "type": "boolean",
+                    "default": false,
+                    "description": "Enabling this parameter will result in TAPRON not executing in the standard fashion. Instead it will use the below provided sample file and create concordant clusters"
+                },
+                "concordance_sample_file":{
+                    "title": "Concordance Sample File",
+                    "type": "string",
+                    "format": "path",
+                    "exists":true,
+                    "description": "three column csv file containing the sample name, TARPON telomere stats with Cluster column, and TARPON telomeric bam file. Please see test data for an example file"
+                }
+            }
         }
     },
     "allOf": [
@@ -415,6 +436,9 @@
         },
         {
             "$ref": "#/definitions/Inheritance_Mode"
+        },
+        {
+            "$ref": "#/definitions/Cluster_Concordance_Mode"
         }
     ],
     "resources": {

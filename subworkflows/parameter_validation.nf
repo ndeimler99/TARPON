@@ -74,7 +74,15 @@ workflow validate_parameters {
                 println("Error - Offspring Stats File must be provided")
             }
         }
-
+        else if (params.cluster_concordance) {
+            try {
+                file(params.concordance_sample_file, checkIfExists: true)
+            }
+            catch (Exception e) {
+                parameters_passed = false
+                println("Error - Cluster Concordance File Must be Provided")
+            }
+        }
         else{
             if (params.recluster_only){
                 try {

@@ -9,4 +9,5 @@ January 26th, 2026 - Added Levensthein distance option in Extra Tools Paterntity
 June 1st, 2026 - Removed methylation options for TARPON and instead incroporated modified bases into TeloMod. v2.1.1
 June 10th, 2026 - converted file loading to pandas based system v2.1.1
 June 15th, 2026 - Incoporated inheritance_mode into TARPON v2.2.1
+July 3rd, 2026 - Incorporated cluster concordance into TARPON v2.3.1
 
