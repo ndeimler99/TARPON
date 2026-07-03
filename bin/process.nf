@@ -1028,18 +1028,34 @@ process alignment_to_ref {
 process CREATE_CLUSTER_SPECIFIC_FASTA {
 
     label 'inheritance'
-    tag 'Cluster Cluster FASTA'
+    tag 'Create Cluster FASTA'
 
     input:
-        path(telo_stats)
-        path(telobam)
+        tuple val(sample), path(telo_stats), path(telobam)
+
+    output:
+        tuple val(sample), path("*.fa"), emit: fasta
+
+    script:
+    """
+    ${baseDir}/bin/create_cluster_fasta.py --telo_stats ${telo_stats} --telobam ${telobam}
+    """
+}
+
+process GENERATE_CLUSTER_FASTA_CONCORDANCE {
+
+    label 'concordance'
+    tag 'Create Cluster FASTA'
+
+    input:
+        tuple val(sample), path(telo_stats), path(telobam)
 
     output:
         path("*.fa"), emit: fasta
 
     script:
     """
-    ${baseDir}/bin/create_cluster_fasta.py --telo_stats ${telo_stats} --telobam ${telobam}
+    ${baseDir}/bin/create_cluster_fasta_concordance.py --telo_stats ${telo_stats} --telobam ${telobam} --sample ${sample}
     """
 }
 
@@ -1051,10 +1067,10 @@ process GENERATE_CONSENSUS {
     tag 'Generate Consensus and Align Reads'
 
     input:
-        tuple val(cluster), path(cluster_fasta)
+        tuple val(sample), val(cluster), path(cluster_fasta)
 
     output:
-        tuple val(cluster), path("*.consensus.fa")
+        tuple val(sample), val(cluster), path("*.consensus.fa")
 
     script:
     """
@@ -1069,10 +1085,10 @@ process MERGE_CONSENSUS {
     tag 'Merging Consensus Sequences'
 
     input:
-        path(consensus_files)
+        tuple val(sample), path(consensus_files)
 
     output:
-        path("*combined_consensus.fa"), emit: consensus_fa
+        tuple val(sample), path("*combined_consensus.fa"), emit: consensus_fa
 
     script:
     """
@@ -1081,7 +1097,7 @@ process MERGE_CONSENSUS {
         cluster=\$(basename  "\$file" | cut -f 1 -d ".")
         sed "s/^>Consensus/>\$cluster/g" "\$file" > "\$cluster.renamed.fasta"
     done
-    cat *.renamed.fasta > combined_consensus.fa
+    cat *.renamed.fasta > ${sample}.combined_consensus.fa
     """
 }
 
@@ -1092,8 +1108,8 @@ process ALIGN_TO_PARENT {
     tag 'Aligning to Parent'
 
     input:
-        path(parental_file, stageAs: "parent.fa")
-        path(offspring_file, stageAs: "offspring.fa")
+        tuple val(parental), path(parental_file, stageAs: "parent.fa")
+        tuple val(offspring), path(offspring_file, stageAs: "offspring.fa")
 
     output:
         path("alignment_stats.txt"), emit: aln_results
@@ -1104,6 +1120,22 @@ process ALIGN_TO_PARENT {
     """
 }
 
+process CONCORDANCE_ALIGNMENT {
+
+    label 'inheritance'
+    tag 'Pairwise Alignments'
+
+    input:
+        tuple path(sampleA), path(sampleB)
+
+    output:
+        path("*.alignments.txt"), emit: aln_results
+
+    script:
+    """
+    concordanceAlignment.py --sampleA ${sampleA} --sampleB ${sampleB}
+    """
+}
 process ASSIGN_PATERNITY {
     
     label 'inheritance'
@@ -1112,9 +1144,9 @@ process ASSIGN_PATERNITY {
     input:
         path(maternal_alignments, stageAs: "maternal.aln.txt")
         path(paternal_alignments, stageAs: "paternal.aln.txt")
-        path(maternal_consensus, stageAs: "maternal_consensus_seqs.fa")
-        path(paternal_consensus, stageAs: "paternal_consensus_seqs.fa")
-        path(offspring_consensus, stageAs: "offspring_consensus_seqs.fa")
+        tuple val(mother), path(maternal_consensus, stageAs: "maternal_consensus_seqs.fa")
+        tuple val(father), path(paternal_consensus, stageAs: "paternal_consensus_seqs.fa")
+        tuple val(offspring), path(offspring_consensus, stageAs: "offspring_consensus_seqs.fa")
         path(offspring_stats, stageAs: "offspring_telo_stats_old.txt")
     
     output:
@@ -1132,4 +1164,32 @@ process ASSIGN_PATERNITY {
     """
     assignPaternityAndPlot.R maternal.aln.txt paternal.aln.txt offspring_telo_stats_old.txt
     """
+}
+
+process CREATE_GRAPH_FILE {
+    
+    label 'inheritance'
+    tag 'Creating Graph and Assigning Clusters'
+
+    input:
+        path(aln_files)
+        path(concord_file)
+    
+    output:
+        path("cluster_assignment_file.txt"), emit: cluster_assignment_file
+        path("BOXPLOTS/*")
+        path("VIOLIN_PLOTS/*")
+
+    publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "cluster_assignment_file.txt"
+    publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "BOXPLOTS/*.pdf"
+    publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "VIOLIN_PLOTS/*.pdf"
+
+    script:
+    """
+    mkdir BOXPLOTS
+    mkdir VIOLIN_PLOTS
+    cluster_graph_generation.py --aln_files ${aln_files} --out cluster_assignment_file.txt
+    plot_concordance_clusters.R ${concord_file} cluster_assignment_file.txt
+    """
+
 }

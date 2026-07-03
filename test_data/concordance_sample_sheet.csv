@@ -1,0 +1,4 @@
+sample,stats,telobam
+HG002-1,/media/data_01/ndeimler/HUMAN/TARPON_LINEAGE_TRACKING/HG002_01/sample/sample.telo_stats.txt,/media/data_01/ndeimler/HUMAN/TARPON_LINEAGE_TRACKING/HG002_01/sample/sample.telomeric.bam
+HG002-2,/media/data_01/ndeimler/HUMAN/TARPON_LINEAGE_TRACKING/HG002_02/sample/sample.telo_stats.txt,/media/data_01/ndeimler/HUMAN/TARPON_LINEAGE_TRACKING/HG002_02/sample/sample.telomeric.bam
+HG002-3,/media/data_01/ndeimler/HUMAN/TARPON_LINEAGE_TRACKING/HG002_03/sample/sample.telo_stats.txt,/media/data_01/ndeimler/HUMAN/TARPON_LINEAGE_TRACKING/HG002_03/sample/sample.telomeric.bam

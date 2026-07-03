@@ -32,6 +32,7 @@ include { enrichment_stats_pipeline } from "./subworkflows/enrichment_stats.nf"
 include { telogator_clustering } from "./bin/process.nf"
 include { alignment_to_ref } from "./bin/process.nf"
 include { inheritance_assignment_pipeline } from "./subworkflows/inheritance.nf"
+include { cluster_concordance_pipeline } from "./subworkflows/cluster_concordance.nf"
 //include { methylation_detection } from "./subworkflows/methylation_detection.nf"
 
 /*
@@ -67,6 +68,10 @@ workflow {
 
             inheritance_assignment_pipeline(params.maternal_telobam, params.paternal_telobam, params.offspring_telobam, params.maternal_stats, params.paternal_stats, params.offspring_stats)
             //report = GENERATE_INHERITANCE_REPORT(parameters.params, versions.versions, manifest.manifest)
+        }
+        else if (params.cluster_concordance){
+
+            cluster_concordance_pipeline(params.concordance_sample_file)
         }
         else {
             // preprocess data pipeline takes the input files or directory and returns SUP basecalled telomeric sequences

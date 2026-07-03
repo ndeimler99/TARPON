@@ -1,4 +1,4 @@
-# TARPON v2.2.1
+# TARPON v2.3.1
 Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 
 ## Table of Contents
@@ -14,6 +14,11 @@ Telomere Analysis and Research Pipeline Optimized for Nanopore Sequencing Data
 10. [Advanced Input Parameteres](#advanced_input)
 11. [Output Files](#output)
 12. [Inheritance Mode](#inheritance)
+13. [Cluster Concordance](#cluster_concordance)
+
+# New!!! - Cluster Concordance #
+
+By specifying --cluster_concordance and providing a sample sheet (csv), clusters from independent samples can be assigned to each other. For example, if you are investigating the same sample over multiple passages and want to look at chromosome allele specific information you can use this function to assign clusters to one another. Please see below for more information.
 
 # NEW!!!! - Inheritance Mode #
 
@@ -198,6 +203,16 @@ Inheritance mode allows the user to provide telomeric sequences and stats produc
 |--offspring_telobam|Telomeric Ubam file provided by TARPON for offspring of interest |
 |--offspring_stats |  Telomeric Stats File provided by TARPON for offspring of interest |
 |--outdir | Location of where you would like the Pipeline to output results (Default ./output) |
+
+## [Cluster Concordance](#cluster_concordance)
+
+Cluster Concordance mode allows the user to provide a three column csv file containing the sample name in the first column, the TARPON stats file output (must include the Cluster column), and the corresponding TARPON telomeric bam file. --cluster_concordance will then generate a consensus sequence per cluster per sample and compare every provided sample with each other in a pairwise manner. Using a graph based approach, each alignment result is compared to every other alignment result and clusters from each sample are assigned to a "concordant cluster" representing a specific chromosome arm allele. This allows the user to track how a single chromosome arm may be behaving during multiple passages or different experimental conditions. When --cluster_concordance is specified the standard TARPON workflow will not execute. The following parameters must be provided and all provided files must have valid paths and exist. No HTML report is generated, however an additional concordance cluster file is provided in the specified outdir. Additionally, figures per cluster are created.
+
+| Parameter | Description |
+|:-----:|:----:|
+|--cluster_concordance |This parameter triggers TARPON to not perform normal telomere analysis but to switch modes entirely|
+|--concordance_sample_file| csv file following the pattern sample_name,telo_stats,telo_bam from TARPON output |
+|--outdir| Location of where you would like the Pipeline to output results (Default ./output) |
 
 
 This pipeline utilizes ezcharts to aid in the generation of bokeh plots for the final HTML report. Please see the following disclaimer as well as the License provided in the LICENSE folder for use of this software.
