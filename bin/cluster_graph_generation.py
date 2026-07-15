@@ -62,36 +62,60 @@ def main(args):
     ]
 
     cluster_dict = {}
-    i = 0
-    uniq_keys = []
-    for cluster in clusters:
-        cluster_dict["Concordance_{}".format(i)] = {}
-        for sample in cluster:
-            uniq_keys.append(sample.split(".")[0])
-            cluster_dict["Concordance_{}".format(i)][sample.split(".")[0]] = sample.split(".")[1]
-        i+= 1
+    uniq_keys = set()
 
-    uniq_keys = set(uniq_keys)
-    print(uniq_keys)
+    for i, cluster in enumerate(clusters):
+        cluster_name = f"Concordance_{i}"
+        cluster_dict[cluster_name] = {}
+
+        for node in cluster:
+            sample, gene = node.split(".", 1)
+            uniq_keys.add(sample)
+
+            # Store the FULL node name for graph lookups
+            cluster_dict[cluster_name][sample] = node
+
+    uniq_keys = sorted(uniq_keys)
+
 
     with open(args.out, "w") as out_fh:
-        out_str = "Concordance_Cluster\t"
-        for sample in uniq_keys:
-            out_str += sample + "\t"
-        out_str.strip()
-        out_fh.write(out_str + "\n")
-        for cluster in cluster_dict:
-            out_str = ""
-            out_str += cluster + "\t"
+        header = ["Concordance_Cluster"] + uniq_keys
+        out_fh.write("\t".join(header) + "\n")
+
+        for cluster_name, members in cluster_dict.items():
+            row = [cluster_name]
+
             for sample in uniq_keys:
-                if sample in cluster_dict[cluster]:
-                    out_str += cluster_dict[cluster][sample] + "\t"
+                if sample in members:
+                    # Write only the gene name
+                    row.append(members[sample].split(".", 1)[1])
                 else:
-                    out_str += "NA\t"
-            out_str.strip()
-            out_fh.write(out_str + "\n")
+                    row.append("NA")
+
+            out_fh.write("\t".join(row) + "\n")
 
 
+    for cluster_name, members in cluster_dict.items():
+
+        outfile = f"CONCORDANCE_TABLES/{cluster_name}.aln_stats.txt"
+        with open(outfile, "w") as fh:
+            fh.write("\t" + "\t".join(uniq_keys) + "\n")
+
+            for sampleA in uniq_keys:
+                nodeA = members.get(sampleA)
+                row = [sampleA]
+                for sampleB in uniq_keys:
+                    nodeB = members.get(sampleB)
+                    if sampleA == sampleB:
+                        row.append("100")
+                    elif nodeA is None or nodeB is None:
+                        row.append("NA")
+                    elif G.has_edge(nodeA, nodeB):
+                        row.append(f"{G[nodeA][nodeB]['weight']:.2f}")
+                    else:
+                        row.append("NA")
+
+                fh.write("\t".join(row) + "\n")
 
 def argparser():
     parser = argparse.ArgumentParser()
