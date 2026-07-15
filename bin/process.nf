@@ -1131,6 +1131,8 @@ process CONCORDANCE_ALIGNMENT {
     output:
         path("*.alignments.txt"), emit: aln_results
 
+    publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "*alignments.txt"
+
     script:
     """
     concordanceAlignment.py --sampleA ${sampleA} --sampleB ${sampleB}
@@ -1179,15 +1181,17 @@ process CREATE_GRAPH_FILE {
         path("cluster_assignment_file.txt"), emit: cluster_assignment_file
         path("BOXPLOTS/*")
         path("VIOLIN_PLOTS/*")
+        path("CONCORDANCE_TABLES/*")
 
     publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "cluster_assignment_file.txt"
     publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "BOXPLOTS/*.pdf"
     publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "VIOLIN_PLOTS/*.pdf"
-
+    publishDir "${params.outdir}/", overwrite: true, mode: "copy", pattern: "CONCORDANCE_TABLES/*.txt"
     script:
     """
     mkdir BOXPLOTS
     mkdir VIOLIN_PLOTS
+    mkdir CONCORDANCE_TABLES
     cluster_graph_generation.py --aln_files ${aln_files} --out cluster_assignment_file.txt
     plot_concordance_clusters.R ${concord_file} cluster_assignment_file.txt
     """
