@@ -1308,6 +1308,8 @@ def summary_barplot(data=None, *, x=None, y=None, hue=None, order=None, hue_orde
     fill = [repeat, mutant, "other"]
     
     colors=["#D81B60", "#1E88E5","#FFC107"]
+
+    print(data["wt_perc"])
      
     wt_count = sum(data["wt_perc"] / 100 * data["telo_length"]) 
     mt_count = sum(data["mt_perc"] / 100 * data["telo_length"]) 

@@ -3,6 +3,7 @@
 import regex
 import argparse
 import pysam
+import pandas as pd
 
 def argparser():
     """Argument parser for entrypoint."""
@@ -58,7 +59,7 @@ def main(args):
     #line[3] = telo_start
     #line[1] = strand
 
-    df = pd.read_table(args.stats_file, delimiter="\t")
+    telo_dict = pd.read_table(args.stats_file, delimiter="\t")
     # with open(args.stats_file, "r") as stats_fh:
     #     linecount = 0 
     #     for line in stats_fh:
@@ -77,7 +78,7 @@ def main(args):
     processivity_dict = {"wild_type":{}, "mutant":{}}
 
     wt_comp = {}
-    mt_comp {}
+    mt_comp = {}
 
 
     with open(args.stats_out, "w") as stats_out_fh:
